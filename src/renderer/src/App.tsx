@@ -16,6 +16,7 @@ import type { AppTheme, DiagramDirection, DiagramDocument, DiagramType } from '.
 import { AppHeader } from './components/AppHeader'
 import { CodeEditorPanel } from './components/CodeEditorPanel'
 import { DiagramSidebar } from './components/DiagramSidebar'
+import { DiagramToolPalette } from './components/DiagramToolPalette'
 import type { EditableEdgeData } from './components/EditableEdge'
 import { FlowCanvas } from './components/FlowCanvas'
 import { PreviewPanel } from './components/PreviewPanel'
@@ -726,21 +727,9 @@ export default function App(): JSX.Element {
           diagramType={diagramType}
           direction={direction}
           autoSync={autoSync}
-          selectedNode={selectedNode}
-          selectedEdge={selectedEdge}
-          selectedNodeCount={selectedNodeIds.length}
-          selectedEdgeCount={selectedEdgeIds.length}
           onTitleChange={setTitle}
           onDiagramTypeChange={updateDiagramType}
           onDirectionChange={updateDirection}
-          onAddNode={addNode}
-          onDuplicateSelected={duplicateSelectedNodes}
-          onSelectedNodeShapeChange={updateSelectedNodeShape}
-          onSelectedNodeStyleChange={updateSelectedNodeStyle}
-          onSelectedEdgeLabelChange={updateSelectedEdgeLabel}
-          onSelectedEdgeStyleChange={updateSelectedEdgeStyle}
-          onSelectedEdgeVisualStyleChange={updateSelectedEdgeVisualStyle}
-          onDeleteSelected={deleteSelectedElements}
           onSyncFromVisual={syncFromVisual}
         />
 
@@ -752,7 +741,23 @@ export default function App(): JSX.Element {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onSelectionChange={onSelectionChange}
-        />
+        >
+          <DiagramToolPalette
+            diagramType={diagramType}
+            selectedNode={selectedNode}
+            selectedEdge={selectedEdge}
+            selectedNodeCount={selectedNodeIds.length}
+            selectedEdgeCount={selectedEdgeIds.length}
+            onAddNode={addNode}
+            onDuplicateSelected={duplicateSelectedNodes}
+            onSelectedNodeShapeChange={updateSelectedNodeShape}
+            onSelectedNodeStyleChange={updateSelectedNodeStyle}
+            onSelectedEdgeLabelChange={updateSelectedEdgeLabel}
+            onSelectedEdgeStyleChange={updateSelectedEdgeStyle}
+            onSelectedEdgeVisualStyleChange={updateSelectedEdgeVisualStyle}
+            onDeleteSelected={deleteSelectedElements}
+          />
+        </FlowCanvas>
 
         <section className="right-panel">
           <CodeEditorPanel

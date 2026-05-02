@@ -1,3 +1,3 @@
-1. сначала .mpro формат + undo/redo, 
-2. затем Mermaid parser для flowchart
-3. потом templates и auto layout
+1. Stabilize the `.mpro` project format and undo/redo behavior.
+2. Add a Mermaid parser for flowcharts.
+3. Add templates and automatic layout.

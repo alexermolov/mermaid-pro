@@ -10,6 +10,7 @@ import {
   type NodeChange,
   type OnSelectionChangeParams
 } from '@xyflow/react'
+import type { ReactNode } from 'react'
 import { EditableNode } from './EditableNode'
 import { EditableEdge } from './EditableEdge'
 import type { VisualNode } from '../lib/mermaid'
@@ -31,6 +32,7 @@ type FlowCanvasProps = {
   onEdgesChange: (changes: EdgeChange[]) => void
   onConnect: (connection: Connection) => void
   onSelectionChange: (params: OnSelectionChangeParams) => void
+  children?: ReactNode
 }
 
 export function FlowCanvas({
@@ -40,10 +42,12 @@ export function FlowCanvas({
   onNodesChange,
   onEdgesChange,
   onConnect,
-  onSelectionChange
+  onSelectionChange,
+  children
 }: FlowCanvasProps): JSX.Element {
   return (
     <section className="canvas-panel">
+      {children}
       <ReactFlow
         nodes={nodes}
         edges={edges}
