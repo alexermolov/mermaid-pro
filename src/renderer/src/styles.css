@@ -404,13 +404,20 @@ label {
   border-radius: 50% / 18%;
 }
 
-.editable-node--circle {
+.editable-node--circle,
+.editable-node--doubleCircle {
   display: grid;
   width: 112px;
   min-width: 112px;
   height: 112px;
   place-items: center;
   border-radius: 999px;
+}
+
+.editable-node--doubleCircle {
+  box-shadow:
+    inset 0 0 0 6px color-mix(in srgb, var(--editable-node-border) 44%, transparent),
+    0 16px 35px var(--editable-node-shadow);
 }
 
 .editable-node--diamond {
@@ -435,6 +442,21 @@ label {
 
 .editable-node--parallelogram input {
   transform: skewX(12deg);
+}
+
+.editable-node--trapezoid {
+  clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
+  padding-inline: 28px;
+}
+
+.editable-node--inverseTrapezoid {
+  clip-path: polygon(0 0, 100% 0, 82% 100%, 18% 100%);
+  padding-inline: 28px;
+}
+
+.editable-node--asymmetric {
+  clip-path: polygon(0 0, 86% 0, 100% 50%, 86% 100%, 0 100%, 12% 50%);
+  padding-inline: 28px 34px;
 }
 
 .editable-node input {

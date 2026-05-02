@@ -8,9 +8,13 @@ export type FlowchartNodeShape =
   | 'subroutine'
   | 'cylinder'
   | 'circle'
+  | 'doubleCircle'
   | 'diamond'
   | 'hexagon'
   | 'parallelogram'
+  | 'trapezoid'
+  | 'inverseTrapezoid'
+  | 'asymmetric'
 
 export type FlowchartEdgeStyle = 'arrow' | 'line' | 'dottedArrow' | 'dottedLine' | 'thickArrow' | 'thickLine'
 
@@ -18,6 +22,7 @@ export type FlowchartNodeStyle = {
   fillColor?: string
   strokeColor?: string
   textColor?: string
+  borderWidth?: number
 }
 
 export type FlowchartEdgeVisualStyle = {
@@ -135,12 +140,20 @@ function formatFlowchartNode(id: string, label: string, shape: FlowchartNodeShap
       return `  ${id}[("${label}")]`
     case 'circle':
       return `  ${id}(("${label}"))`
+    case 'doubleCircle':
+      return `  ${id}((("${label}")))`
     case 'diamond':
       return `  ${id}{"${label}"}`
     case 'hexagon':
       return `  ${id}{{"${label}"}}`
     case 'parallelogram':
       return `  ${id}[/"${label}"/]`
+    case 'trapezoid':
+      return `  ${id}[/"${label}"\\]`
+    case 'inverseTrapezoid':
+      return `  ${id}[\\"${label}"/]`
+    case 'asymmetric':
+      return `  ${id}>"${label}"]`
     case 'rectangle':
       return `  ${id}["${label}"]`
   }
@@ -167,7 +180,8 @@ function formatFlowchartNodeStyle(id: string, style: FlowchartNodeStyle | undefi
   const declarations = [
     style?.fillColor ? `fill:${style.fillColor}` : '',
     style?.strokeColor ? `stroke:${style.strokeColor}` : '',
-    style?.textColor ? `color:${style.textColor}` : ''
+    style?.textColor ? `color:${style.textColor}` : '',
+    style?.borderWidth ? `stroke-width:${style.borderWidth}px` : ''
   ].filter(Boolean)
 
   return declarations.length > 0 ? `  style ${id} ${declarations.join(',')}` : ''

@@ -1,26 +1,48 @@
-import { Download, FileCode2, FolderOpen, ImageDown, Moon, Save, Sparkles, Sun } from 'lucide-react'
+import {
+  Download,
+  FileCode2,
+  FileText,
+  FolderOpen,
+  ImageDown,
+  Moon,
+  Redo2,
+  Save,
+  Sparkles,
+  Sun,
+  Undo2
+} from 'lucide-react'
 import type { AppTheme } from '../lib/appHelpers'
 
 type AppHeaderProps = {
   theme: AppTheme
   canExport: boolean
+  canUndo: boolean
+  canRedo: boolean
   onNewDiagram: () => void
   onOpenDiagram: () => void
   onSaveDiagram: () => void
+  onSaveMermaid: () => void
   onExportSvg: () => void
   onExportPng: () => void
   onToggleTheme: () => void
+  onUndo: () => void
+  onRedo: () => void
 }
 
 export function AppHeader({
   theme,
   canExport,
+  canUndo,
+  canRedo,
   onNewDiagram,
   onOpenDiagram,
   onSaveDiagram,
+  onSaveMermaid,
   onExportSvg,
   onExportPng,
-  onToggleTheme
+  onToggleTheme,
+  onUndo,
+  onRedo
 }: AppHeaderProps): JSX.Element {
   const isDarkTheme = theme === 'dark'
 
@@ -47,7 +69,19 @@ export function AppHeader({
         </button>
         <button onClick={onSaveDiagram}>
           <Save size={16} />
-          Save
+          Project
+        </button>
+        <button onClick={onSaveMermaid}>
+          <FileText size={16} />
+          MMD
+        </button>
+        <button onClick={onUndo} disabled={!canUndo} title="Undo">
+          <Undo2 size={16} />
+          Undo
+        </button>
+        <button onClick={onRedo} disabled={!canRedo} title="Redo">
+          <Redo2 size={16} />
+          Redo
         </button>
         <button onClick={onExportSvg} disabled={!canExport} title={canExport ? 'Export SVG' : 'Fix Mermaid errors first'}>
           <Download size={16} />

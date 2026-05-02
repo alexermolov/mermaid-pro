@@ -1,7 +1,7 @@
-import type { DiagramDirection, DiagramType } from '../../../shared/diagram'
+import type { AppTheme, DiagramDirection, DiagramType } from '../../../shared/diagram'
 import type { FlowchartEdgeStyle, FlowchartNodeShape, VisualNode } from './mermaid'
 
-export type AppTheme = 'light' | 'dark'
+export type { AppTheme }
 
 export const directions: DiagramDirection[] = ['LR', 'TD', 'BT', 'RL']
 
@@ -24,9 +24,13 @@ export const flowchartNodeShapes: Array<{ value: FlowchartNodeShape; label: stri
   { value: 'subroutine', label: 'Subroutine' },
   { value: 'cylinder', label: 'Cylinder' },
   { value: 'circle', label: 'Circle' },
+  { value: 'doubleCircle', label: 'Double circle' },
   { value: 'diamond', label: 'Decision diamond' },
   { value: 'hexagon', label: 'Hexagon' },
-  { value: 'parallelogram', label: 'Parallelogram' }
+  { value: 'parallelogram', label: 'Parallelogram' },
+  { value: 'trapezoid', label: 'Trapezoid' },
+  { value: 'inverseTrapezoid', label: 'Inverse trapezoid' },
+  { value: 'asymmetric', label: 'Asymmetric' }
 ]
 
 export const flowchartEdgeStyles: Array<{ value: FlowchartEdgeStyle; label: string }> = [

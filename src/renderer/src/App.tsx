@@ -12,7 +12,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { toPng } from 'html-to-image'
-import type { DiagramDirection, DiagramType } from '../../shared/diagram'
+import type { AppTheme, DiagramDirection, DiagramDocument, DiagramType } from '../../shared/diagram'
 import { AppHeader } from './components/AppHeader'
 import { CodeEditorPanel } from './components/CodeEditorPanel'
 import { DiagramSidebar } from './components/DiagramSidebar'
@@ -22,8 +22,7 @@ import { PreviewPanel } from './components/PreviewPanel'
 import {
   isTextInputTarget,
   layoutNodesForDirection,
-  toFileBaseName,
-  type AppTheme
+  toFileBaseName
 } from './lib/appHelpers'
 import { importDrawioDiagram, isDrawioDiagram } from './lib/drawioImport'
 import {
@@ -37,6 +36,19 @@ import {
   type VisualEdge,
   type VisualNode
 } from './lib/mermaid'
+
+type DiagramSnapshot = {
+  title: string
+  diagramType: DiagramType
+  direction: DiagramDirection
+  nodes: VisualNode[]
+  edges: VisualEdge[]
+  code: string
+  autoSync: boolean
+  appTheme: AppTheme
+}
+
+const historyLimit = 80
 
 export default function App(): JSX.Element {
   const [title, setTitle] = useState(defaultDiagram.title)
@@ -54,7 +66,12 @@ export default function App(): JSX.Element {
   const [renderedSvg, setRenderedSvg] = useState('')
   const [status, setStatus] = useState('Ready')
   const [appTheme, setAppTheme] = useState<AppTheme>('dark')
+  const [undoStack, setUndoStack] = useState<DiagramSnapshot[]>([])
+  const [redoStack, setRedoStack] = useState<DiagramSnapshot[]>([])
   const previewRef = useRef<HTMLDivElement>(null)
+  const lastCommittedSnapshotRef = useRef<DiagramSnapshot | null>(null)
+  const lastCommittedHistoryKeyRef = useRef('')
+  const isRestoringHistoryRef = useRef(false)
   const canExport = Boolean(renderedSvg)
   const isDarkTheme = appTheme === 'dark'
 
@@ -198,12 +215,115 @@ export default function App(): JSX.Element {
     () => toMermaid(nodes, edges, direction, diagramType),
     [nodes, edges, direction, diagramType]
   )
+  const effectiveCode = autoSync ? generatedCode : code
+
+  const currentSnapshot = useMemo<DiagramSnapshot>(
+    () => ({
+      title,
+      diagramType,
+      direction,
+      nodes: toSerializableNodes(nodes),
+      edges: toSerializableEdges(edges),
+      code: effectiveCode,
+      autoSync,
+      appTheme
+    }),
+    [appTheme, autoSync, diagramType, direction, effectiveCode, edges, nodes, title]
+  )
 
   useEffect(() => {
     if (autoSync) {
       setCode(generatedCode)
     }
   }, [autoSync, generatedCode])
+
+  useEffect(() => {
+    const snapshot = cloneSnapshot(currentSnapshot)
+    const historyKey = getSnapshotKey(snapshot)
+
+    if (!lastCommittedSnapshotRef.current) {
+      lastCommittedSnapshotRef.current = snapshot
+      lastCommittedHistoryKeyRef.current = historyKey
+      return
+    }
+
+    if (historyKey === lastCommittedHistoryKeyRef.current) {
+      return
+    }
+
+    if (isRestoringHistoryRef.current) {
+      isRestoringHistoryRef.current = false
+      lastCommittedSnapshotRef.current = snapshot
+      lastCommittedHistoryKeyRef.current = historyKey
+      return
+    }
+
+    const previousSnapshot = cloneSnapshot(lastCommittedSnapshotRef.current)
+    setUndoStack((currentStack) => [...currentStack, previousSnapshot].slice(-historyLimit))
+    setRedoStack([])
+    lastCommittedSnapshotRef.current = snapshot
+    lastCommittedHistoryKeyRef.current = historyKey
+  }, [currentSnapshot])
+
+  const applySnapshot = useCallback(
+    (snapshot: DiagramSnapshot) => {
+      isRestoringHistoryRef.current = true
+      setTitle(snapshot.title)
+      setDiagramType(snapshot.diagramType)
+      setDirection(snapshot.direction)
+      setNodes(cloneSerializable(snapshot.nodes))
+      setEdges(cloneSerializable(snapshot.edges))
+      setCode(snapshot.code)
+      setAutoSync(snapshot.autoSync)
+      setAppTheme(snapshot.appTheme)
+      setSelectedNodeIds([])
+      setSelectedEdgeIds([])
+      setSelectedEdgeId(null)
+    },
+    [setEdges, setNodes]
+  )
+
+  const resetHistory = useCallback(() => {
+    setUndoStack([])
+    setRedoStack([])
+    lastCommittedSnapshotRef.current = null
+    lastCommittedHistoryKeyRef.current = ''
+    isRestoringHistoryRef.current = true
+  }, [])
+
+  const undo = useCallback(() => {
+    setUndoStack((currentUndoStack) => {
+      const previousSnapshot = currentUndoStack.at(-1)
+      if (!previousSnapshot) {
+        return currentUndoStack
+      }
+
+      const currentHistorySnapshot = lastCommittedSnapshotRef.current
+        ? cloneSnapshot(lastCommittedSnapshotRef.current)
+        : cloneSnapshot(currentSnapshot)
+      setRedoStack((currentRedoStack) => [currentHistorySnapshot, ...currentRedoStack].slice(0, historyLimit))
+      applySnapshot(previousSnapshot)
+      setStatus('Undo')
+      return currentUndoStack.slice(0, -1)
+    })
+  }, [applySnapshot, currentSnapshot])
+
+  const redo = useCallback(() => {
+    setRedoStack((currentRedoStack) => {
+      const nextSnapshot = currentRedoStack[0]
+      if (!nextSnapshot) {
+        return currentRedoStack
+      }
+
+      const currentHistorySnapshot = lastCommittedSnapshotRef.current
+        ? cloneSnapshot(lastCommittedSnapshotRef.current)
+        : cloneSnapshot(currentSnapshot)
+      setUndoStack((currentUndoStack) => [...currentUndoStack, currentHistorySnapshot].slice(-historyLimit))
+      applySnapshot(nextSnapshot)
+      setStatus('Redo')
+      return currentRedoStack.slice(1)
+    })
+  }, [applySnapshot, currentSnapshot])
 
   const onNodesChange = useCallback(
     (changes: NodeChange<VisualNode>[]) => {
@@ -277,9 +397,89 @@ export default function App(): JSX.Element {
     setStatus('Selected items deleted')
   }, [selectedEdgeIds, selectedNodeIds, setEdges, setNodes])
 
+  const duplicateSelectedNodes = useCallback(() => {
+    if (selectedNodeIds.length === 0) {
+      return
+    }
+
+    const selectedNodeIdSet = new Set(selectedNodeIds)
+    const copySuffix = Date.now().toString(36)
+    const nodeIdMap = new Map<string, string>()
+    const duplicatedNodes = nodes
+      .filter((node) => selectedNodeIdSet.has(node.id))
+      .map((node, index): VisualNode => {
+        const id = `${node.id}_copy_${copySuffix}_${index + 1}`
+        nodeIdMap.set(node.id, id)
+
+        return {
+          ...node,
+          id,
+          selected: true,
+          position: {
+            x: node.position.x + 48,
+            y: node.position.y + 48
+          },
+          data: {
+            ...node.data,
+            label: `${node.data.label || node.id} copy`
+          }
+        }
+      })
+
+    if (duplicatedNodes.length === 0) {
+      return
+    }
+
+    const duplicatedEdges = edges
+      .filter((edge) => nodeIdMap.has(edge.source) && nodeIdMap.has(edge.target))
+      .map((edge, index): VisualEdge => ({
+        ...edge,
+        id: `${edge.id}_copy_${copySuffix}_${index + 1}`,
+        source: nodeIdMap.get(edge.source) ?? edge.source,
+        target: nodeIdMap.get(edge.target) ?? edge.target,
+        selected: false
+      }))
+
+    const duplicatedNodeIds = duplicatedNodes.map((node) => node.id)
+    setNodes((currentNodes) => [
+      ...currentNodes.map((node) => ({ ...node, selected: false })),
+      ...duplicatedNodes
+    ])
+    setEdges((currentEdges) => [
+      ...currentEdges.map((edge) => ({ ...edge, selected: false })),
+      ...duplicatedEdges
+    ])
+    setSelectedNodeIds(duplicatedNodeIds)
+    setSelectedEdgeIds([])
+    setSelectedEdgeId(null)
+    setAutoSync(true)
+    setStatus(`Duplicated ${duplicatedNodes.length} selected node${duplicatedNodes.length === 1 ? '' : 's'}`)
+  }, [edges, nodes, selectedNodeIds, setEdges, setNodes])
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
-      if ((event.key !== 'Delete' && event.key !== 'Backspace') || isTextInputTarget(event.target)) {
+      if (isTextInputTarget(event.target)) {
+        return
+      }
+
+      const key = event.key.toLowerCase()
+      const isShortcut = event.ctrlKey || event.metaKey
+      const isUndoShortcut = isShortcut && key === 'z' && !event.shiftKey
+      const isRedoShortcut = isShortcut && (key === 'y' || (key === 'z' && event.shiftKey))
+
+      if (isUndoShortcut) {
+        event.preventDefault()
+        undo()
+        return
+      }
+
+      if (isRedoShortcut) {
+        event.preventDefault()
+        redo()
+        return
+      }
+
+      if (event.key !== 'Delete' && event.key !== 'Backspace') {
         return
       }
 
@@ -293,7 +493,7 @@ export default function App(): JSX.Element {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [deleteSelectedElements, selectedEdgeIds.length, selectedNodeIds.length])
+  }, [deleteSelectedElements, redo, selectedEdgeIds.length, selectedNodeIds.length, undo])
 
   function addNode(): void {
     const id = nextNodeId(nodes)
@@ -372,13 +572,17 @@ export default function App(): JSX.Element {
   }, [])
 
   function createNewDiagram(): void {
-    setTitle(defaultDiagram.title)
-    setDiagramType(defaultDiagram.type)
-    setDirection(defaultDiagram.direction)
-    setNodes(defaultDiagram.nodes)
-    setEdges(defaultDiagram.edges)
-    setCode(toMermaid(defaultDiagram.nodes, defaultDiagram.edges, defaultDiagram.direction, defaultDiagram.type))
-    setAutoSync(true)
+    resetHistory()
+    applySnapshot({
+      title: defaultDiagram.title,
+      diagramType: defaultDiagram.type,
+      direction: defaultDiagram.direction,
+      nodes: defaultDiagram.nodes,
+      edges: defaultDiagram.edges,
+      code: toMermaid(defaultDiagram.nodes, defaultDiagram.edges, defaultDiagram.direction, defaultDiagram.type),
+      autoSync: true,
+      appTheme
+    })
     setStatus('New diagram created')
   }
 
@@ -390,18 +594,38 @@ export default function App(): JSX.Element {
     }
 
     const fileName = result.filePath?.split(/[\\/]/).pop() ?? 'Imported Diagram'
+    const projectDocument =
+      result.filePath && isProjectFile(result.filePath) ? parseProjectDocument(result.content) : undefined
+
+    if (result.filePath && isProjectFile(result.filePath)) {
+      if (!projectDocument) {
+        setStatus('Unable to open Mermaid Pro project')
+        return
+      }
+
+      resetHistory()
+      applySnapshot(toSnapshotFromDocument(projectDocument))
+      setStatus(`Opened ${result.filePath}`)
+      return
+    }
+
     const drawioImport = isDrawioDiagram(result.content) ? importDrawioDiagram(result.content) : undefined
 
     setTitle(fileName)
 
     if (drawioImport) {
       const importedCode = toMermaid(drawioImport.nodes, drawioImport.edges, 'LR', 'flowchart')
-      setDiagramType('flowchart')
-      setDirection('LR')
-      setNodes(drawioImport.nodes)
-      setEdges(drawioImport.edges)
-      setCode(importedCode)
-      setAutoSync(true)
+      resetHistory()
+      applySnapshot({
+        title: fileName,
+        diagramType: 'flowchart',
+        direction: 'LR',
+        nodes: drawioImport.nodes,
+        edges: drawioImport.edges,
+        code: importedCode,
+        autoSync: true,
+        appTheme
+      })
       setSelectedNodeIds([])
       setSelectedEdgeIds([])
       setSelectedEdgeId(null)
@@ -409,19 +633,34 @@ export default function App(): JSX.Element {
       return
     }
 
+    resetHistory()
     setCode(result.content)
     setAutoSync(false)
     setStatus(`Opened ${result.filePath}`)
   }
 
   async function saveDiagram(): Promise<void> {
+    const document = toProjectDocument(currentSnapshot)
     const filePath = await window.mermaidPro.saveDiagram({
-      content: code,
-      defaultPath: `${toFileBaseName(title)}.mmd`
+      content: JSON.stringify(document, null, 2),
+      defaultPath: `${toFileBaseName(title)}.mpro`,
+      format: 'project'
     })
 
     if (filePath) {
       setStatus(`Saved ${filePath}`)
+    }
+  }
+
+  async function saveMermaid(): Promise<void> {
+    const filePath = await window.mermaidPro.saveDiagram({
+      content: effectiveCode,
+      defaultPath: `${toFileBaseName(title)}.mmd`,
+      format: 'mermaid'
+    })
+
+    if (filePath) {
+      setStatus(`Saved Mermaid ${filePath}`)
     }
   }
 
@@ -468,12 +707,17 @@ export default function App(): JSX.Element {
       <AppHeader
         theme={appTheme}
         canExport={canExport}
+        canUndo={undoStack.length > 0}
+        canRedo={redoStack.length > 0}
         onNewDiagram={createNewDiagram}
         onOpenDiagram={openDiagram}
         onSaveDiagram={saveDiagram}
+        onSaveMermaid={saveMermaid}
         onExportSvg={exportSvg}
         onExportPng={exportPng}
         onToggleTheme={() => setAppTheme((currentTheme) => (currentTheme === 'dark' ? 'light' : 'dark'))}
+        onUndo={undo}
+        onRedo={redo}
       />
 
       <section className="workspace">
@@ -490,6 +734,7 @@ export default function App(): JSX.Element {
           onDiagramTypeChange={updateDiagramType}
           onDirectionChange={updateDirection}
           onAddNode={addNode}
+          onDuplicateSelected={duplicateSelectedNodes}
           onSelectedNodeShapeChange={updateSelectedNodeShape}
           onSelectedNodeStyleChange={updateSelectedNodeStyle}
           onSelectedEdgeLabelChange={updateSelectedEdgeLabel}
@@ -532,4 +777,116 @@ export default function App(): JSX.Element {
       </section>
     </main>
   )
+}
+
+function toProjectDocument(snapshot: DiagramSnapshot): DiagramDocument {
+  return {
+    format: 'mermaid-pro',
+    version: 1,
+    title: snapshot.title,
+    type: snapshot.diagramType,
+    direction: snapshot.direction,
+    nodes: toSerializableNodes(snapshot.nodes),
+    edges: toSerializableEdges(snapshot.edges),
+    code: snapshot.code,
+    autoSync: snapshot.autoSync,
+    theme: snapshot.appTheme
+  }
+}
+
+function toSnapshotFromDocument(document: DiagramDocument): DiagramSnapshot {
+  return {
+    title: document.title,
+    diagramType: document.type,
+    direction: document.direction,
+    nodes: toSerializableNodes(document.nodes as VisualNode[]).map((node) => ({
+      ...node,
+      type: node.type ?? 'editableNode'
+    })),
+    edges: toSerializableEdges(document.edges as VisualEdge[]),
+    code: document.code,
+    autoSync: document.autoSync,
+    appTheme: document.theme
+  }
+}
+
+function parseProjectDocument(content: string): DiagramDocument | undefined {
+  try {
+    const parsedDocument: unknown = JSON.parse(content)
+
+    if (!isRecord(parsedDocument) || parsedDocument.format !== 'mermaid-pro') {
+      return undefined
+    }
+
+    return {
+      format: 'mermaid-pro',
+      version: 1,
+      title: typeof parsedDocument.title === 'string' ? parsedDocument.title : defaultDiagram.title,
+      type: isDiagramType(parsedDocument.type) ? parsedDocument.type : defaultDiagram.type,
+      direction: isDiagramDirection(parsedDocument.direction) ? parsedDocument.direction : defaultDiagram.direction,
+      nodes: Array.isArray(parsedDocument.nodes) ? parsedDocument.nodes : defaultDiagram.nodes,
+      edges: Array.isArray(parsedDocument.edges) ? parsedDocument.edges : defaultDiagram.edges,
+      code: typeof parsedDocument.code === 'string' ? parsedDocument.code : '',
+      autoSync: typeof parsedDocument.autoSync === 'boolean' ? parsedDocument.autoSync : false,
+      theme: parsedDocument.theme === 'light' ? 'light' : 'dark'
+    }
+  } catch {
+    return undefined
+  }
+}
+
+function isProjectFile(filePath: string): boolean {
+  return filePath.toLowerCase().endsWith('.mpro')
+}
+
+function toSerializableNodes(nodes: VisualNode[]): VisualNode[] {
+  return cloneSerializable(nodes).map((node) => {
+    const data = { ...node.data }
+    delete data.onLabelChange
+    delete data.direction
+
+    return {
+      ...node,
+      selected: false,
+      dragging: false,
+      data
+    }
+  })
+}
+
+function toSerializableEdges(edges: VisualEdge[]): VisualEdge[] {
+  return cloneSerializable(edges).map((edge) => {
+    const data = { ...(edge.data ?? {}) } as EditableEdgeData
+    delete data.onLabelChange
+
+    return {
+      ...edge,
+      selected: false,
+      data
+    }
+  })
+}
+
+function cloneSnapshot(snapshot: DiagramSnapshot): DiagramSnapshot {
+  return cloneSerializable(snapshot)
+}
+
+function cloneSerializable<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
+function getSnapshotKey(snapshot: DiagramSnapshot): string {
+  return JSON.stringify(snapshot)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isDiagramType(value: unknown): value is DiagramType {
+  return value === 'flowchart' || value === 'sequence' || value === 'class' || value === 'state' || value === 'er' || value === 'mindmap'
+}
+
+function isDiagramDirection(value: unknown): value is DiagramDirection {
+  return value === 'TD' || value === 'LR' || value === 'BT' || value === 'RL'
 }

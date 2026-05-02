@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
-import { join } from 'node:path'
+import { extname, join } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
 import { inflateRawSync } from 'node:zlib'
 import type { SaveDiagramPayload, SaveExportPayload } from '../shared/diagram'
@@ -65,10 +65,11 @@ app.whenReady().then(() => {
 
   ipcMain.handle('diagram:open', async () => {
     const result = await dialog.showOpenDialog({
-      title: 'Open Mermaid diagram',
+      title: 'Open diagram',
       properties: ['openFile'],
       filters: [
-        { name: 'Supported diagrams', extensions: ['mmd', 'mermaid', 'txt', 'drawio', 'xml'] },
+        { name: 'Supported diagrams', extensions: ['mpro', 'mmd', 'mermaid', 'txt', 'drawio', 'xml'] },
+        { name: 'Mermaid Pro projects', extensions: ['mpro'] },
         { name: 'Mermaid files', extensions: ['mmd', 'mermaid', 'txt'] },
         { name: 'draw.io files', extensions: ['drawio', 'xml'] },
         { name: 'All files', extensions: ['*'] }
@@ -80,19 +81,23 @@ app.whenReady().then(() => {
     }
 
     const filePath = result.filePaths[0]
-    const content = normalizeDrawioContent(await readFile(filePath, 'utf8'))
+    const rawContent = await readFile(filePath, 'utf8')
+    const content = extname(filePath).toLowerCase() === '.mpro' ? rawContent : normalizeDrawioContent(rawContent)
 
     return { canceled: false, filePath, content }
   })
 
   ipcMain.handle('diagram:save', async (_event, payload: SaveDiagramPayload) => {
+    const isProject = payload.format === 'project'
     const result = await dialog.showSaveDialog({
-      title: 'Save Mermaid diagram',
-      defaultPath: payload.defaultPath ?? 'diagram.mmd',
-      filters: [
-        { name: 'Mermaid files', extensions: ['mmd'] },
-        { name: 'Text files', extensions: ['txt'] }
-      ]
+      title: isProject ? 'Save Mermaid Pro project' : 'Save Mermaid diagram',
+      defaultPath: payload.defaultPath ?? (isProject ? 'diagram.mpro' : 'diagram.mmd'),
+      filters: isProject
+        ? [{ name: 'Mermaid Pro projects', extensions: ['mpro'] }]
+        : [
+            { name: 'Mermaid files', extensions: ['mmd'] },
+            { name: 'Text files', extensions: ['txt'] }
+          ]
     })
 
     if (result.canceled || !result.filePath) {

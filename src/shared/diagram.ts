@@ -11,13 +11,19 @@ export type DiagramType = 'flowchart' | 'sequence' | 'class' | 'state' | 'er' | 
 
 export type DiagramDirection = 'TD' | 'LR' | 'BT' | 'RL'
 
+export type AppTheme = 'light' | 'dark'
+
 export type DiagramDocument = {
+  format: 'mermaid-pro'
+  version: 1
   title: string
   type: DiagramType
   direction: DiagramDirection
   nodes: DiagramNode[]
   edges: DiagramEdge[]
   code: string
+  autoSync: boolean
+  theme: AppTheme
 }
 
 export type OpenDiagramResult = {
@@ -29,6 +35,7 @@ export type OpenDiagramResult = {
 export type SaveDiagramPayload = {
   content: string
   defaultPath?: string
+  format?: 'project' | 'mermaid'
 }
 
 export type SaveExportPayload = {

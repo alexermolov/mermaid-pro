@@ -59,6 +59,7 @@ function getNodeStyle(style: VisualNode['data']['style']): CSSProperties {
   return {
     ...(style?.fillColor ? { background: style.fillColor } : {}),
     ...(style?.strokeColor ? { borderColor: style.strokeColor } : {}),
-    ...(style?.textColor ? { color: style.textColor } : {})
+    ...(style?.textColor ? { color: style.textColor } : {}),
+    ...(style?.borderWidth ? { borderWidth: style.borderWidth } : {})
   }
 }
