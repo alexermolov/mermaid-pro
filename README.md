@@ -58,6 +58,14 @@ npm run dist
 
 Packaged artifacts are written to `release/`.
 
+## GitHub Windows Builds
+
+The repository includes a GitHub Actions workflow that packages the Windows desktop app with electron-builder.
+
+- Run `Windows Build` manually from the GitHub Actions tab to create a downloadable artifact.
+- Push a version tag such as `v0.1.0` to run the same packaging workflow for a release tag.
+- The workflow uploads the Windows installer files from `release/` as the `mermaid-pro-windows` artifact.
+
 ## Project Structure
 
 ```text
