@@ -28,7 +28,9 @@ jobs:
         run: npm ci
 
       - name: Package Windows installer
-        run: npm run dist -- --publish never
+        run: |
+          npm run build
+          npx electron-builder --publish never
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
