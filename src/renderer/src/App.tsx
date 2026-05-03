@@ -67,6 +67,7 @@ export default function App(): JSX.Element {
   const [renderedSvg, setRenderedSvg] = useState('')
   const [status, setStatus] = useState('Ready')
   const [appTheme, setAppTheme] = useState<AppTheme>('dark')
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [undoStack, setUndoStack] = useState<DiagramSnapshot[]>([])
   const [redoStack, setRedoStack] = useState<DiagramSnapshot[]>([])
   const previewRef = useRef<HTMLDivElement>(null)
@@ -721,16 +722,18 @@ export default function App(): JSX.Element {
         onRedo={redo}
       />
 
-      <section className="workspace">
+      <section className={`workspace${isSidebarCollapsed ? ' workspace--sidebar-collapsed' : ''}`}>
         <DiagramSidebar
           title={title}
           diagramType={diagramType}
           direction={direction}
           autoSync={autoSync}
+          isCollapsed={isSidebarCollapsed}
           onTitleChange={setTitle}
           onDiagramTypeChange={updateDiagramType}
           onDirectionChange={updateDirection}
           onSyncFromVisual={syncFromVisual}
+          onToggleCollapsed={() => setIsSidebarCollapsed((current) => !current)}
         />
 
         <FlowCanvas
