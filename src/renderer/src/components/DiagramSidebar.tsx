@@ -53,30 +53,41 @@ export function DiagramSidebar({
               Diagram title
               <input value={title} onChange={(event) => onTitleChange(event.target.value)} />
             </label>
-            <label>
-              Diagram type
-              <select value={diagramType} onChange={(event) => onDiagramTypeChange(event.target.value as DiagramType)}>
+            <div className="control-group">
+              <span className="control-label">Diagram type</span>
+              <div className="mode-button-group" role="radiogroup" aria-label="Diagram type">
                 {diagramTypes.map((item) => (
-                  <option key={item.value} value={item.value}>
+                  <button
+                    key={item.value}
+                    type="button"
+                    className={`mode-button${diagramType === item.value ? ' mode-button--active' : ''}`}
+                    role="radio"
+                    aria-checked={diagramType === item.value}
+                    onClick={() => onDiagramTypeChange(item.value)}
+                  >
                     {item.label}
-                  </option>
+                  </button>
                 ))}
-              </select>
-            </label>
-            <label>
-              Flow direction
-              <select
-                value={direction}
-                disabled={diagramType !== 'flowchart'}
-                onChange={(event) => onDirectionChange(event.target.value as DiagramDirection)}
-              >
+              </div>
+            </div>
+            <div className="control-group">
+              <span className="control-label">Flow direction</span>
+              <div className="mode-button-group mode-button-group--compact" role="radiogroup" aria-label="Flow direction">
                 {directions.map((item) => (
-                  <option key={item} value={item}>
+                  <button
+                    key={item}
+                    type="button"
+                    className={`mode-button${direction === item ? ' mode-button--active' : ''}`}
+                    role="radio"
+                    aria-checked={direction === item}
+                    disabled={diagramType !== 'flowchart'}
+                    onClick={() => onDirectionChange(item)}
+                  >
                     {item}
-                  </option>
+                  </button>
                 ))}
-              </select>
-            </label>
+              </div>
+            </div>
           </div>
 
           <div className="panel-section hint">
