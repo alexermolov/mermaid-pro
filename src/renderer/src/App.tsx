@@ -30,6 +30,9 @@ import {
   defaultDiagram,
   nextNodeId,
   toMermaid,
+  type EditableVisualNodeData,
+  type ErCardinality,
+  type ErRelationshipLineStyle,
   type FlowchartEdgeVisualStyle,
   type FlowchartEdgeStyle,
   type FlowchartNodeShape,
@@ -91,6 +94,16 @@ export default function App(): JSX.Element {
       setNodes((currentNodes) =>
         currentNodes.map((node) => (node.id === id ? { ...node, data: { ...node.data, label } } : node))
       )
+    },
+    [setNodes]
+  )
+
+  const updateNodeData = useCallback(
+    (id: string, data: Partial<EditableVisualNodeData>) => {
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => (node.id === id ? { ...node, data: { ...node.data, ...data } } : node))
+      )
+      setAutoSync(true)
     },
     [setNodes]
   )
@@ -179,17 +192,46 @@ export default function App(): JSX.Element {
     [setEdges]
   )
 
+  const updateEdgeErRelationship = useCallback(
+    (
+      id: string,
+      relationship: Partial<{
+        erSourceCardinality: ErCardinality
+        erTargetCardinality: ErCardinality
+        erRelationshipLineStyle: ErRelationshipLineStyle
+      }>
+    ) => {
+      setEdges((currentEdges) =>
+        currentEdges.map((edge) =>
+          edge.id === id
+            ? {
+                ...edge,
+                data: {
+                  ...(edge.data ?? {}),
+                  ...relationship
+                }
+              }
+            : edge
+        )
+      )
+      setAutoSync(true)
+    },
+    [setEdges]
+  )
+
   const flowNodes = useMemo(
     () =>
       nodes.map((node) => ({
         ...node,
         data: {
           ...node.data,
+          diagramType,
           direction,
-          onLabelChange: updateNodeLabel
+          onLabelChange: updateNodeLabel,
+          onDataChange: updateNodeData
         }
       })),
-    [direction, nodes, updateNodeLabel]
+    [diagramType, direction, nodes, updateNodeData, updateNodeLabel]
   )
 
   const flowEdges = useMemo(
@@ -505,7 +547,7 @@ export default function App(): JSX.Element {
         id,
         type: 'editableNode',
         position: { x: 120 + currentNodes.length * 40, y: 220 + currentNodes.length * 24 },
-        data: { label: `Node ${currentNodes.length + 1}` }
+        data: createNodeData(diagramType, currentNodes.length + 1)
       }
     ])
     setAutoSync(true)
@@ -549,6 +591,20 @@ export default function App(): JSX.Element {
     }
 
     updateEdgeVisualStyle(selectedEdgeId, visualStyle)
+  }
+
+  function updateSelectedEdgeErRelationship(
+    relationship: Partial<{
+      erSourceCardinality: ErCardinality
+      erTargetCardinality: ErCardinality
+      erRelationshipLineStyle: ErRelationshipLineStyle
+    }>
+  ): void {
+    if (!selectedEdgeId) {
+      return
+    }
+
+    updateEdgeErRelationship(selectedEdgeId, relationship)
   }
 
   function updateDiagramType(nextDiagramType: DiagramType): void {
@@ -758,6 +814,7 @@ export default function App(): JSX.Element {
             onSelectedEdgeLabelChange={updateSelectedEdgeLabel}
             onSelectedEdgeStyleChange={updateSelectedEdgeStyle}
             onSelectedEdgeVisualStyleChange={updateSelectedEdgeVisualStyle}
+            onSelectedEdgeErRelationshipChange={updateSelectedEdgeErRelationship}
             onDeleteSelected={deleteSelectedElements}
           />
         </FlowCanvas>
@@ -851,6 +908,8 @@ function toSerializableNodes(nodes: VisualNode[]): VisualNode[] {
   return cloneSerializable(nodes).map((node) => {
     const data = { ...node.data }
     delete data.onLabelChange
+    delete data.onDataChange
+    delete data.diagramType
     delete data.direction
 
     return {
@@ -881,6 +940,33 @@ function cloneSnapshot(snapshot: DiagramSnapshot): DiagramSnapshot {
 
 function cloneSerializable<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
+}
+
+function createNodeData(diagramType: DiagramType, index: number): EditableVisualNodeData {
+  switch (diagramType) {
+    case 'class':
+      return {
+        label: `Class${index}`,
+        classAttributes: '+String name',
+        classMethods: '+method()'
+      }
+    case 'state':
+      return {
+        label: `State ${index}`,
+        stateDescription: 'entry action'
+      }
+    case 'er':
+      return {
+        label: `Entity ${index}`,
+        erAttributes: 'string name'
+      }
+    case 'sequence':
+      return { label: `Participant ${index}` }
+    case 'mindmap':
+      return { label: `Topic ${index}` }
+    case 'flowchart':
+      return { label: `Node ${index}` }
+  }
 }
 
 function getSnapshotKey(snapshot: DiagramSnapshot): string {

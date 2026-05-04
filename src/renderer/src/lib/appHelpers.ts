@@ -3,7 +3,7 @@ import type { FlowchartEdgeStyle, FlowchartNodeShape, VisualNode } from './merma
 
 export type { AppTheme }
 
-export const directions: DiagramDirection[] = ['LR', 'TD', 'BT', 'RL']
+export const directions: DiagramDirection[] = ['TD', 'LR', 'BT', 'RL']
 
 const visualLayoutOrigin = { x: 120, y: 140 }
 const visualLayoutGap = { x: 240, y: 140 }

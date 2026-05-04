@@ -7,6 +7,8 @@ import {
   getEdgePlaceholder
 } from '../lib/appHelpers'
 import type {
+  ErCardinality,
+  ErRelationshipLineStyle,
   FlowchartEdgeStyle,
   FlowchartEdgeVisualStyle,
   FlowchartNodeShape,
@@ -28,6 +30,13 @@ type DiagramToolPaletteProps = {
   onSelectedEdgeLabelChange: (label: string) => void
   onSelectedEdgeStyleChange: (lineStyle: FlowchartEdgeStyle) => void
   onSelectedEdgeVisualStyleChange: (visualStyle: Partial<FlowchartEdgeVisualStyle>) => void
+  onSelectedEdgeErRelationshipChange: (
+    relationship: Partial<{
+      erSourceCardinality: ErCardinality
+      erTargetCardinality: ErCardinality
+      erRelationshipLineStyle: ErRelationshipLineStyle
+    }>
+  ) => void
   onDeleteSelected: () => void
 }
 
@@ -44,6 +53,7 @@ export function DiagramToolPalette({
   onSelectedEdgeLabelChange,
   onSelectedEdgeStyleChange,
   onSelectedEdgeVisualStyleChange,
+  onSelectedEdgeErRelationshipChange,
   onDeleteSelected
 }: DiagramToolPaletteProps): JSX.Element {
   const hasSelection = selectedNodeCount > 0 || selectedEdgeCount > 0
@@ -52,6 +62,7 @@ export function DiagramToolPalette({
   const canEditFlowchartNode = diagramType === 'flowchart' && hasSingleNodeSelection
   const canEditEdgeLabel = hasSingleEdgeSelection
   const canEditFlowchartEdge = diagramType === 'flowchart' && hasSingleEdgeSelection
+  const canEditErEdge = diagramType === 'er' && hasSingleEdgeSelection
   const canDuplicateNodes = selectedNodeCount > 0
   const nodeStyle = selectedNode?.data.style
   const edgeVisualStyle = selectedEdge?.data?.visualStyle
@@ -205,7 +216,67 @@ export function DiagramToolPalette({
               </div>
             </>
           )}
-          {!canEditFlowchartEdge && (
+          {canEditErEdge && (
+            <>
+              <div className="palette-grid palette-grid--edge">
+                <label>
+                  From
+                  <select
+                    value={selectedEdge.data?.erSourceCardinality ?? 'one'}
+                    title="Source cardinality"
+                    onChange={(event) =>
+                      onSelectedEdgeErRelationshipChange({
+                        erSourceCardinality: event.target.value as ErCardinality
+                      })
+                    }
+                  >
+                    {erCardinalityOptions.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  To
+                  <select
+                    value={selectedEdge.data?.erTargetCardinality ?? 'zeroOrMore'}
+                    title="Target cardinality"
+                    onChange={(event) =>
+                      onSelectedEdgeErRelationshipChange({
+                        erTargetCardinality: event.target.value as ErCardinality
+                      })
+                    }
+                  >
+                    {erCardinalityOptions.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <label>
+                Relationship
+                <select
+                  value={selectedEdge.data?.erRelationshipLineStyle ?? 'identifying'}
+                  title="Relationship line style"
+                  onChange={(event) =>
+                    onSelectedEdgeErRelationshipChange({
+                      erRelationshipLineStyle: event.target.value as ErRelationshipLineStyle
+                    })
+                  }
+                >
+                  {erRelationshipLineStyleOptions.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
+          {!canEditFlowchartEdge && !canEditErEdge && (
             <p className="palette-hint">
               This diagram type uses the edge label as its main relationship control.
             </p>
@@ -221,6 +292,18 @@ export function DiagramToolPalette({
     </aside>
   )
 }
+
+const erCardinalityOptions: Array<{ value: ErCardinality; label: string }> = [
+  { value: 'one', label: 'Exactly one' },
+  { value: 'zeroOrOne', label: 'Zero or one' },
+  { value: 'oneOrMore', label: 'One or more' },
+  { value: 'zeroOrMore', label: 'Zero or more' }
+]
+
+const erRelationshipLineStyleOptions: Array<{ value: ErRelationshipLineStyle; label: string }> = [
+  { value: 'identifying', label: 'Identifying' },
+  { value: 'nonIdentifying', label: 'Non-identifying' }
+]
 
 function getSelectionLabel(
   selectedNodeCount: number,

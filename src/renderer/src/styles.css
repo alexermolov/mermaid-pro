@@ -21,7 +21,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -49,7 +50,8 @@ button:hover {
 }
 
 button:disabled,
-input:disabled {
+input:disabled,
+textarea:disabled {
   cursor: not-allowed;
   opacity: 0.52;
 }
@@ -61,7 +63,8 @@ button:disabled:hover {
 }
 
 input,
-select {
+select,
+textarea {
   width: 100%;
   border: 1px solid var(--border-control);
   border-radius: 12px;
@@ -72,7 +75,8 @@ select {
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
@@ -609,7 +613,7 @@ label {
   transform: rotate(45deg);
 }
 
-.editable-node--diamond input {
+.editable-node--diamond .editable-node__content {
   transform: rotate(-45deg);
 }
 
@@ -622,7 +626,7 @@ label {
   transform: skewX(-12deg);
 }
 
-.editable-node--parallelogram input {
+.editable-node--parallelogram .editable-node__content {
   transform: skewX(12deg);
 }
 
@@ -641,12 +645,41 @@ label {
   padding-inline: 28px 34px;
 }
 
-.editable-node input {
+.editable-node--class,
+.editable-node--state,
+.editable-node--er {
+  width: 220px;
+}
+
+.editable-node--sequence {
+  min-width: 176px;
+  border-radius: 999px;
+}
+
+.editable-node--mindmap {
+  min-width: 176px;
+  border-radius: 22px;
+}
+
+.editable-node__content {
+  display: grid;
+  gap: 8px;
+}
+
+.editable-node input,
+.editable-node textarea {
   border: 0;
   color: currentColor;
   background: transparent;
   padding: 6px;
   text-align: center;
+}
+
+.editable-node textarea {
+  min-height: 58px;
+  resize: vertical;
+  text-align: left;
+  line-height: 1.35;
 }
 
 .react-flow__edge-path,

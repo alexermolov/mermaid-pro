@@ -30,19 +30,36 @@ export type FlowchartEdgeVisualStyle = {
   strokeWidth?: number
 }
 
+export type ErCardinality = 'one' | 'zeroOrOne' | 'oneOrMore' | 'zeroOrMore'
+export type ErRelationshipLineStyle = 'identifying' | 'nonIdentifying'
+
 export type VisualNodeData = {
   label: string
+  classAttributes?: string
+  classMethods?: string
+  erAttributes?: string
+  stateDescription?: string
   shape?: FlowchartNodeShape
   style?: FlowchartNodeStyle
   onLabelChange?: (id: string, label: string) => void
+  onDataChange?: (id: string, data: Partial<EditableVisualNodeData>) => void
+  diagramType?: DiagramType
   direction?: DiagramDirection
 }
 
 export type VisualNode = Node<VisualNodeData>
 
+export type EditableVisualNodeData = Pick<
+  VisualNodeData,
+  'label' | 'classAttributes' | 'classMethods' | 'erAttributes' | 'stateDescription'
+>
+
 export type VisualEdgeData = {
   lineStyle?: FlowchartEdgeStyle
   visualStyle?: FlowchartEdgeVisualStyle
+  erSourceCardinality?: ErCardinality
+  erTargetCardinality?: ErCardinality
+  erRelationshipLineStyle?: ErRelationshipLineStyle
 }
 
 export type VisualEdge = Edge<VisualEdgeData>
@@ -217,12 +234,24 @@ function toSequenceDiagram(nodes: VisualNode[], edges: VisualEdge[]): string {
 }
 
 function toClassDiagram(nodes: VisualNode[], edges: VisualEdge[]): string {
-  const classLines = nodes.map((node) => `  class ${sanitizeId(node.id)}`).join('\n')
+  const classIdByNodeId = new Map(nodes.map((node) => [node.id, toClassId(node)]))
+  const classLines = nodes
+    .map((node) => {
+      const classId = classIdByNodeId.get(node.id) ?? sanitizeId(node.id)
+      const classMembers = formatIndentedLines(node.data.classAttributes)
+      const classMethods = formatIndentedLines(node.data.classMethods)
+      const memberLines = [...classMembers, ...classMethods].map((line) => `    ${line}`).join('\n')
+
+      return memberLines ? `  class ${classId} {\n${memberLines}\n  }` : `  class ${classId}`
+    })
+    .join('\n')
 
   const relationshipLines = edges
     .map((edge) => {
       const label = edge.label ? ` : ${escapeClassText(String(edge.label))}` : ''
-      return `  ${sanitizeId(edge.source)} --> ${sanitizeId(edge.target)}${label}`
+      const sourceId = classIdByNodeId.get(edge.source) ?? sanitizeId(edge.source)
+      const targetId = classIdByNodeId.get(edge.target) ?? sanitizeId(edge.target)
+      return `  ${sourceId} --> ${targetId}${label}`
     })
     .join('\n')
 
@@ -231,7 +260,15 @@ function toClassDiagram(nodes: VisualNode[], edges: VisualEdge[]): string {
 
 function toStateDiagram(nodes: VisualNode[], edges: VisualEdge[]): string {
   const stateLines = nodes
-    .map((node) => `  state "${escapeQuotedText(node.data.label || node.id)}" as ${sanitizeId(node.id)}`)
+    .map((node) => {
+      const stateId = sanitizeId(node.id)
+      const labelLine = `  state "${escapeQuotedText(node.data.label || node.id)}" as ${stateId}`
+      const descriptionLines = formatIndentedLines(node.data.stateDescription).map(
+        (line) => `  ${stateId} : ${escapeStateText(line)}`
+      )
+
+      return [labelLine, ...descriptionLines].join('\n')
+    })
     .join('\n')
 
   const transitionLines = edges
@@ -245,18 +282,23 @@ function toStateDiagram(nodes: VisualNode[], edges: VisualEdge[]): string {
 }
 
 function toErDiagram(nodes: VisualNode[], edges: VisualEdge[]): string {
+  const entityIdByNodeId = new Map(nodes.map((node) => [node.id, toErId(node)]))
   const entityLines = nodes
     .map((node) => {
-      const entityId = sanitizeErId(node.id)
+      const entityId = entityIdByNodeId.get(node.id) ?? sanitizeErId(node.id)
       const label = escapeErText(node.data.label || node.id)
-      return `  ${entityId} {\n    string label "${label}"\n  }`
+      const attributeLines = formatErAttributeLines(node.data.erAttributes)
+      const bodyLines = attributeLines.length > 0 ? attributeLines : [`string label "${label}"`]
+      return `  ${entityId} {\n${bodyLines.map((line) => `    ${line}`).join('\n')}\n  }`
     })
     .join('\n')
 
   const relationshipLines = edges
     .map((edge) => {
       const label = edge.label ? sanitizeErRole(String(edge.label)) : 'relates_to'
-      return `  ${sanitizeErId(edge.source)} ||--o{ ${sanitizeErId(edge.target)} : ${label}`
+      const sourceId = entityIdByNodeId.get(edge.source) ?? sanitizeErId(edge.source)
+      const targetId = entityIdByNodeId.get(edge.target) ?? sanitizeErId(edge.target)
+      return `  ${sourceId} ${formatErRelationship(edge)} ${targetId} : ${label}`
     })
     .join('\n')
 
@@ -321,7 +363,64 @@ export function nextNodeId(nodes: VisualNode[]): string {
 }
 
 function sanitizeId(id: string): string {
-  return id.replace(/[^a-zA-Z0-9_]/g, '_')
+  const sanitizedId = id.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^_+|_+$/g, '')
+  if (!sanitizedId) {
+    return 'node'
+  }
+
+  return /^[a-zA-Z_]/.test(sanitizedId) ? sanitizedId : `node_${sanitizedId}`
+}
+
+function toClassId(node: VisualNode): string {
+  return sanitizeId(node.data.label || node.id)
+}
+
+function toErId(node: VisualNode): string {
+  return sanitizeErId(node.data.label || node.id)
+}
+
+function formatIndentedLines(text: string | undefined): string[] {
+  return (text ?? '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
+function formatErAttributeLines(text: string | undefined): string[] {
+  return formatIndentedLines(text).map((line) => {
+    const [type, ...nameParts] = line.split(/\s+/)
+
+    if (!type || nameParts.length === 0) {
+      return `string ${sanitizeErRole(line)}`
+    }
+
+    return `${sanitizeErRole(type)} ${sanitizeErRole(nameParts.join('_'))}`
+  })
+}
+
+function formatErRelationship(edge: VisualEdge): string {
+  const sourceCardinality = formatErCardinality(edge.data?.erSourceCardinality ?? 'one', 'source')
+  const targetCardinality = formatErCardinality(edge.data?.erTargetCardinality ?? 'zeroOrMore', 'target')
+  const lineStyle = edge.data?.erRelationshipLineStyle === 'nonIdentifying' ? '..' : '--'
+
+  return `${sourceCardinality}${lineStyle}${targetCardinality}`
+}
+
+function formatErCardinality(cardinality: ErCardinality, side: 'source' | 'target'): string {
+  const sourceMarkers: Record<ErCardinality, string> = {
+    one: '||',
+    zeroOrOne: 'o|',
+    oneOrMore: '}|',
+    zeroOrMore: '}o'
+  }
+  const targetMarkers: Record<ErCardinality, string> = {
+    one: '||',
+    zeroOrOne: '|o',
+    oneOrMore: '|{',
+    zeroOrMore: 'o{'
+  }
+
+  return side === 'source' ? sourceMarkers[cardinality] : targetMarkers[cardinality]
 }
 
 function escapeLabel(label: string): string {
