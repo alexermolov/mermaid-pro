@@ -137,10 +137,11 @@ function step(command, args) {
 }
 
 function run(command, args, options = {}) {
-  const result = spawnSync(resolveCommand(command), args, {
+  const spawn = resolveCommand(command, args)
+  const result = spawnSync(spawn.command, spawn.args, {
     encoding: 'utf8',
     stdio: options.quiet ? 'pipe' : 'inherit',
-    shell: false
+    shell: spawn.shell
   })
 
   if (result.error) {
@@ -155,12 +156,28 @@ function run(command, args, options = {}) {
   return result
 }
 
-function resolveCommand(command) {
-  if (process.platform === 'win32' && command === 'npm') {
-    return 'npm.cmd'
+function resolveCommand(command, args) {
+  if (command === 'npm' && process.env.npm_execpath) {
+    return {
+      command: process.execPath,
+      args: [process.env.npm_execpath, ...args],
+      shell: false
+    }
   }
 
-  return command
+  if (process.platform === 'win32' && command === 'npm') {
+    return {
+      command: 'npm.cmd',
+      args,
+      shell: true
+    }
+  }
+
+  return {
+    command,
+    args,
+    shell: false
+  }
 }
 
 function formatCommand(command, args) {
