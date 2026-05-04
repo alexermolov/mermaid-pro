@@ -218,8 +218,9 @@ label {
 }
 
 .workspace {
+  --right-panel-width: 520px;
   display: grid;
-  grid-template-columns: 280px minmax(440px, 1fr) minmax(420px, 0.86fr);
+  grid-template-columns: 280px minmax(440px, 1fr) 8px minmax(420px, var(--right-panel-width));
   gap: 14px;
   min-height: 0;
   padding: 14px;
@@ -227,7 +228,29 @@ label {
 }
 
 .workspace--sidebar-collapsed {
-  grid-template-columns: 64px minmax(440px, 1fr) minmax(420px, 0.86fr);
+  grid-template-columns: 64px minmax(440px, 1fr) 8px minmax(420px, var(--right-panel-width));
+}
+
+.workspace--resizing-right-panel {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.workspace-resizer {
+  align-self: stretch;
+  width: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-subtle) 68%, transparent);
+  cursor: col-resize;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.workspace-resizer:hover,
+.workspace--resizing-right-panel .workspace-resizer {
+  background: color-mix(in srgb, var(--accent) 64%, transparent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .left-panel,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   addEdge,
   MarkerType,
@@ -53,6 +53,14 @@ type DiagramSnapshot = {
 }
 
 const historyLimit = 80
+const rightPanelMinWidth = 420
+const rightPanelDefaultWidth = 520
+const canvasMinWidth = 440
+const workspacePadding = 14
+const workspaceGap = 14
+const workspaceResizeHandleWidth = 8
+const sidebarExpandedWidth = 280
+const sidebarCollapsedWidth = 64
 
 export default function App(): JSX.Element {
   const [title, setTitle] = useState(defaultDiagram.title)
@@ -71,14 +79,20 @@ export default function App(): JSX.Element {
   const [status, setStatus] = useState('Ready')
   const [appTheme, setAppTheme] = useState<AppTheme>('dark')
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [rightPanelWidth, setRightPanelWidth] = useState(rightPanelDefaultWidth)
+  const [isResizingRightPanel, setIsResizingRightPanel] = useState(false)
   const [undoStack, setUndoStack] = useState<DiagramSnapshot[]>([])
   const [redoStack, setRedoStack] = useState<DiagramSnapshot[]>([])
+  const workspaceRef = useRef<HTMLElement>(null)
   const previewRef = useRef<HTMLDivElement>(null)
   const lastCommittedSnapshotRef = useRef<DiagramSnapshot | null>(null)
   const lastCommittedHistoryKeyRef = useRef('')
   const isRestoringHistoryRef = useRef(false)
   const canExport = Boolean(renderedSvg)
   const isDarkTheme = appTheme === 'dark'
+  const workspaceStyle = {
+    '--right-panel-width': `${rightPanelWidth}px`
+  } as CSSProperties
 
   const flowTheme = useMemo(
     () => ({
@@ -539,6 +553,45 @@ export default function App(): JSX.Element {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [deleteSelectedElements, redo, selectedEdgeIds.length, selectedNodeIds.length, undo])
 
+  useEffect(() => {
+    if (!isResizingRightPanel) {
+      return undefined
+    }
+
+    function handlePointerMove(event: PointerEvent): void {
+      const workspace = workspaceRef.current
+
+      if (!workspace) {
+        return
+      }
+
+      const workspaceRect = workspace.getBoundingClientRect()
+      const sidebarWidth = isSidebarCollapsed ? sidebarCollapsedWidth : sidebarExpandedWidth
+      const contentWidth = workspaceRect.width - workspacePadding * 2
+      const maxRightPanelWidth =
+        contentWidth - sidebarWidth - canvasMinWidth - workspaceResizeHandleWidth - workspaceGap * 3
+      const nextRightPanelWidth = workspaceRect.right - workspacePadding - event.clientX
+
+      setRightPanelWidth(clamp(nextRightPanelWidth, rightPanelMinWidth, maxRightPanelWidth))
+    }
+
+    function stopResizing(): void {
+      setIsResizingRightPanel(false)
+    }
+
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', stopResizing)
+
+    return () => {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', stopResizing)
+    }
+  }, [isResizingRightPanel, isSidebarCollapsed])
+
   function addNode(): void {
     const id = nextNodeId(nodes)
     setNodes((currentNodes) => [
@@ -778,7 +831,13 @@ export default function App(): JSX.Element {
         onRedo={redo}
       />
 
-      <section className={`workspace${isSidebarCollapsed ? ' workspace--sidebar-collapsed' : ''}`}>
+      <section
+        ref={workspaceRef}
+        className={`workspace${isSidebarCollapsed ? ' workspace--sidebar-collapsed' : ''}${
+          isResizingRightPanel ? ' workspace--resizing-right-panel' : ''
+        }`}
+        style={workspaceStyle}
+      >
         <DiagramSidebar
           title={title}
           diagramType={diagramType}
@@ -818,6 +877,17 @@ export default function App(): JSX.Element {
             onDeleteSelected={deleteSelectedElements}
           />
         </FlowCanvas>
+
+        <div
+          className="workspace-resizer"
+          role="separator"
+          aria-label="Resize right panels"
+          aria-orientation="vertical"
+          onPointerDown={(event) => {
+            event.preventDefault()
+            setIsResizingRightPanel(true)
+          }}
+        />
 
         <section className="right-panel">
           <CodeEditorPanel
@@ -940,6 +1010,14 @@ function cloneSnapshot(snapshot: DiagramSnapshot): DiagramSnapshot {
 
 function cloneSerializable<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (max < min) {
+    return min
+  }
+
+  return Math.min(Math.max(value, min), max)
 }
 
 function createNodeData(diagramType: DiagramType, index: number): EditableVisualNodeData {

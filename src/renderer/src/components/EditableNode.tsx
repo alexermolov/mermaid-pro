@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
 import type { DiagramDirection } from '../../../shared/diagram'
 import type { VisualNode } from '../lib/mermaid'
 
-function getHandlePositions(direction: DiagramDirection = 'LR'): { source: Position; target: Position } {
+function getHandlePositions(direction: DiagramDirection = 'TD'): { source: Position; target: Position } {
   switch (direction) {
     case 'TD':
       return { source: Position.Bottom, target: Position.Top }

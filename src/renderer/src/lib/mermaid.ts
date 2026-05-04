@@ -68,19 +68,19 @@ const initialNodes: VisualNode[] = [
   {
     id: 'start',
     type: 'editableNode',
-    position: { x: 80, y: 120 },
+    position: { x: 120, y: 140 },
     data: { label: 'Start' }
   },
   {
     id: 'process',
     type: 'editableNode',
-    position: { x: 340, y: 120 },
+    position: { x: 120, y: 280 },
     data: { label: 'Process' }
   },
   {
     id: 'finish',
     type: 'editableNode',
-    position: { x: 600, y: 120 },
+    position: { x: 120, y: 420 },
     data: { label: 'Finish' }
   }
 ]
@@ -93,7 +93,7 @@ const initialEdges: VisualEdge[] = [
 export const defaultDiagram = {
   title: 'Untitled Mermaid Diagram',
   type: 'flowchart' as DiagramType,
-  direction: 'LR' as DiagramDirection,
+  direction: 'TD' as DiagramDirection,
   nodes: initialNodes,
   edges: initialEdges
 }
