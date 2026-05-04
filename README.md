@@ -58,6 +58,22 @@ npm run dist
 
 Packaged artifacts are written to `release/`.
 
+### Release A Version Tag
+
+Use the release script to update `package.json` and `package-lock.json`, create a release commit, tag it, and push the branch plus tag:
+
+```bash
+npm run release -- 0.2.0
+```
+
+The script accepts `0.2.0` or `v0.2.0` and creates a `v0.2.0` tag. By default it requires a clean working tree; pass `--include-worktree` if you intentionally want to include current changes in the release commit, or `--no-push` to keep the commit and tag local.
+
+When passing flags through `npm run`, put an extra `--` before the flags:
+
+```bash
+npm run release -- 0.2.0 -- --include-worktree --no-push
+```
+
 ## GitHub Windows Builds
 
 The repository includes a GitHub Actions workflow that packages the Windows desktop app with electron-builder.

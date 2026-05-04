@@ -86,23 +86,6 @@ export function getEdgePlaceholder(diagramType: DiagramType): string {
   }
 }
 
-export function getWorkflowHint(diagramType: DiagramType): string {
-  switch (diagramType) {
-    case 'sequence':
-      return 'Arrange participants left to right, connect them in message order, then label each message.'
-    case 'class':
-      return 'Create classes as nodes, connect relationships, then label edges with relationship notes.'
-    case 'state':
-      return 'Create states as nodes, connect transitions, then label edges with events or conditions.'
-    case 'er':
-      return 'Create entities as nodes, connect relationships, then label edges with relationship names.'
-    case 'mindmap':
-      return 'Use one root topic, connect child topics outward, and avoid cycles for the clearest mindmap.'
-    case 'flowchart':
-      return 'Drag nodes, connect handles, rename nodes inline, then export Mermaid, SVG or PNG.'
-  }
-}
-
 export function isTextInputTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
     return false

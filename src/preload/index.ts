@@ -1,7 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { OpenDiagramResult, SaveDiagramPayload, SaveExportPayload } from '../shared/diagram'
+import type { LastProjectResult, OpenDiagramResult, SaveDiagramPayload, SaveExportPayload } from '../shared/diagram'
 
 const api = {
+  loadLastProject: (): Promise<LastProjectResult> => ipcRenderer.invoke('diagram:load-last-project'),
   openDiagram: (): Promise<OpenDiagramResult> => ipcRenderer.invoke('diagram:open'),
   saveDiagram: (payload: SaveDiagramPayload): Promise<string | undefined> =>
     ipcRenderer.invoke('diagram:save', payload),

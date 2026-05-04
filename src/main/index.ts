@@ -5,6 +5,44 @@ import { inflateRawSync } from 'node:zlib'
 import type { SaveDiagramPayload, SaveExportPayload } from '../shared/diagram'
 
 const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
+const recentProjectFileName = 'recent-project.json'
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function getRecentProjectPath(): string {
+  return join(app.getPath('userData'), recentProjectFileName)
+}
+
+async function readLastProjectPath(): Promise<string | undefined> {
+  try {
+    const content = await readFile(getRecentProjectPath(), 'utf8')
+    const parsedContent: unknown = JSON.parse(content)
+
+    return isRecord(parsedContent) && typeof parsedContent.lastProjectPath === 'string'
+      ? parsedContent.lastProjectPath
+      : undefined
+  } catch {
+    return undefined
+  }
+}
+
+async function rememberLastProjectPath(filePath: string): Promise<void> {
+  if (extname(filePath).toLowerCase() !== '.mpro') {
+    return
+  }
+
+  try {
+    await writeFile(getRecentProjectPath(), JSON.stringify({ lastProjectPath: filePath }, null, 2), 'utf8')
+  } catch {
+    // Saving/opening the project should still succeed if recent-project metadata cannot be updated.
+  }
+}
+
+async function readProjectFile(filePath: string): Promise<string> {
+  return readFile(filePath, 'utf8')
+}
 
 function decodeHtmlEntities(value: string): string {
   return value
@@ -63,6 +101,22 @@ function createWindow(): void {
 app.whenReady().then(() => {
   app.setAppUserModelId('com.mermaidpro.desktop')
 
+  ipcMain.handle('diagram:load-last-project', async () => {
+    const filePath = await readLastProjectPath()
+
+    if (!filePath) {
+      return { canceled: true }
+    }
+
+    try {
+      const content = await readProjectFile(filePath)
+
+      return { canceled: false, filePath, content }
+    } catch {
+      return { canceled: true }
+    }
+  })
+
   ipcMain.handle('diagram:open', async () => {
     const result = await dialog.showOpenDialog({
       title: 'Open diagram',
@@ -82,7 +136,12 @@ app.whenReady().then(() => {
 
     const filePath = result.filePaths[0]
     const rawContent = await readFile(filePath, 'utf8')
-    const content = extname(filePath).toLowerCase() === '.mpro' ? rawContent : normalizeDrawioContent(rawContent)
+    const isProject = extname(filePath).toLowerCase() === '.mpro'
+    const content = isProject ? rawContent : normalizeDrawioContent(rawContent)
+
+    if (isProject) {
+      await rememberLastProjectPath(filePath)
+    }
 
     return { canceled: false, filePath, content }
   })
@@ -105,6 +164,11 @@ app.whenReady().then(() => {
     }
 
     await writeFile(result.filePath, payload.content, 'utf8')
+
+    if (isProject) {
+      await rememberLastProjectPath(result.filePath)
+    }
+
     return result.filePath
   })
 
