@@ -137,7 +137,7 @@ function step(command, args) {
 }
 
 function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
+  const result = spawnSync(resolveCommand(command), args, {
     encoding: 'utf8',
     stdio: options.quiet ? 'pipe' : 'inherit',
     shell: false
@@ -153,6 +153,14 @@ function run(command, args, options = {}) {
   }
 
   return result
+}
+
+function resolveCommand(command) {
+  if (process.platform === 'win32' && command === 'npm') {
+    return 'npm.cmd'
+  }
+
+  return command
 }
 
 function formatCommand(command, args) {
