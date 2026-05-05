@@ -9,6 +9,7 @@ import {
   sequenceParticipantPresentations,
   sequenceMessageTypes
 } from '../lib/appHelpers'
+import { getFlowchartShapeDefinition } from '../lib/flowchartShapeRegistry'
 import type {
   ErCardinality,
   ErRelationshipLineStyle,
@@ -156,11 +157,15 @@ export function DiagramToolPalette({
 
       {canEditFlowchartNode && selectedNode && (
         <div className="palette-section">
-          <PaletteSelect
+          <PaletteShapePicker
             label="Shape"
             value={selectedNode.data.shape ?? 'rectangle'}
-            title="Change selected node shape"
             options={flowchartNodeShapes}
+            appearance={{
+              fill: nodeStyle?.fillColor ?? '#1e293b',
+              stroke: nodeStyle?.strokeColor ?? '#60a5fa',
+              strokeWidth: Math.min(4, Math.max(1.5, nodeStyle?.borderWidth ?? 1.8))
+            }}
             onChange={(value) => onSelectedNodeShapeChange(value as FlowchartNodeShape)}
           />
           <div className="palette-grid">
@@ -228,11 +233,14 @@ export function DiagramToolPalette({
           )}
           {canEditFlowchartEdge && (
             <>
-              <PaletteSelect
+              <PaletteLineStylePicker
                 label="Line style"
                 value={selectedEdge.data?.lineStyle ?? 'arrow'}
-                title="Change selected edge style"
                 options={flowchartEdgeStyles}
+                appearance={{
+                  stroke: edgeVisualStyle?.strokeColor ?? '#60a5fa',
+                  strokeWidth: Math.min(4, Math.max(2, edgeVisualStyle?.strokeWidth ?? 3))
+                }}
                 onChange={(value) => onSelectedEdgeStyleChange(value as FlowchartEdgeStyle)}
               />
               <div className="palette-grid palette-grid--edge">
@@ -317,11 +325,182 @@ const erRelationshipLineStyleOptions: SelectOption[] = [
 
 function PaletteField({ label, children }: { label: string; children: ReactNode }): JSX.Element {
   return (
-    <label>
-      {label}
+    <label className="palette-field">
+      <span className="palette-field-label">{label}</span>
       {children}
     </label>
   )
+}
+
+function PaletteShapePicker({
+  label,
+  value,
+  options,
+  appearance,
+  onChange
+}: {
+  label: string
+  value: string
+  options: SelectOption[]
+  appearance: { fill: string; stroke: string; strokeWidth: number }
+  onChange: (value: string) => void
+}): JSX.Element {
+  return (
+    <div className="palette-field">
+      <span className="palette-field-label">{label}</span>
+      <div className="shape-palette" role="listbox" aria-label={label}>
+        {options.map((option) => {
+          const definition = getFlowchartShapeDefinition(option.value as FlowchartNodeShape)
+          const isSelected = option.value === value
+
+          return (
+            <button
+              key={option.value}
+              type="button"
+              className={`shape-palette__item${isSelected ? ' shape-palette__item--active' : ''}`}
+              role="option"
+              aria-selected={isSelected}
+              title={option.label}
+              onClick={() => onChange(option.value)}
+            >
+              <span className="shape-palette__preview" aria-hidden="true">
+                <svg viewBox="0 0 100 100" focusable="false">
+                  {definition.render(appearance)}
+                </svg>
+              </span>
+              <span className="shape-palette__label">{option.label}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function PaletteLineStylePicker({
+  label,
+  value,
+  options,
+  appearance,
+  onChange
+}: {
+  label: string
+  value: string
+  options: SelectOption[]
+  appearance: { stroke: string; strokeWidth: number }
+  onChange: (value: string) => void
+}): JSX.Element {
+  return (
+    <div className="palette-field">
+      <span className="palette-field-label">{label}</span>
+      <div className="shape-palette shape-palette--line" role="listbox" aria-label={label}>
+        {options.map((option) => {
+          const isSelected = option.value === value
+
+          return (
+            <button
+              key={option.value}
+              type="button"
+              className={`shape-palette__item${isSelected ? ' shape-palette__item--active' : ''}`}
+              role="option"
+              aria-selected={isSelected}
+              title={option.label}
+              onClick={() => onChange(option.value)}
+            >
+              <span className="shape-palette__preview shape-palette__preview--line" aria-hidden="true">
+                <svg viewBox="0 0 100 40" focusable="false">
+                  {renderLineStylePreview(option.value as FlowchartEdgeStyle, appearance)}
+                </svg>
+              </span>
+              <span className="shape-palette__label">{option.label}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function renderLineStylePreview(
+  lineStyle: FlowchartEdgeStyle,
+  appearance: { stroke: string; strokeWidth: number }
+): JSX.Element {
+  const strokeDasharray =
+    lineStyle === 'dottedArrow' || lineStyle === 'dottedLine' ? '6 5' : undefined
+  const strokeWidth =
+    lineStyle === 'thickArrow' || lineStyle === 'thickLine' ? Math.max(appearance.strokeWidth + 1.5, 4) : appearance.strokeWidth
+  const startX = 18
+  const endX = 82
+  const centerY = 20
+  const lineProps = {
+    stroke: appearance.stroke,
+    strokeWidth,
+    strokeDasharray,
+    strokeLinecap: 'round' as const
+  }
+
+  return (
+    <>
+      <line x1={startX} y1={centerY} x2={endX} y2={centerY} {...lineProps} />
+      {hasStartMarker(lineStyle) ? renderLineMarker(lineStyle, 'start', appearance.stroke, strokeWidth) : null}
+      {hasEndMarker(lineStyle) ? renderLineMarker(lineStyle, 'end', appearance.stroke, strokeWidth) : null}
+    </>
+  )
+}
+
+function hasStartMarker(lineStyle: FlowchartEdgeStyle): boolean {
+  return (
+    lineStyle === 'bidirectionalArrow' ||
+    lineStyle === 'bidirectionalCircle' ||
+    lineStyle === 'bidirectionalCross'
+  )
+}
+
+function hasEndMarker(lineStyle: FlowchartEdgeStyle): boolean {
+  return lineStyle !== 'line' && lineStyle !== 'dottedLine' && lineStyle !== 'thickLine'
+}
+
+function renderLineMarker(
+  lineStyle: FlowchartEdgeStyle,
+  side: 'start' | 'end',
+  stroke: string,
+  strokeWidth: number
+): JSX.Element | null {
+  const direction = side === 'start' ? -1 : 1
+  const x = side === 'start' ? 18 : 82
+  const tipX = x + direction * 8
+  const innerX = x + direction * 2
+
+  switch (lineStyle) {
+    case 'arrow':
+    case 'dottedArrow':
+    case 'thickArrow':
+    case 'bidirectionalArrow':
+      return (
+        <polygon
+          points={`${x},20 ${tipX},15 ${innerX},20 ${tipX},25`}
+          fill={stroke}
+          stroke={stroke}
+          strokeWidth={Math.max(1, strokeWidth / 2)}
+          strokeLinejoin="round"
+        />
+      )
+    case 'circleEdge':
+    case 'bidirectionalCircle':
+      return <circle cx={x} cy="20" r="4.5" fill="none" stroke={stroke} strokeWidth={Math.max(1.5, strokeWidth)} />
+    case 'crossEdge':
+    case 'bidirectionalCross':
+      return (
+        <>
+          <line x1={x - 4} y1={16} x2={x + 4} y2={24} stroke={stroke} strokeWidth={Math.max(1.5, strokeWidth)} strokeLinecap="round" />
+          <line x1={x + 4} y1={16} x2={x - 4} y2={24} stroke={stroke} strokeWidth={Math.max(1.5, strokeWidth)} strokeLinecap="round" />
+        </>
+      )
+    case 'line':
+    case 'dottedLine':
+    case 'thickLine':
+      return null
+  }
 }
 
 function PaletteSelect({
