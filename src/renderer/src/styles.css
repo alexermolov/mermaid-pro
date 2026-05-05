@@ -746,7 +746,21 @@ label {
   border-radius: 16px;
   background: var(--editable-node-bg);
   box-shadow: 0 16px 35px var(--editable-node-shadow);
-  padding: 10px;
+}
+
+.editable-node--flowchart {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.editable-node__shape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
 }
 
 .editable-node__handle {
@@ -759,81 +773,6 @@ label {
 .editable-node--selected {
   border-color: #7c3aed;
   box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.18);
-}
-
-.editable-node--rounded {
-  border-radius: 999px;
-}
-
-.editable-node--stadium {
-  min-width: 168px;
-  border-radius: 999px;
-}
-
-.editable-node--subroutine {
-  box-shadow:
-    inset 12px 0 0 color-mix(in srgb, var(--editable-node-border) 44%, transparent),
-    inset -12px 0 0 color-mix(in srgb, var(--editable-node-border) 44%, transparent),
-    0 16px 35px var(--editable-node-shadow);
-}
-
-.editable-node--cylinder {
-  border-radius: 50% / 18%;
-}
-
-.editable-node--circle,
-.editable-node--doubleCircle {
-  display: grid;
-  width: 112px;
-  min-width: 112px;
-  height: 112px;
-  place-items: center;
-  border-radius: 999px;
-}
-
-.editable-node--doubleCircle {
-  box-shadow:
-    inset 0 0 0 6px color-mix(in srgb, var(--editable-node-border) 44%, transparent),
-    0 16px 35px var(--editable-node-shadow);
-}
-
-.editable-node--diamond {
-  width: 132px;
-  min-width: 132px;
-  height: 132px;
-  transform: rotate(45deg);
-}
-
-.editable-node--diamond .editable-node__content {
-  transform: rotate(-45deg);
-}
-
-.editable-node--hexagon {
-  clip-path: polygon(18% 0, 82% 0, 100% 50%, 82% 100%, 18% 100%, 0 50%);
-  padding-inline: 28px;
-}
-
-.editable-node--parallelogram {
-  transform: skewX(-12deg);
-}
-
-.editable-node--parallelogram .editable-node__content {
-  transform: skewX(12deg);
-}
-
-.editable-node--trapezoid {
-  clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
-  padding-inline: 28px;
-}
-
-.editable-node--inverseTrapezoid {
-  clip-path: polygon(0 0, 100% 0, 82% 100%, 18% 100%);
-  padding-inline: 28px;
-}
-
-.editable-node--asymmetric {
-  clip-path: polygon(0 0, 86% 0, 100% 50%, 86% 100%, 0 100%, 12% 50%);
-  padding-inline: 28px 34px;
 }
 
 .editable-node--class,
@@ -931,8 +870,12 @@ label {
 }
 
 .editable-node__content {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 8px;
+  height: 100%;
+  padding: 10px;
 }
 
 .editable-node input,

@@ -1,7 +1,7 @@
 import type { AppTheme, DiagramDirection, DiagramType } from '../../../shared/diagram'
+export { flowchartNodeShapes } from './flowchartShapeRegistry'
 import type {
   FlowchartEdgeStyle,
-  FlowchartNodeShape,
   SequenceMessageType,
   SequenceParticipantPresentation
 } from './mermaid'
@@ -17,22 +17,6 @@ export const diagramTypes: Array<{ value: DiagramType; label: string }> = [
   { value: 'state', label: 'State diagram' },
   { value: 'er', label: 'ER diagram' },
   { value: 'mindmap', label: 'Mindmap' }
-]
-
-export const flowchartNodeShapes: Array<{ value: FlowchartNodeShape; label: string }> = [
-  { value: 'rectangle', label: 'Rectangle' },
-  { value: 'rounded', label: 'Rounded' },
-  { value: 'stadium', label: 'Stadium' },
-  { value: 'subroutine', label: 'Subroutine' },
-  { value: 'cylinder', label: 'Cylinder' },
-  { value: 'circle', label: 'Circle' },
-  { value: 'doubleCircle', label: 'Double circle' },
-  { value: 'diamond', label: 'Decision diamond' },
-  { value: 'hexagon', label: 'Hexagon' },
-  { value: 'parallelogram', label: 'Parallelogram' },
-  { value: 'trapezoid', label: 'Trapezoid' },
-  { value: 'inverseTrapezoid', label: 'Inverse trapezoid' },
-  { value: 'asymmetric', label: 'Asymmetric' }
 ]
 
 export const flowchartEdgeStyles: Array<{ value: FlowchartEdgeStyle; label: string }> = [

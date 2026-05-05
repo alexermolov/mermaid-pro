@@ -3,7 +3,8 @@ import type { NodeProps } from '@xyflow/react'
 import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react'
 import type { CSSProperties } from 'react'
 import type { DiagramDirection } from '../../../shared/diagram'
-import type { VisualNode } from '../lib/mermaid'
+import { getFlowchartShapeDefinition, type FlowchartShapeAppearance } from '../lib/flowchartShapeRegistry'
+import type { FlowchartNodeStyle, VisualNode } from '../lib/mermaid'
 
 function getHandlePositions(direction: DiagramDirection = 'TD'): { source: Position; target: Position } {
   switch (direction) {
@@ -36,17 +37,23 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
   const updateNodeInternals = useUpdateNodeInternals()
   const handlePositions = getNodeHandlePositions(data.diagramType, data.direction)
   const shapeClasses = getNodeShapeClasses(data)
-  const nodeStyle = getNodeStyle(data.style)
+  const isFlowchartShape = data.diagramType === 'flowchart'
+  const flowchartShape = data.shape ?? 'rectangle'
+  const flowchartShapeDefinition = isFlowchartShape ? getFlowchartShapeDefinition(flowchartShape) : undefined
+  const nodeStyle = getNodeStyle(data.style, isFlowchartShape, flowchartShapeDefinition?.layout)
 
   useEffect(() => {
     updateNodeInternals(id)
-  }, [data.diagramType, data.direction, id, updateNodeInternals])
+  }, [data.diagramType, data.direction, data.shape, id, updateNodeInternals])
 
   return (
     <div
-      className={`editable-node ${shapeClasses.join(' ')} ${selected ? 'editable-node--selected' : ''}`}
+      className={`editable-node ${shapeClasses.join(' ')} ${selected && !isFlowchartShape ? 'editable-node--selected' : ''}`}
       style={nodeStyle}
     >
+      {flowchartShapeDefinition ? (
+        <FlowchartNodeShapeLayer definition={flowchartShapeDefinition} style={data.style} selected={selected} />
+      ) : null}
       <Handle
         className="editable-node__handle"
         type="target"
@@ -76,7 +83,7 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
 
 function getNodeShapeClasses(data: VisualNode['data']): string[] {
   if (data.diagramType === 'flowchart') {
-    return [`editable-node--${data.shape ?? 'rectangle'}`]
+    return ['editable-node--flowchart']
   }
 
   if (data.diagramType === 'sequence') {
@@ -132,6 +139,42 @@ function renderModeFields(id: string, data: VisualNode['data']): JSX.Element | n
   }
 }
 
+function FlowchartNodeShapeLayer({
+  definition,
+  style,
+  selected
+}: {
+  definition: ReturnType<typeof getFlowchartShapeDefinition>
+  style?: FlowchartNodeStyle
+  selected: boolean
+}): JSX.Element {
+  const appearance = getFlowchartShapeAppearance(style, selected)
+
+  return (
+    <svg
+      className="editable-node__shape"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      style={{ filter: `drop-shadow(0 16px 35px ${appearance.shadowColor})` }}
+    >
+      {definition.render(appearance)}
+    </svg>
+  )
+}
+
+function getFlowchartShapeAppearance(
+  style: FlowchartNodeStyle | undefined,
+  selected: boolean
+): FlowchartShapeAppearance & { shadowColor: string } {
+  return {
+    fill: style?.fillColor ?? 'var(--editable-node-bg)',
+    stroke: selected ? '#7c3aed' : style?.strokeColor ?? 'var(--editable-node-border)',
+    strokeWidth: Math.max(style?.borderWidth ?? 1.5, selected ? 2 : 1.5),
+    shadowColor: selected ? 'rgba(124, 58, 237, 0.2)' : 'var(--editable-node-shadow)'
+  }
+}
+
 function getLabelPlaceholder(diagramType: VisualNode['data']['diagramType']): string {
   switch (diagramType) {
     case 'sequence':
@@ -150,11 +193,16 @@ function getLabelPlaceholder(diagramType: VisualNode['data']['diagramType']): st
   }
 }
 
-function getNodeStyle(style: VisualNode['data']['style']): CSSProperties {
+function getNodeStyle(
+  style: VisualNode['data']['style'],
+  isFlowchartShape = false,
+  flowchartLayout?: CSSProperties
+): CSSProperties {
   return {
-    ...(style?.fillColor ? { background: style.fillColor } : {}),
-    ...(style?.strokeColor ? { borderColor: style.strokeColor } : {}),
+    ...(flowchartLayout ?? {}),
+    ...(!isFlowchartShape && style?.fillColor ? { background: style.fillColor } : {}),
+    ...(!isFlowchartShape && style?.strokeColor ? { borderColor: style.strokeColor } : {}),
     ...(style?.textColor ? { color: style.textColor } : {}),
-    ...(style?.borderWidth ? { borderWidth: style.borderWidth } : {})
+    ...(!isFlowchartShape && style?.borderWidth ? { borderWidth: style.borderWidth } : {})
   }
 }
