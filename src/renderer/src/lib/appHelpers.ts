@@ -20,7 +20,12 @@ export const flowchartEdgeStyles: Array<{ value: FlowchartEdgeStyle; label: stri
   { value: 'dottedArrow', label: 'Dotted arrow' },
   { value: 'dottedLine', label: 'Dotted line' },
   { value: 'thickArrow', label: 'Thick arrow' },
-  { value: 'thickLine', label: 'Thick line' }
+  { value: 'thickLine', label: 'Thick line' },
+  { value: 'circleEdge', label: 'Circle edge (--o)' },
+  { value: 'crossEdge', label: 'Cross edge (--x)' },
+  { value: 'bidirectionalArrow', label: 'Two-way arrow (<-->)' },
+  { value: 'bidirectionalCircle', label: 'Two-way circle (o--o)' },
+  { value: 'bidirectionalCross', label: 'Two-way cross (x--x)' }
 ]
 
 export const sequenceMessageTypes: Array<{ value: SequenceMessageType; label: string }> = [

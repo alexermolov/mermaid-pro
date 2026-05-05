@@ -4,7 +4,7 @@ import {
   type Edge,
   type EdgeProps
 } from '@xyflow/react'
-import { resolveEdgePresentation } from '../lib/edgePresentationRegistry'
+import { resolveEdgeMarkers, resolveEdgePresentation, type ResolvedEdgeMarker } from '../lib/edgePresentationRegistry'
 import type { VisualEdgeData } from '../lib/mermaid'
 
 export type EditableEdgeData = VisualEdgeData & {
@@ -21,13 +21,14 @@ export function EditableEdge({
   targetY,
   sourcePosition,
   targetPosition,
-  markerEnd,
   label,
   selected,
   data
 }: EditableEdgeProps): JSX.Element {
   const labelText = typeof label === 'string' ? label : ''
   const shouldShowLabelEditor = selected || labelText.length > 0
+  const strokeColor = data?.visualStyle?.strokeColor ?? 'var(--edge-color)'
+  const markers = resolveEdgeMarkers(data?.diagramType, data)
   const presentation = resolveEdgePresentation(
     data?.diagramType,
     data,
@@ -42,12 +43,26 @@ export function EditableEdge({
     }
   )
   const [edgePath, labelX, labelY] = presentation.path
+  const markerIds = createEdgeMarkerIds(id)
 
   return (
     <>
+      <svg width="0" height="0" aria-hidden="true" focusable="false" style={{ position: 'absolute' }}>
+        <defs>
+          {renderEdgeMarkerDef(markerIds.startArrow, 'arrow', strokeColor)}
+          {renderEdgeMarkerDef(markerIds.startArrowClosed, 'arrowClosed', strokeColor)}
+          {renderEdgeMarkerDef(markerIds.startCircle, 'circle', strokeColor)}
+          {renderEdgeMarkerDef(markerIds.startCross, 'cross', strokeColor)}
+          {renderEdgeMarkerDef(markerIds.endArrow, 'arrow', strokeColor)}
+          {renderEdgeMarkerDef(markerIds.endArrowClosed, 'arrowClosed', strokeColor)}
+          {renderEdgeMarkerDef(markerIds.endCircle, 'circle', strokeColor)}
+          {renderEdgeMarkerDef(markerIds.endCross, 'cross', strokeColor)}
+        </defs>
+      </svg>
       <BaseEdge
         path={edgePath}
-        markerEnd={markerEnd}
+        markerStart={toMarkerUrl(markers.start, markerIds, 'start')}
+        markerEnd={toMarkerUrl(markers.end, markerIds, 'end')}
         style={presentation.pathStyle}
       />
       {shouldShowLabelEditor && (
@@ -65,4 +80,75 @@ export function EditableEdge({
       )}
     </>
   )
+}
+
+function createEdgeMarkerIds(edgeId: string): Record<'startArrow' | 'startArrowClosed' | 'startCircle' | 'startCross' | 'endArrow' | 'endArrowClosed' | 'endCircle' | 'endCross', string> {
+  const baseId = edgeId.replace(/[^A-Za-z0-9_-]/g, '_')
+
+  return {
+    startArrow: `${baseId}-marker-start-arrow`,
+    startArrowClosed: `${baseId}-marker-start-arrowclosed`,
+    startCircle: `${baseId}-marker-start-circle`,
+    startCross: `${baseId}-marker-start-cross`,
+    endArrow: `${baseId}-marker-end-arrow`,
+    endArrowClosed: `${baseId}-marker-end-arrowclosed`,
+    endCircle: `${baseId}-marker-end-circle`,
+    endCross: `${baseId}-marker-end-cross`
+  }
+}
+
+function toMarkerUrl(
+  marker: ResolvedEdgeMarker | undefined,
+  markerIds: ReturnType<typeof createEdgeMarkerIds>,
+  side: 'start' | 'end'
+): string | undefined {
+  if (!marker) {
+    return undefined
+  }
+
+  const markerIdMap = {
+    start: {
+      arrow: markerIds.startArrow,
+      arrowClosed: markerIds.startArrowClosed,
+      circle: markerIds.startCircle,
+      cross: markerIds.startCross
+    },
+    end: {
+      arrow: markerIds.endArrow,
+      arrowClosed: markerIds.endArrowClosed,
+      circle: markerIds.endCircle,
+      cross: markerIds.endCross
+    }
+  } as const
+
+  return `url(#${markerIdMap[side][marker]})`
+}
+
+function renderEdgeMarkerDef(id: string, marker: ResolvedEdgeMarker, color: string): JSX.Element {
+  switch (marker) {
+    case 'arrow':
+      return (
+        <marker id={id} viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse" markerUnits="strokeWidth">
+          <polyline points="1,1 9,5 1,9" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </marker>
+      )
+    case 'arrowClosed':
+      return (
+        <marker id={id} viewBox="0 0 10 10" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse" markerUnits="strokeWidth">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill={color} stroke={color} />
+        </marker>
+      )
+    case 'circle':
+      return (
+        <marker id={id} viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto-start-reverse" markerUnits="strokeWidth">
+          <circle cx="6" cy="6" r="4" fill="white" stroke={color} strokeWidth="1.5" />
+        </marker>
+      )
+    case 'cross':
+      return (
+        <marker id={id} viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto-start-reverse" markerUnits="strokeWidth">
+          <path d="M 2 2 L 10 10 M 10 2 L 2 10" fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" />
+        </marker>
+      )
+  }
 }

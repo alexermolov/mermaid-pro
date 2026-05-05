@@ -1,12 +1,9 @@
-import {
-  MarkerType,
-  getBezierPath,
-  type EdgeMarker,
-  type Position
-} from '@xyflow/react'
+import { getBezierPath, type Position } from '@xyflow/react'
 import type { CSSProperties } from 'react'
 import type { DiagramType } from '../../../shared/diagram'
 import type { FlowchartEdgeStyle, SequenceMessageType, VisualEdgeData } from './mermaid'
+
+export type ResolvedEdgeMarker = 'arrow' | 'arrowClosed' | 'circle' | 'cross'
 
 type EdgePathResult = [string, number, number]
 
@@ -22,7 +19,7 @@ type EdgePathContext = {
 
 type EdgePresentationResolver = {
   getLabelPlaceholder: () => string
-  getMarkerEnd: (data: VisualEdgeData | undefined, strokeColor: string) => EdgeMarker | undefined
+  getMarkers: (data: VisualEdgeData | undefined) => { start?: ResolvedEdgeMarker; end?: ResolvedEdgeMarker }
   getPath: (context: EdgePathContext) => EdgePathResult
   getPathStyle: (data: VisualEdgeData | undefined) => CSSProperties
 }
@@ -39,9 +36,8 @@ const edgePresentationRegistry: Record<DiagramType, EdgePresentationResolver> = 
   mindmap: createFlowLikeResolver('Select an edge to add a branch label'),
   sequence: {
     getLabelPlaceholder: () => 'Select an edge to add a message',
-    getMarkerEnd: (data, strokeColor) => ({
-      type: data?.sequenceMessageType === 'sync' || data?.sequenceMessageType === 'dashed' ? MarkerType.Arrow : MarkerType.ArrowClosed,
-      color: strokeColor
+    getMarkers: (data) => ({
+      end: data?.sequenceMessageType === 'sync' || data?.sequenceMessageType === 'dashed' ? 'arrow' : 'arrowClosed'
     }),
     getPath: ({ sourceX, sourceY, targetX, targetY, sequenceOrder }) =>
       getSequencePath({
@@ -65,12 +61,11 @@ export function getEdgeLabelPlaceholder(diagramType: DiagramType): string {
   return edgePresentationRegistry[diagramType].getLabelPlaceholder()
 }
 
-export function resolveEdgeMarkerEnd(
+export function resolveEdgeMarkers(
   diagramType: DiagramType | undefined,
-  data: VisualEdgeData | undefined,
-  strokeColor: string
-): EdgeMarker | undefined {
-  return edgePresentationRegistry[diagramType ?? defaultDiagramType].getMarkerEnd(data, strokeColor)
+  data: VisualEdgeData | undefined
+): { start?: ResolvedEdgeMarker; end?: ResolvedEdgeMarker } {
+  return edgePresentationRegistry[diagramType ?? defaultDiagramType].getMarkers(data)
 }
 
 export function resolveEdgePresentation(
@@ -94,15 +89,29 @@ export function resolveEdgePresentation(
 function createFlowLikeResolver(labelPlaceholder: string): EdgePresentationResolver {
   return {
     getLabelPlaceholder: () => labelPlaceholder,
-    getMarkerEnd: (data, strokeColor) => {
+    getMarkers: (data) => {
       const lineStyle = data?.lineStyle ?? 'arrow'
 
-      return lineStyle === 'arrow' || lineStyle === 'dottedArrow' || lineStyle === 'thickArrow'
-        ? {
-            type: MarkerType.ArrowClosed,
-            color: strokeColor
-          }
-        : undefined
+      switch (lineStyle) {
+        case 'arrow':
+        case 'dottedArrow':
+        case 'thickArrow':
+          return { end: 'arrowClosed' }
+        case 'circleEdge':
+          return { end: 'circle' }
+        case 'crossEdge':
+          return { end: 'cross' }
+        case 'bidirectionalArrow':
+          return { start: 'arrowClosed', end: 'arrowClosed' }
+        case 'bidirectionalCircle':
+          return { start: 'circle', end: 'circle' }
+        case 'bidirectionalCross':
+          return { start: 'cross', end: 'cross' }
+        case 'line':
+        case 'dottedLine':
+        case 'thickLine':
+          return {}
+      }
     },
     getPath: ({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition }) =>
       getBezierPathTuple({
@@ -124,6 +133,11 @@ function createFlowLikeResolver(labelPlaceholder: string): EdgePresentationResol
         case 'thickArrow':
         case 'thickLine':
           return { ...baseStyle, strokeWidth: data?.visualStyle?.strokeWidth ?? 4 }
+        case 'circleEdge':
+        case 'crossEdge':
+        case 'bidirectionalArrow':
+        case 'bidirectionalCircle':
+        case 'bidirectionalCross':
         case 'arrow':
         case 'line':
           return baseStyle

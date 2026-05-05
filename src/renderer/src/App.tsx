@@ -20,9 +20,6 @@ import type { EditableEdgeData } from './components/EditableEdge'
 import { FlowCanvas } from './components/FlowCanvas'
 import { PreviewPanel } from './components/PreviewPanel'
 import {
-  resolveEdgeMarkerEnd,
-} from './lib/edgePresentationRegistry'
-import {
   isTextInputTarget,
   toFileBaseName
 } from './lib/appHelpers'
@@ -292,12 +289,9 @@ export default function App(): JSX.Element {
   const flowEdges = useMemo(
     () =>
       edges.map((edge): Edge<EditableEdgeData> => {
-        const strokeColor = edge.data?.visualStyle?.strokeColor ?? 'var(--edge-color)'
-
         return {
           ...edge,
           type: 'editableEdge',
-          markerEnd: resolveEdgeMarkerEnd(diagramType, edge.data, strokeColor),
           data: {
             ...(edge.data ?? {}),
             diagramType,

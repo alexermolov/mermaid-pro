@@ -9,15 +9,57 @@ export type FlowchartNodeShape =
   | 'subroutine'
   | 'cylinder'
   | 'circle'
+  | 'smallCircle'
   | 'doubleCircle'
+  | 'framedCircle'
   | 'diamond'
   | 'hexagon'
   | 'parallelogram'
   | 'trapezoid'
   | 'inverseTrapezoid'
   | 'asymmetric'
+  | 'fork'
+  | 'hourglass'
+  | 'comment'
+  | 'commentRight'
+  | 'commentBoth'
+  | 'bolt'
+  | 'document'
+  | 'delay'
+  | 'directAccessStorage'
+  | 'linedCylinder'
+  | 'display'
+  | 'dividedRectangle'
+  | 'triangle'
+  | 'windowPane'
+  | 'filledCircle'
+  | 'linedDocument'
+  | 'notchedPentagon'
+  | 'flippedTriangle'
+  | 'slopedRectangle'
+  | 'stackedDocument'
+  | 'stackedRectangle'
+  | 'paperTape'
+  | 'bowTieRectangle'
+  | 'crossedCircle'
+  | 'taggedDocument'
+  | 'taggedRectangle'
+  | 'notchedRectangle'
+  | 'linedRectangle'
+  | 'cloud'
 
-export type FlowchartEdgeStyle = 'arrow' | 'line' | 'dottedArrow' | 'dottedLine' | 'thickArrow' | 'thickLine'
+export type FlowchartEdgeStyle =
+  | 'arrow'
+  | 'line'
+  | 'dottedArrow'
+  | 'dottedLine'
+  | 'thickArrow'
+  | 'thickLine'
+  | 'circleEdge'
+  | 'crossEdge'
+  | 'bidirectionalArrow'
+  | 'bidirectionalCircle'
+  | 'bidirectionalCross'
 
 export type FlowchartNodeStyle = {
   fillColor?: string
@@ -124,6 +166,143 @@ const autoLayoutSpacing = {
   node: 72
 }
 
+const flowchartShapeAliases: Record<string, FlowchartNodeShape> = {
+  rectangle: 'rectangle',
+  rect: 'rectangle',
+  process: 'rectangle',
+  proc: 'rectangle',
+  rounded: 'rounded',
+  event: 'rounded',
+  stadium: 'stadium',
+  pill: 'stadium',
+  terminal: 'stadium',
+  subroutine: 'subroutine',
+  subproc: 'subroutine',
+  subprocess: 'subroutine',
+  'fr-rect': 'subroutine',
+  'framed-rectangle': 'subroutine',
+  cylinder: 'cylinder',
+  database: 'cylinder',
+  db: 'cylinder',
+  cyl: 'cylinder',
+  circle: 'circle',
+  circ: 'circle',
+  'small-circle': 'smallCircle',
+  'sm-circ': 'smallCircle',
+  start: 'smallCircle',
+  'double-circle': 'doubleCircle',
+  'dbl-circ': 'doubleCircle',
+  'framed-circle': 'framedCircle',
+  'fr-circ': 'framedCircle',
+  stop: 'framedCircle',
+  diamond: 'diamond',
+  diam: 'diamond',
+  decision: 'diamond',
+  question: 'diamond',
+  hexagon: 'hexagon',
+  hex: 'hexagon',
+  prepare: 'hexagon',
+  parallelogram: 'parallelogram',
+  'lean-right': 'parallelogram',
+  'lean-r': 'parallelogram',
+  'in-out': 'parallelogram',
+  trapezoid: 'trapezoid',
+  'trapezoid-bottom': 'trapezoid',
+  'trap-b': 'trapezoid',
+  priority: 'trapezoid',
+  inverseTrapezoid: 'inverseTrapezoid',
+  invtrapezoid: 'inverseTrapezoid',
+  'trapezoid-top': 'inverseTrapezoid',
+  'trap-t': 'inverseTrapezoid',
+  manual: 'inverseTrapezoid',
+  asymmetric: 'asymmetric',
+  fork: 'fork',
+  join: 'fork',
+  hourglass: 'hourglass',
+  collate: 'hourglass',
+  comment: 'comment',
+  brace: 'comment',
+  'brace-l': 'comment',
+  commentright: 'commentRight',
+  'comment-right': 'commentRight',
+  'brace-r': 'commentRight',
+  braces: 'commentBoth',
+  bolt: 'bolt',
+  'com-link': 'bolt',
+  'lightning-bolt': 'bolt',
+  doc: 'document',
+  document: 'document',
+  delay: 'delay',
+  das: 'directAccessStorage',
+  'h-cyl': 'directAccessStorage',
+  'horizontal-cylinder': 'directAccessStorage',
+  'lin-cyl': 'linedCylinder',
+  disk: 'linedCylinder',
+  'lined-cylinder': 'linedCylinder',
+  'curv-trap': 'display',
+  display: 'display',
+  'curved-trapezoid': 'display',
+  'div-rect': 'dividedRectangle',
+  'div-proc': 'dividedRectangle',
+  'divided-process': 'dividedRectangle',
+  'divided-rectangle': 'dividedRectangle',
+  tri: 'triangle',
+  triangle: 'triangle',
+  extract: 'triangle',
+  'win-pane': 'windowPane',
+  'window-pane': 'windowPane',
+  'internal-storage': 'windowPane',
+  'f-circ': 'filledCircle',
+  'filled-circle': 'filledCircle',
+  junction: 'filledCircle',
+  'lin-doc': 'linedDocument',
+  'lined-document': 'linedDocument',
+  'notch-pent': 'notchedPentagon',
+  'notched-pentagon': 'notchedPentagon',
+  'loop-limit': 'notchedPentagon',
+  'flip-tri': 'flippedTriangle',
+  'flipped-triangle': 'flippedTriangle',
+  'manual-file': 'flippedTriangle',
+  'sl-rect': 'slopedRectangle',
+  'sloped-rectangle': 'slopedRectangle',
+  'manual-input': 'slopedRectangle',
+  docs: 'stackedDocument',
+  documents: 'stackedDocument',
+  'st-doc': 'stackedDocument',
+  'stacked-document': 'stackedDocument',
+  'st-rect': 'stackedRectangle',
+  processes: 'stackedRectangle',
+  procs: 'stackedRectangle',
+  'stacked-rectangle': 'stackedRectangle',
+  flag: 'paperTape',
+  'paper-tape': 'paperTape',
+  'bow-rect': 'bowTieRectangle',
+  'bow-tie-rectangle': 'bowTieRectangle',
+  'stored-data': 'bowTieRectangle',
+  'cross-circ': 'crossedCircle',
+  'crossed-circle': 'crossedCircle',
+  summary: 'crossedCircle',
+  'tag-doc': 'taggedDocument',
+  'tagged-document': 'taggedDocument',
+  'tag-rect': 'taggedRectangle',
+  'tagged-rectangle': 'taggedRectangle',
+  'tag-proc': 'taggedRectangle',
+  'tagged-process': 'taggedRectangle',
+  'notch-rect': 'notchedRectangle',
+  card: 'notchedRectangle',
+  'notched-rectangle': 'notchedRectangle',
+  'lin-rect': 'linedRectangle',
+  'lined-process': 'linedRectangle',
+  'lined-rectangle': 'linedRectangle',
+  'lin-proc': 'linedRectangle',
+  'shaded-process': 'linedRectangle',
+  cloud: 'cloud'
+}
+
+function formatExpandedFlowchartNode(mermaidShape: string): (id: string, label: string) => string {
+  return (id, label) => `  ${id}@{ shape: ${mermaidShape}, label: "${label}" }`
+}
+
 const flowchartNodeFormatters: Record<FlowchartNodeShape, (id: string, label: string) => string> = {
   rectangle: (id, label) => `  ${id}["${label}"]`,
   rounded: (id, label) => `  ${id}("${label}")`,
@@ -131,13 +310,44 @@ const flowchartNodeFormatters: Record<FlowchartNodeShape, (id: string, label: st
   subroutine: (id, label) => `  ${id}[["${label}"]]`,
   cylinder: (id, label) => `  ${id}[("${label}")]`,
   circle: (id, label) => `  ${id}(("${label}"))`,
+  smallCircle: formatExpandedFlowchartNode('sm-circ'),
   doubleCircle: (id, label) => `  ${id}((("${label}")))`,
+  framedCircle: formatExpandedFlowchartNode('fr-circ'),
   diamond: (id, label) => `  ${id}{"${label}"}`,
   hexagon: (id, label) => `  ${id}{{"${label}"}}`,
   parallelogram: (id, label) => `  ${id}[/"${label}"/]`,
   trapezoid: (id, label) => `  ${id}[/"${label}"\\]`,
   inverseTrapezoid: (id, label) => `  ${id}[\\"${label}"/]`,
-  asymmetric: (id, label) => `  ${id}>"${label}"]`
+  asymmetric: (id, label) => `  ${id}>"${label}"]`,
+  fork: formatExpandedFlowchartNode('fork'),
+  hourglass: formatExpandedFlowchartNode('hourglass'),
+  comment: formatExpandedFlowchartNode('brace'),
+  commentRight: formatExpandedFlowchartNode('brace-r'),
+  commentBoth: formatExpandedFlowchartNode('braces'),
+  bolt: formatExpandedFlowchartNode('bolt'),
+  document: formatExpandedFlowchartNode('doc'),
+  delay: formatExpandedFlowchartNode('delay'),
+  directAccessStorage: formatExpandedFlowchartNode('h-cyl'),
+  linedCylinder: formatExpandedFlowchartNode('lin-cyl'),
+  display: formatExpandedFlowchartNode('curv-trap'),
+  dividedRectangle: formatExpandedFlowchartNode('div-rect'),
+  triangle: formatExpandedFlowchartNode('tri'),
+  windowPane: formatExpandedFlowchartNode('win-pane'),
+  filledCircle: formatExpandedFlowchartNode('f-circ'),
+  linedDocument: formatExpandedFlowchartNode('lin-doc'),
+  notchedPentagon: formatExpandedFlowchartNode('notch-pent'),
+  flippedTriangle: formatExpandedFlowchartNode('flip-tri'),
+  slopedRectangle: formatExpandedFlowchartNode('sl-rect'),
+  stackedDocument: formatExpandedFlowchartNode('docs'),
+  stackedRectangle: formatExpandedFlowchartNode('st-rect'),
+  paperTape: formatExpandedFlowchartNode('flag'),
+  bowTieRectangle: formatExpandedFlowchartNode('bow-rect'),
+  crossedCircle: formatExpandedFlowchartNode('cross-circ'),
+  taggedDocument: formatExpandedFlowchartNode('tag-doc'),
+  taggedRectangle: formatExpandedFlowchartNode('tag-rect'),
+  notchedRectangle: formatExpandedFlowchartNode('notch-rect'),
+  linedRectangle: formatExpandedFlowchartNode('lin-rect'),
+  cloud: formatExpandedFlowchartNode('cloud')
 }
 
 const flowchartLinkFormatters: Record<FlowchartEdgeStyle, (label: string) => string> = {
@@ -146,7 +356,12 @@ const flowchartLinkFormatters: Record<FlowchartEdgeStyle, (label: string) => str
   dottedArrow: (label) => (label ? `-. ${label} .->` : '-.->'),
   dottedLine: (label) => (label ? `-. ${label} .-` : '-.-'),
   thickArrow: (label) => (label ? `== ${label} ==>` : '==>'),
-  thickLine: (label) => (label ? `== ${label} ==` : '===')
+  thickLine: (label) => (label ? `== ${label} ==` : '==='),
+  circleEdge: (label) => (label ? `--o|${label}|` : '--o'),
+  crossEdge: (label) => (label ? `--x|${label}|` : '--x'),
+  bidirectionalArrow: (label) => (label ? `<-->|${label}|` : '<-->'),
+  bidirectionalCircle: (label) => (label ? `o--o|${label}|` : 'o--o'),
+  bidirectionalCross: (label) => (label ? `x--x|${label}|` : 'x--x')
 }
 
 const sequenceArrowByMessageType: Record<SequenceMessageType, string> = {
@@ -180,7 +395,7 @@ const mermaidParsers: Array<{
   parse: (lines: string[]) => ParsedMermaidDiagram
 }> = [
   {
-    matches: (header) => /^(flowchart|graph)\s+(TD|LR|BT|RL)$/.test(header),
+    matches: (header) => /^(flowchart|graph)\s+(TB|TD|LR|BT|RL)$/.test(header),
     parse: parseFlowchart
   },
   {
@@ -433,7 +648,8 @@ export function nextNodeId(nodes: VisualNode[]): string {
 }
 
 export function parseMermaid(code: string): ParsedMermaidDiagram {
-  const lines = code
+  const lines = stripLeadingMermaidFrontmatter(
+    code
     .replace(/^\uFEFF/, '')
     .split(/\r?\n/)
     .map((line) => line.trimEnd())
@@ -441,6 +657,7 @@ export function parseMermaid(code: string): ParsedMermaidDiagram {
       const trimmedLine = line.trim()
       return trimmedLine.length > 0 && !trimmedLine.startsWith('%%')
     })
+  )
 
   const header = lines[0]?.trim() ?? ''
 
@@ -639,8 +856,9 @@ function normalizeInlineText(text: string): string {
 }
 
 function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
-  const headerMatch = lines[0]?.match(/^(?:flowchart|graph)\s+(TD|LR|BT|RL)$/)
-  const direction = (headerMatch?.[1] as DiagramDirection | undefined) ?? 'TD'
+  const headerMatch = lines[0]?.match(/^(?:flowchart|graph)\s+(TB|TD|LR|BT|RL)$/)
+  const rawDirection = headerMatch?.[1]
+  const direction = (rawDirection === 'TB' ? 'TD' : rawDirection) as DiagramDirection | undefined ?? 'TD'
   const nodes = new Map<string, VisualNode>()
   const edges: VisualEdge[] = []
   const edgeIndexById = new Map<number, string>()
@@ -653,7 +871,13 @@ function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
       continue
     }
 
-    if (line === 'end' || line.startsWith('subgraph ') || line.startsWith('classDef ') || line.startsWith('class ')) {
+    if (
+      line === 'end' ||
+      line.startsWith('subgraph ') ||
+      line.startsWith('classDef ') ||
+      line.startsWith('class ') ||
+      line.startsWith('click ')
+    ) {
       continue
     }
 
@@ -948,22 +1172,26 @@ function tryParseFlowchartEdge(
   edgeIndexById: Map<number, string>,
   linkIndex: number
 ): boolean {
-  const parsedEdge = parseFlowchartEdgeExpression(line)
-  if (!parsedEdge) {
+  const parsedEdges = parseFlowchartEdgeExpressions(line)
+  if (!parsedEdges || parsedEdges.length === 0) {
     return false
   }
 
-  const sourceNode = ensureNodeFromFlowchartDescriptor(nodes, parsedEdge.source)
-  const targetNode = ensureNodeFromFlowchartDescriptor(nodes, parsedEdge.target)
-  const edgeId = `${sourceNode.id}-${targetNode.id}-${edges.length + 1}`
-  edges.push({
-    id: edgeId,
-    source: sourceNode.id,
-    target: targetNode.id,
-    label: parsedEdge.label,
-    data: { lineStyle: parsedEdge.lineStyle }
+  parsedEdges.forEach((parsedEdge, offset) => {
+    const sourceNode = ensureNodeFromFlowchartDescriptor(nodes, parsedEdge.source)
+    const targetNode = ensureNodeFromFlowchartDescriptor(nodes, parsedEdge.target)
+    const edgeId = `${sourceNode.id}-${targetNode.id}-${edges.length + 1}`
+
+    edges.push({
+      id: edgeId,
+      source: sourceNode.id,
+      target: targetNode.id,
+      label: parsedEdge.label,
+      data: { lineStyle: parsedEdge.lineStyle }
+    })
+    edgeIndexById.set(linkIndex + offset, edgeId)
   })
-  edgeIndexById.set(linkIndex, edgeId)
+
   return true
 }
 
@@ -986,26 +1214,38 @@ function applyFlowchartNodeStyle(line: string, nodes: Map<string, VisualNode>): 
 }
 
 function applyFlowchartEdgeStyle(line: string, edges: VisualEdge[], edgeIndexById: Map<number, string>): void {
-  const styleMatch = line.match(/^linkStyle\s+(\d+)\s+(.+)$/)
+  const styleMatch = line.match(/^linkStyle\s+([^\s]+)\s+(.+)$/)
   if (!styleMatch) {
     return
   }
 
-  const [, indexText, declarationText] = styleMatch
-  const edgeId = edgeIndexById.get(Number(indexText))
-  const edge = edges.find((item) => item.id === edgeId)
+  const [, selectorText, declarationText] = styleMatch
+  const targetEdgeIds = selectorText.toLowerCase() === 'default'
+    ? edges.map((edge) => edge.id)
+    : selectorText
+        .split(',')
+        .map((item) => edgeIndexById.get(Number(item.trim())))
+        .filter((edgeId): edgeId is string => Boolean(edgeId))
 
-  if (!edge) {
+  if (targetEdgeIds.length === 0) {
     return
   }
 
   const declarations = parseStyleDeclarations(declarationText)
-  edge.data = {
-    ...(edge.data ?? {}),
-    visualStyle: {
-      ...(edge.data?.visualStyle ?? {}),
-      ...(declarations.stroke ? { strokeColor: declarations.stroke } : {}),
-      ...(declarations['stroke-width'] ? { strokeWidth: parsePixelValue(declarations['stroke-width']) } : {})
+
+  for (const edgeId of targetEdgeIds) {
+    const edge = edges.find((item) => item.id === edgeId)
+    if (!edge) {
+      continue
+    }
+
+    edge.data = {
+      ...(edge.data ?? {}),
+      visualStyle: {
+        ...(edge.data?.visualStyle ?? {}),
+        ...(declarations.stroke ? { strokeColor: declarations.stroke } : {}),
+        ...(declarations['stroke-width'] ? { strokeWidth: parsePixelValue(declarations['stroke-width']) } : {})
+      }
     }
   }
 }
@@ -1029,6 +1269,11 @@ function parseFlowchartNodeDescriptor(
   descriptorText: string
 ): { id: string; label: string; shape?: FlowchartNodeShape } | undefined {
   const descriptor = descriptorText.trim()
+  const expandedDescriptor = parseExpandedFlowchartNodeDescriptor(descriptor)
+
+  if (expandedDescriptor) {
+    return expandedDescriptor
+  }
 
   for (const [shape, pattern] of flowchartDescriptorPatterns) {
     const match = descriptor.match(pattern)
@@ -1063,7 +1308,7 @@ function parseFlowchartEdgeExpression(
       lineStyle: FlowchartEdgeStyle
     }
   | undefined {
-  const pipeLabelMatch = line.match(/^(.*?)\s+(-->|---|-\.->|-\.\-|==>|===)\|([^|]+)\|\s+(.*?)$/)
+  const pipeLabelMatch = line.match(/^(.*?)\s+(<-->|o--o|x--x|-->|---|-\.->|-\.\-|==>|===|--o|--x)\|([^|]+)\|\s+(.*?)$/)
   if (pipeLabelMatch) {
     const [, sourceText, linkToken, label, targetText] = pipeLabelMatch
     return createFlowchartEdgeDescriptor(sourceText, targetText, parseFlowchartLineStyle(linkToken), normalizeEscapedText(label))
@@ -1080,13 +1325,95 @@ function parseFlowchartEdgeExpression(
     return createFlowchartEdgeDescriptor(sourceText, targetText, lineStyle, normalizeEscapedText(label))
   }
 
-  const simpleMatch = line.match(/^(.*?)\s+(-->|---|-\.->|-\.\-|==>|===)\s+(.*?)$/)
+  const simpleMatch = line.match(/^(.*?)\s+(<-->|o--o|x--x|-->|---|-\.->|-\.\-|==>|===|--o|--x)\s+(.*?)$/)
   if (!simpleMatch) {
     return undefined
   }
 
   const [, sourceText, linkToken, targetText] = simpleMatch
   return createFlowchartEdgeDescriptor(sourceText, targetText, parseFlowchartLineStyle(linkToken))
+}
+
+function parseFlowchartEdgeExpressions(
+  line: string
+):
+  | Array<{
+      source: { id: string; label: string; shape?: FlowchartNodeShape }
+      target: { id: string; label: string; shape?: FlowchartNodeShape }
+      label?: string
+      lineStyle: FlowchartEdgeStyle
+    }>
+  | undefined {
+  const chainedEdges = parseChainedFlowchartEdgeExpressions(line)
+  if (chainedEdges && chainedEdges.length > 0) {
+    return chainedEdges
+  }
+
+  const singleEdge = parseFlowchartEdgeExpression(line)
+  return singleEdge ? [singleEdge] : undefined
+}
+
+function parseChainedFlowchartEdgeExpressions(
+  line: string
+):
+  | Array<{
+      source: { id: string; label: string; shape?: FlowchartNodeShape }
+      target: { id: string; label: string; shape?: FlowchartNodeShape }
+      label?: string
+      lineStyle: FlowchartEdgeStyle
+    }>
+  | undefined {
+  const links = Array.from(line.matchAll(flowchartLinkPattern)).map((match) => ({
+    index: match.index ?? -1,
+    raw: match[0],
+    token: match[1],
+    label: match[2]
+  }))
+
+  if (links.length === 0) {
+    return undefined
+  }
+
+  const firstSourceText = line.slice(0, links[0].index).trim()
+  let currentSources = parseFlowchartNodeGroup(firstSourceText)
+  if (!currentSources || currentSources.length === 0) {
+    return undefined
+  }
+
+  const parsedEdges: Array<{
+    source: { id: string; label: string; shape?: FlowchartNodeShape }
+    target: { id: string; label: string; shape?: FlowchartNodeShape }
+    label?: string
+    lineStyle: FlowchartEdgeStyle
+  }> = []
+
+  for (let index = 0; index < links.length; index += 1) {
+    const currentLink = links[index]
+    const nextLink = links[index + 1]
+    const targetText = line
+      .slice(currentLink.index + currentLink.raw.length, nextLink?.index ?? line.length)
+      .trim()
+    const currentTargets = parseFlowchartNodeGroup(targetText)
+
+    if (!currentTargets || currentTargets.length === 0) {
+      return undefined
+    }
+
+    for (const source of currentSources) {
+      for (const target of currentTargets) {
+        parsedEdges.push({
+          source,
+          target,
+          ...(currentLink.label ? { label: normalizeEscapedText(currentLink.label) } : {}),
+          lineStyle: parseFlowchartLineStyle(currentLink.token)
+        })
+      }
+    }
+
+    currentSources = currentTargets
+  }
+
+  return parsedEdges
 }
 
 function createFlowchartEdgeDescriptor(
@@ -1129,6 +1456,7 @@ function ensureNodeFromFlowchartDescriptor(
 function parseFlowchartShape(token: string): FlowchartNodeShape {
   switch (token) {
     case '((': return 'circle'
+    case 'o': return 'smallCircle'
     case '(((': return 'doubleCircle'
     case '([': return 'stadium'
     case '[[': return 'subroutine'
@@ -1175,6 +1503,12 @@ function parseFlowchartLineStylePair(startToken: string, endToken: string): Flow
 
 function parseFlowchartLineStyle(token: string): FlowchartEdgeStyle {
   switch (token) {
+    case '<-->':
+      return 'bidirectionalArrow'
+    case 'o--o':
+      return 'bidirectionalCircle'
+    case 'x--x':
+      return 'bidirectionalCross'
     case '---':
       return 'line'
     case '-.->':
@@ -1185,10 +1519,27 @@ function parseFlowchartLineStyle(token: string): FlowchartEdgeStyle {
       return 'thickArrow'
     case '===':
       return 'thickLine'
+    case '--o':
+      return 'circleEdge'
+    case '--x':
+      return 'crossEdge'
     case '-->':
     default:
       return 'arrow'
   }
+}
+
+function stripLeadingMermaidFrontmatter(lines: string[]): string[] {
+  if (lines[0]?.trim() !== '---') {
+    return lines
+  }
+
+  const closingIndex = lines.findIndex((line, index) => index > 0 && line.trim() === '---')
+  if (closingIndex === -1) {
+    return lines
+  }
+
+  return lines.slice(closingIndex + 1)
 }
 
 function parseErRelationshipData(relationship: string): VisualEdgeData {
@@ -1496,6 +1847,150 @@ function normalizeEscapedText(text: string): string {
   return text.replace(/\\"/g, '"').replace(/^['"]|['"]$/g, '').trim()
 }
 
+function parseExpandedFlowchartNodeDescriptor(
+  descriptorText: string
+): { id: string; label: string; shape?: FlowchartNodeShape } | undefined {
+  const match = descriptorText.match(/^([A-Za-z0-9_:.\-]+)@\{\s*(.+)\s*\}$/)
+  if (!match) {
+    return undefined
+  }
+
+  const [, id, propertyText] = match
+  const properties = parseMermaidPropertyMap(propertyText)
+  const shapeToken = properties.shape ? normalizeEscapedText(properties.shape).toLowerCase() : undefined
+  const shape = shapeToken ? flowchartShapeAliases[shapeToken] : undefined
+  const label = properties.label ? normalizeFlowchartLabel(properties.label) : id
+
+  return {
+    id,
+    label,
+    ...(shape ? { shape } : {})
+  }
+}
+
+function parseMermaidPropertyMap(text: string): Record<string, string> {
+  return splitMermaidProperties(text).reduce<Record<string, string>>((result, entry) => {
+    const separatorIndex = entry.indexOf(':')
+    if (separatorIndex === -1) {
+      return result
+    }
+
+    const key = entry.slice(0, separatorIndex).trim()
+    const value = entry.slice(separatorIndex + 1).trim()
+    if (key && value) {
+      result[key] = value
+    }
+
+    return result
+  }, {})
+}
+
+function splitMermaidProperties(text: string): string[] {
+  const entries: string[] = []
+  let current = ''
+  let quote: '"' | "'" | undefined
+
+  for (const character of text) {
+    if ((character === '"' || character === "'") && !quote) {
+      quote = character
+      current += character
+      continue
+    }
+
+    if (quote && character === quote && !current.endsWith('\\')) {
+      quote = undefined
+      current += character
+      continue
+    }
+
+    if (character === ',' && !quote) {
+      if (current.trim()) {
+        entries.push(current.trim())
+      }
+      current = ''
+      continue
+    }
+
+    current += character
+  }
+
+  if (current.trim()) {
+    entries.push(current.trim())
+  }
+
+  return entries
+}
+
+function parseFlowchartNodeGroup(
+  text: string
+): Array<{ id: string; label: string; shape?: FlowchartNodeShape }> | undefined {
+  const descriptors = splitTopLevelFlowchartGroup(text)
+    .map((part) => parseFlowchartNodeDescriptor(part.trim()))
+
+  if (descriptors.some((descriptor) => !descriptor)) {
+    return undefined
+  }
+
+  return descriptors as Array<{ id: string; label: string; shape?: FlowchartNodeShape }>
+}
+
+function splitTopLevelFlowchartGroup(text: string): string[] {
+  const parts: string[] = []
+  let current = ''
+  let roundDepth = 0
+  let squareDepth = 0
+  let curlyDepth = 0
+  let quote: '"' | "'" | undefined
+
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index]
+
+    if ((character === '"' || character === "'") && !quote) {
+      quote = character
+      current += character
+      continue
+    }
+
+    if (quote && character === quote && text[index - 1] !== '\\') {
+      quote = undefined
+      current += character
+      continue
+    }
+
+    if (!quote) {
+      if (character === '(') {
+        roundDepth += 1
+      } else if (character === ')') {
+        roundDepth = Math.max(0, roundDepth - 1)
+      } else if (character === '[') {
+        squareDepth += 1
+      } else if (character === ']') {
+        squareDepth = Math.max(0, squareDepth - 1)
+      } else if (character === '{') {
+        curlyDepth += 1
+      } else if (character === '}') {
+        curlyDepth = Math.max(0, curlyDepth - 1)
+      }
+
+      if (character === '&' && roundDepth === 0 && squareDepth === 0 && curlyDepth === 0) {
+        if (current.trim()) {
+          parts.push(current.trim())
+        }
+        current = ''
+        continue
+      }
+    }
+
+    current += character
+  }
+
+  if (current.trim()) {
+    parts.push(current.trim())
+  }
+
+  return parts
+}
+
 function normalizeFlowchartLabel(text: string): string {
   return normalizeEscapedText(text)
 }
@@ -1537,3 +2032,5 @@ const flowchartDescriptorPatterns: Array<[FlowchartNodeShape, RegExp]> = [
   ['rounded', /^([A-Za-z0-9_:.\-]+)\((.+?)\)$/],
   ['rectangle', /^([A-Za-z0-9_:.\-]+)\[(.+?)\]$/]
 ]
+
+const flowchartLinkPattern = /\s*(<-->|o--o|x--x|-->|---|-\.->|-\.\-|==>|===|--o|--x)(?:\|([^|]+)\|)?\s*/g
