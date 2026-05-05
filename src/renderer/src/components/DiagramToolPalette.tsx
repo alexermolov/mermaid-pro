@@ -6,6 +6,7 @@ import {
   flowchartNodeShapes,
   getAddNodeLabel,
   getEdgePlaceholder,
+  sequenceParticipantPresentations,
   sequenceMessageTypes
 } from '../lib/appHelpers'
 import type {
@@ -16,6 +17,7 @@ import type {
   FlowchartNodeShape,
   FlowchartNodeStyle,
   SequenceMessageType,
+  SequenceParticipantPresentation,
   VisualEdge,
   VisualNode
 } from '../lib/mermaid'
@@ -34,6 +36,7 @@ type DiagramToolPaletteProps = {
   onSequenceMessageDraftChange: (draft: Partial<{ sourceId: string; targetId: string }>) => void
   onDuplicateSelected: () => void
   onSelectedNodeShapeChange: (shape: FlowchartNodeShape) => void
+  onSelectedSequenceParticipantPresentationChange: (presentation: SequenceParticipantPresentation) => void
   onSelectedNodeStyleChange: (style: Partial<FlowchartNodeStyle>) => void
   onSelectedEdgeLabelChange: (label: string) => void
   onSelectedEdgeStyleChange: (lineStyle: FlowchartEdgeStyle) => void
@@ -68,6 +71,7 @@ export function DiagramToolPalette({
   onSequenceMessageDraftChange,
   onDuplicateSelected,
   onSelectedNodeShapeChange,
+  onSelectedSequenceParticipantPresentationChange,
   onSelectedNodeStyleChange,
   onSelectedEdgeLabelChange,
   onSelectedEdgeStyleChange,
@@ -80,6 +84,7 @@ export function DiagramToolPalette({
   const hasSingleNodeSelection = selectedNodeCount === 1 && selectedEdgeCount === 0 && Boolean(selectedNode)
   const hasSingleEdgeSelection = selectedEdgeCount === 1 && selectedNodeCount === 0 && Boolean(selectedEdge)
   const canEditFlowchartNode = diagramType === 'flowchart' && hasSingleNodeSelection
+  const canEditSequenceNode = diagramType === 'sequence' && hasSingleNodeSelection
   const canEditEdgeLabel = hasSingleEdgeSelection
   const canEditFlowchartEdge = diagramType === 'flowchart' && hasSingleEdgeSelection
   const canEditSequenceEdge = diagramType === 'sequence' && hasSingleEdgeSelection
@@ -186,6 +191,20 @@ export function DiagramToolPalette({
               onChange={(value) => onSelectedNodeStyleChange({ borderWidth: value })}
             />
           </div>
+        </div>
+      )}
+
+      {canEditSequenceNode && selectedNode && (
+        <div className="palette-section">
+          <PaletteSelect
+            label="Participant type"
+            value={selectedNode.data.sequenceParticipantType ?? selectedNode.data.sequenceParticipantKind ?? 'participant'}
+            title="Change selected sequence participant type"
+            options={sequenceParticipantPresentations}
+            onChange={(value) =>
+              onSelectedSequenceParticipantPresentationChange(value as SequenceParticipantPresentation)
+            }
+          />
         </div>
       )}
 

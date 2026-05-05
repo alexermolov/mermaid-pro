@@ -35,7 +35,7 @@ function getNodeHandlePositions(diagramType: VisualNode['data']['diagramType'], 
 export function EditableNode({ id, data, selected, isConnectable }: NodeProps<VisualNode>): JSX.Element {
   const updateNodeInternals = useUpdateNodeInternals()
   const handlePositions = getNodeHandlePositions(data.diagramType, data.direction)
-  const shape = data.diagramType === 'flowchart' ? (data.shape ?? 'rectangle') : (data.diagramType ?? 'flowchart')
+  const shapeClasses = getNodeShapeClasses(data)
   const nodeStyle = getNodeStyle(data.style)
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
 
   return (
     <div
-      className={`editable-node editable-node--${shape} ${selected ? 'editable-node--selected' : ''}`}
+      className={`editable-node ${shapeClasses.join(' ')} ${selected ? 'editable-node--selected' : ''}`}
       style={nodeStyle}
     >
       <Handle
@@ -72,6 +72,19 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
       />
     </div>
   )
+}
+
+function getNodeShapeClasses(data: VisualNode['data']): string[] {
+  if (data.diagramType === 'flowchart') {
+    return [`editable-node--${data.shape ?? 'rectangle'}`]
+  }
+
+  if (data.diagramType === 'sequence') {
+    const sequenceKind = data.sequenceParticipantType ?? (data.sequenceParticipantKind === 'actor' ? 'actor' : 'participant')
+    return ['editable-node--sequence', `editable-node--sequence-${sequenceKind}`]
+  }
+
+  return [`editable-node--${data.diagramType ?? 'flowchart'}`]
 }
 
 function renderModeFields(id: string, data: VisualNode['data']): JSX.Element | null {

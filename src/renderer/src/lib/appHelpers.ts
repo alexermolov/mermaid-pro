@@ -1,5 +1,10 @@
 import type { AppTheme, DiagramDirection, DiagramType } from '../../../shared/diagram'
-import type { FlowchartEdgeStyle, FlowchartNodeShape, SequenceMessageType } from './mermaid'
+import type {
+  FlowchartEdgeStyle,
+  FlowchartNodeShape,
+  SequenceMessageType,
+  SequenceParticipantPresentation
+} from './mermaid'
 
 export type { AppTheme }
 
@@ -44,6 +49,17 @@ export const sequenceMessageTypes: Array<{ value: SequenceMessageType; label: st
   { value: 'sync', label: 'Sync message (->)' },
   { value: 'dashedAsync', label: 'Async return (-->>)' },
   { value: 'dashed', label: 'Return (-->)' }
+]
+
+export const sequenceParticipantPresentations: Array<{ value: SequenceParticipantPresentation; label: string }> = [
+  { value: 'participant', label: 'Participant' },
+  { value: 'actor', label: 'Actor' },
+  { value: 'boundary', label: 'Boundary' },
+  { value: 'control', label: 'Control' },
+  { value: 'entity', label: 'Entity' },
+  { value: 'database', label: 'Database' },
+  { value: 'collections', label: 'Collections' },
+  { value: 'queue', label: 'Queue' }
 ]
 
 export function toFileBaseName(title: string): string {

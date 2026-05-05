@@ -55,6 +55,7 @@ import {
   type FlowchartNodeShape,
   type FlowchartNodeStyle,
   type SequenceMessageType,
+  type SequenceParticipantPresentation,
   type VisualEdge,
   type VisualNode
 } from './lib/mermaid'
@@ -171,6 +172,22 @@ export default function App(): JSX.Element {
             ...(node.data.style ?? {}),
             ...style
           }
+        }
+      }))
+      setAutoSync(true)
+    },
+    [updateNodeById]
+  )
+
+  const updateNodeSequenceParticipantPresentation = useCallback(
+    (id: string, presentation: SequenceParticipantPresentation) => {
+      updateNodeById(id, (node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          sequenceParticipantKind: presentation === 'actor' ? 'actor' : 'participant',
+          sequenceParticipantType:
+            presentation === 'participant' || presentation === 'actor' ? undefined : presentation
         }
       }))
       setAutoSync(true)
@@ -796,6 +813,14 @@ export default function App(): JSX.Element {
     updateNodeStyle(selectedNode.id, style)
   }
 
+  function updateSelectedSequenceParticipantPresentation(presentation: SequenceParticipantPresentation): void {
+    if (!selectedNode) {
+      return
+    }
+
+    updateNodeSequenceParticipantPresentation(selectedNode.id, presentation)
+  }
+
   function updateSelectedEdgeStyle(lineStyle: FlowchartEdgeStyle): void {
     if (!selectedEdgeId) {
       return
@@ -1174,6 +1199,7 @@ export default function App(): JSX.Element {
             }
             onDuplicateSelected={duplicateSelectedNodes}
             onSelectedNodeShapeChange={updateSelectedNodeShape}
+            onSelectedSequenceParticipantPresentationChange={updateSelectedSequenceParticipantPresentation}
             onSelectedNodeStyleChange={updateSelectedNodeStyle}
             onSelectedEdgeLabelChange={updateSelectedEdgeLabel}
             onSelectedEdgeStyleChange={updateSelectedEdgeStyle}

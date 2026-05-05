@@ -32,6 +32,9 @@ export type FlowchartEdgeVisualStyle = {
 }
 
 export type SequenceMessageType = 'sync' | 'async' | 'dashed' | 'dashedAsync'
+export type SequenceParticipantKind = 'participant' | 'actor'
+export type SequenceParticipantType = 'boundary' | 'control' | 'entity' | 'database' | 'collections' | 'queue'
+export type SequenceParticipantPresentation = SequenceParticipantKind | SequenceParticipantType
 
 export type ErCardinality = 'one' | 'zeroOrOne' | 'oneOrMore' | 'zeroOrMore'
 export type ErRelationshipLineStyle = 'identifying' | 'nonIdentifying'
@@ -44,6 +47,8 @@ export type VisualNodeData = {
   stateDescription?: string
   shape?: FlowchartNodeShape
   style?: FlowchartNodeStyle
+  sequenceParticipantKind?: SequenceParticipantKind
+  sequenceParticipantType?: SequenceParticipantType
   onLabelChange?: (id: string, label: string) => void
   onDataChange?: (id: string, data: Partial<EditableVisualNodeData>) => void
   diagramType?: DiagramType
@@ -282,7 +287,7 @@ function toSequenceDiagram(nodes: VisualNode[], edges: VisualEdge[]): string {
   })
 
   const participantLines = orderedNodes
-    .map((node) => `  participant ${sanitizeId(node.id)} as ${escapeSequenceText(node.data.label || node.id)}`)
+    .map((node) => formatSequenceParticipantDeclaration(node))
     .join('\n')
 
   const messageLines = edges
@@ -507,8 +512,70 @@ function formatSequenceArrow(messageType: SequenceMessageType = 'async'): string
   return sequenceArrowByMessageType[messageType]
 }
 
+function formatSequenceParticipantDeclaration(node: VisualNode): string {
+  const kind = node.data.sequenceParticipantKind ?? 'participant'
+  const type = node.data.sequenceParticipantType
+  const id = sanitizeId(node.id)
+  const label = node.data.label || node.id
+  const alias = label !== node.id ? ` as ${escapeSequenceText(label)}` : ''
+
+  if (!type) {
+    return `  ${kind} ${id}${alias}`
+  }
+
+    return `  ${kind} ${id}@${JSON.stringify({ type })}${alias}`
+}
+
 function parseSequenceArrow(operator: string): SequenceMessageType {
   return sequenceMessageTypeByArrow[operator] ?? 'async'
+}
+
+function parseSequenceParticipantDeclaration(
+  line: string
+): { id: string; label: string; kind: SequenceParticipantKind; type?: SequenceParticipantType } | undefined {
+  const participantMatch = line.match(/^(participant|actor)\s+([^\s@]+)(?:@(\{.*\}))?(?:\s+as\s+(.+))?$/)
+
+  if (!participantMatch) {
+    return undefined
+  }
+
+  const [, rawKind, id, rawConfig, externalAlias] = participantMatch
+  const kind = rawKind as SequenceParticipantKind
+  const config = parseSequenceParticipantConfig(rawConfig)
+  const label = normalizeEscapedText(externalAlias ?? config?.alias ?? id)
+
+  return {
+    id,
+    label,
+    kind,
+    type: config?.type
+  }
+}
+
+function parseSequenceParticipantConfig(
+  rawConfig: string | undefined
+): { alias?: string; type?: SequenceParticipantType } | undefined {
+  if (!rawConfig) {
+    return undefined
+  }
+
+  try {
+    const parsed = JSON.parse(rawConfig) as { alias?: unknown; type?: unknown }
+    const alias = typeof parsed.alias === 'string' ? parsed.alias : undefined
+    const type = isSequenceParticipantType(parsed.type) ? parsed.type : undefined
+    return alias || type ? { alias, type } : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function isSequenceParticipantType(value: unknown): value is SequenceParticipantType {
+  return value === 'boundary'
+    || value === 'control'
+    || value === 'entity'
+    || value === 'database'
+    || value === 'collections'
+    || value === 'queue'
 }
 
 function parseSequenceParticipantRef(reference: string): string {
@@ -627,11 +694,13 @@ function parseSequence(lines: string[]): ParsedMermaidDiagram {
       continue
     }
 
-    const participantMatch = line.match(/^(participant|actor)\s+(\S+)(?:\s+as\s+(.+))?$/)
-    if (participantMatch) {
-      const id = participantMatch[2]
-      const label = normalizeEscapedText(participantMatch[3] ?? id)
-      ensureNode(nodes, id, label)
+    const participantDescriptor = parseSequenceParticipantDeclaration(line)
+    if (participantDescriptor) {
+      const { id, kind, label, type } = participantDescriptor
+      ensureNode(nodes, id, label, {
+        sequenceParticipantKind: kind,
+        sequenceParticipantType: type
+      })
       continue
     }
 
