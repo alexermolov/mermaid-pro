@@ -26,6 +26,7 @@ type DiagramToolPaletteProps = {
   selectedNodeCount: number
   selectedEdgeCount: number
   onAddNode: () => void
+  onAddSequenceMessage: () => void
   onDuplicateSelected: () => void
   onSelectedNodeShapeChange: (shape: FlowchartNodeShape) => void
   onSelectedNodeStyleChange: (style: Partial<FlowchartNodeStyle>) => void
@@ -50,6 +51,7 @@ export function DiagramToolPalette({
   selectedNodeCount,
   selectedEdgeCount,
   onAddNode,
+  onAddSequenceMessage,
   onDuplicateSelected,
   onSelectedNodeShapeChange,
   onSelectedNodeStyleChange,
@@ -69,6 +71,7 @@ export function DiagramToolPalette({
   const canEditSequenceEdge = diagramType === 'sequence' && hasSingleEdgeSelection
   const canEditErEdge = diagramType === 'er' && hasSingleEdgeSelection
   const canDuplicateNodes = selectedNodeCount > 0
+  const canAddSequenceMessage = diagramType === 'sequence' && selectedNodeCount === 2 && selectedEdgeCount === 0
   const nodeStyle = selectedNode?.data.style
   const edgeVisualStyle = selectedEdge?.data?.visualStyle
   const selectionLabel = getSelectionLabel(selectedNodeCount, selectedEdgeCount)
@@ -88,6 +91,16 @@ export function DiagramToolPalette({
           <Plus size={16} />
           {getAddNodeLabel(diagramType)}
         </button>
+        {diagramType === 'sequence' && (
+          <button
+            onClick={onAddSequenceMessage}
+            disabled={!canAddSequenceMessage}
+            title="Select exactly two participants to add a message between them"
+          >
+            <Plus size={16} />
+            Add message
+          </button>
+        )}
         <button onClick={onDuplicateSelected} disabled={!canDuplicateNodes} title="Duplicate selected nodes">
           <Copy size={16} />
           Duplicate

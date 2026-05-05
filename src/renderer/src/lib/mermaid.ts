@@ -521,7 +521,7 @@ function parseSequenceArrow(operator: string): SequenceMessageType {
 }
 
 function parseSequenceParticipantRef(reference: string): string {
-  return reference.replace(/^[+-]+/, '')
+  return reference.replace(/^[+-]+|[+-]+$/g, '')
 }
 
 function compareSequenceEdges(
@@ -640,7 +640,7 @@ function parseSequence(lines: string[]): ParsedMermaidDiagram {
       continue
     }
 
-    const messageMatch = line.match(/^(\S+)\s*(-->>|->>|-->|->)\s*([+-]*\S+)(?:\s*:\s*(.+))?$/)
+    const messageMatch = line.match(/^(\S+?)\s*(-->>|->>|-->|->)\s*([+-]*\S+)(?:\s*:\s*(.+))?$/)
     if (messageMatch) {
       const [, sourceReference, operator, targetReference, label] = messageMatch
       const sourceId = parseSequenceParticipantRef(sourceReference)

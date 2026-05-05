@@ -499,22 +499,34 @@ export default function App(): JSX.Element {
     [onEdgesChangeBase]
   )
 
+  const createConnectionEdge = useCallback(
+    (connection: Pick<Connection, 'source' | 'target'>): VisualEdge | null => {
+      if (!connection.source || !connection.target) {
+        return null
+      }
+
+      return {
+        source: connection.source,
+        target: connection.target,
+        id: `${connection.source}-${connection.target}-${Date.now().toString(36)}`,
+        animated: true,
+        data: diagramType === 'sequence' ? { sequenceMessageType: 'async' } : { lineStyle: 'arrow' }
+      }
+    },
+    [diagramType]
+  )
+
   const onConnect = useCallback(
     (connection: Connection) => {
-      setEdges((currentEdges) =>
-        addEdge(
-          {
-            ...connection,
-            id: `${connection.source}-${connection.target}-${Date.now().toString(36)}`,
-            animated: true,
-            data: diagramType === 'sequence' ? { sequenceMessageType: 'async' } : { lineStyle: 'arrow' }
-          },
-          currentEdges
-        )
-      )
+      const nextEdge = createConnectionEdge(connection)
+      if (!nextEdge) {
+        return
+      }
+
+      setEdges((currentEdges) => addEdge(nextEdge, currentEdges))
       setAutoSync(true)
     },
-    [diagramType, setEdges]
+    [createConnectionEdge, setEdges]
   )
 
   const selectedEdge = useMemo(
@@ -613,6 +625,24 @@ export default function App(): JSX.Element {
     setAutoSync(true)
     setStatus(`Duplicated ${duplicatedNodes.length} selected node${duplicatedNodes.length === 1 ? '' : 's'}`)
   }, [edges, nodes, selectedNodeIds, setEdges, setNodes])
+
+  const addSelectedSequenceMessage = useCallback(() => {
+    if (diagramType !== 'sequence' || selectedNodeIds.length !== 2 || selectedEdgeIds.length > 0) {
+      return
+    }
+
+    const [source, target] = selectedNodeIds
+    const nextEdge = createConnectionEdge({ source, target })
+    if (!nextEdge) {
+      return
+    }
+
+    setEdges((currentEdges) => [...currentEdges, nextEdge])
+    setSelectedEdgeIds([nextEdge.id])
+    setSelectedEdgeId(nextEdge.id)
+    setAutoSync(true)
+    setStatus('Sequence message added between selected participants')
+  }, [createConnectionEdge, diagramType, selectedEdgeIds.length, selectedNodeIds, setEdges])
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
@@ -1100,6 +1130,7 @@ export default function App(): JSX.Element {
             selectedNodeCount={selectedNodeIds.length}
             selectedEdgeCount={selectedEdgeIds.length}
             onAddNode={addNode}
+            onAddSequenceMessage={addSelectedSequenceMessage}
             onDuplicateSelected={duplicateSelectedNodes}
             onSelectedNodeShapeChange={updateSelectedNodeShape}
             onSelectedNodeStyleChange={updateSelectedNodeStyle}
