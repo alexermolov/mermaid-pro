@@ -736,15 +736,20 @@ export default function App(): JSX.Element {
     setAutoSync(true)
   }
 
+  function requestFitView(): void {
+    setFitViewToken((currentToken) => currentToken + 1)
+  }
+
   function updateDirection(nextDirection: DiagramDirection): void {
     setDirection(nextDirection)
     applyAutoLayout(nextDirection)
+    requestFitView()
     setStatus(`Flow direction changed to ${nextDirection}`)
   }
 
   function autoLayoutDiagram(): void {
     applyAutoLayout(direction)
-    setFitViewToken((currentToken) => currentToken + 1)
+    requestFitView()
     setStatus('Canvas auto-layout applied')
   }
 
@@ -765,6 +770,7 @@ export default function App(): JSX.Element {
       setSelectedEdgeIds([])
       setSelectedEdgeId(null)
       setAutoSync(true)
+      requestFitView()
       setStatus('Visual diagram updated from Mermaid code')
     } catch (error) {
       setStatus(error instanceof Error ? `Sync failed: ${error.message}` : 'Sync failed')
@@ -901,6 +907,7 @@ export default function App(): JSX.Element {
       resetHistory()
       setDiagrams([importedMermaidSnapshot])
       applySnapshot(importedMermaidSnapshot)
+      requestFitView()
       setStatus(`Opened ${result.filePath}`)
       return
     }
