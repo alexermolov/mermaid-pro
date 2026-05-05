@@ -26,6 +26,7 @@ import {
   isTextInputTarget,
   toFileBaseName
 } from './lib/appHelpers'
+import { getDiagramTypeDefinition } from './lib/diagramTypeRegistry'
 import {
   cloneSerializable,
   cloneSnapshot,
@@ -1248,28 +1249,5 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function createNodeData(diagramType: DiagramType, index: number): EditableVisualNodeData {
-  switch (diagramType) {
-    case 'class':
-      return {
-        label: `Class${index}`,
-        classAttributes: '+String name',
-        classMethods: '+method()'
-      }
-    case 'state':
-      return {
-        label: `State ${index}`,
-        stateDescription: 'entry action'
-      }
-    case 'er':
-      return {
-        label: `Entity ${index}`,
-        erAttributes: 'string name'
-      }
-    case 'sequence':
-      return { label: `Participant ${index}` }
-    case 'mindmap':
-      return { label: `Topic ${index}` }
-    case 'flowchart':
-      return { label: `Node ${index}` }
-  }
+  return getDiagramTypeDefinition(diagramType).createNodeData(index)
 }

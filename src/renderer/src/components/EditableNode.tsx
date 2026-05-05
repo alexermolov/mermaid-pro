@@ -38,7 +38,7 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
   const updateNodeInternals = useUpdateNodeInternals()
   const handlePositions = getNodeHandlePositions(data.diagramType, data.direction)
   const presentation = resolveNodePresentation(data)
-  const nodeStyle = getNodeStyle(data.style, presentation.usesSvgShape, presentation.layout)
+  const nodeStyle = getNodeStyle(data.style, Boolean(presentation.renderShape), presentation.layout)
 
   useEffect(() => {
     updateNodeInternals(id)
@@ -46,7 +46,7 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
 
   return (
     <div
-      className={`editable-node ${presentation.classNames.join(' ')} ${selected && !presentation.usesSvgShape ? 'editable-node--selected' : ''}`}
+      className={`editable-node ${presentation.classNames.join(' ')} ${selected ? 'editable-node--selected' : ''}`}
       style={nodeStyle}
     >
       {presentation.renderShape ? (
@@ -62,9 +62,9 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
         <input
           value={data.label}
           onChange={(event) => data.onLabelChange?.(id, event.target.value)}
-          placeholder={getLabelPlaceholder(data.diagramType)}
+          placeholder={presentation.labelPlaceholder}
         />
-        {renderModeFields(id, data)}
+        {presentation.renderFields?.(id, data) ?? null}
       </div>
       {data.diagramType === 'sequence' && data.sequenceLifelineHeight ? (
         <div className="editable-node__sequence-lifeline" style={{ height: `${data.sequenceLifelineHeight}px` }} />
@@ -77,51 +77,6 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
       />
     </div>
   )
-}
-
-function renderModeFields(id: string, data: VisualNode['data']): JSX.Element | null {
-  switch (data.diagramType) {
-    case 'class':
-      return (
-        <>
-          <textarea
-            value={data.classAttributes ?? ''}
-            onChange={(event) => data.onDataChange?.(id, { classAttributes: event.target.value })}
-            placeholder="+String name"
-            rows={3}
-          />
-          <textarea
-            value={data.classMethods ?? ''}
-            onChange={(event) => data.onDataChange?.(id, { classMethods: event.target.value })}
-            placeholder="+method()"
-            rows={3}
-          />
-        </>
-      )
-    case 'state':
-      return (
-        <textarea
-          value={data.stateDescription ?? ''}
-          onChange={(event) => data.onDataChange?.(id, { stateDescription: event.target.value })}
-          placeholder="entry action"
-          rows={3}
-        />
-      )
-    case 'er':
-      return (
-        <textarea
-          value={data.erAttributes ?? ''}
-          onChange={(event) => data.onDataChange?.(id, { erAttributes: event.target.value })}
-          placeholder="string name"
-          rows={4}
-        />
-      )
-    case 'sequence':
-    case 'mindmap':
-    case 'flowchart':
-    default:
-      return null
-  }
 }
 
 function FlowchartNodeShapeLayer({
@@ -157,24 +112,6 @@ function getFlowchartShapeAppearance(
     stroke: selected ? '#7c3aed' : style?.strokeColor ?? 'var(--editable-node-border)',
     strokeWidth: Math.max(style?.borderWidth ?? 1.5, selected ? 2 : 1.5),
     shadowColor: selected ? 'rgba(124, 58, 237, 0.2)' : 'var(--editable-node-shadow)'
-  }
-}
-
-function getLabelPlaceholder(diagramType: VisualNode['data']['diagramType']): string {
-  switch (diagramType) {
-    case 'sequence':
-      return 'Participant name'
-    case 'class':
-      return 'Class name'
-    case 'state':
-      return 'State name'
-    case 'er':
-      return 'Entity name'
-    case 'mindmap':
-      return 'Topic'
-    case 'flowchart':
-    default:
-      return 'Node label'
   }
 }
 

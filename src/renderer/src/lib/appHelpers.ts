@@ -1,6 +1,7 @@
 import type { AppTheme, DiagramDirection, DiagramType } from '../../../shared/diagram'
 import { getEdgeLabelPlaceholder } from './edgePresentationRegistry'
 export { flowchartNodeShapes } from './flowchartShapeRegistry'
+import { diagramTypes, getDiagramTypeDefinition } from './diagramTypeRegistry'
 import type {
   FlowchartEdgeStyle,
   SequenceMessageType,
@@ -11,14 +12,7 @@ export type { AppTheme }
 
 export const directions: DiagramDirection[] = ['TD', 'LR', 'BT', 'RL']
 
-export const diagramTypes: Array<{ value: DiagramType; label: string }> = [
-  { value: 'flowchart', label: 'Flowchart' },
-  { value: 'sequence', label: 'Sequence diagram' },
-  { value: 'class', label: 'Class diagram' },
-  { value: 'state', label: 'State diagram' },
-  { value: 'er', label: 'ER diagram' },
-  { value: 'mindmap', label: 'Mindmap' }
-]
+export { diagramTypes }
 
 export const flowchartEdgeStyles: Array<{ value: FlowchartEdgeStyle; label: string }> = [
   { value: 'arrow', label: 'Arrow' },
@@ -58,20 +52,7 @@ export function toFileBaseName(title: string): string {
 }
 
 export function getAddNodeLabel(diagramType: DiagramType): string {
-  switch (diagramType) {
-    case 'sequence':
-      return 'Add participant'
-    case 'class':
-      return 'Add class'
-    case 'state':
-      return 'Add state'
-    case 'er':
-      return 'Add entity'
-    case 'mindmap':
-      return 'Add topic'
-    case 'flowchart':
-      return 'Add node'
-  }
+  return getDiagramTypeDefinition(diagramType).addNodeLabel
 }
 
 export function getEdgePlaceholder(diagramType: DiagramType): string {

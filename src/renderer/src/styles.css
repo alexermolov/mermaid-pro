@@ -495,6 +495,9 @@ label {
 }
 
 .mode-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   justify-content: flex-start;
   width: 100%;
   min-width: 0;
@@ -506,6 +509,22 @@ label {
 
 .mode-button-group--compact .mode-button {
   justify-content: center;
+}
+
+.mode-button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.mode-button__icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
 }
 
 .mode-button--active {
@@ -742,10 +761,10 @@ label {
   position: relative;
   min-width: 144px;
   min-height: 58px;
-  border: 1px solid var(--editable-node-border);
+  border: 0;
   border-radius: 16px;
-  background: var(--editable-node-bg);
-  box-shadow: 0 16px 35px var(--editable-node-shadow);
+  background: transparent;
+  box-shadow: none;
 }
 
 .editable-node--flowchart {
@@ -775,77 +794,8 @@ label {
   box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.18);
 }
 
-.editable-node--class,
-.editable-node--state,
-.editable-node--er {
-  width: 220px;
-}
-
 .editable-node--sequence {
-  min-width: 176px;
-  border-radius: 14px;
   overflow: visible;
-}
-
-.editable-node--sequence-participant {
-  border-radius: 14px;
-}
-
-.editable-node--sequence-actor {
-  border-radius: 14px;
-  border-style: dashed;
-  border-width: 2px;
-}
-
-.editable-node--sequence-boundary {
-  border-radius: 14px;
-  box-shadow:
-    inset 6px 0 0 color-mix(in srgb, var(--editable-node-border) 32%, transparent),
-    inset -6px 0 0 color-mix(in srgb, var(--editable-node-border) 32%, transparent),
-    0 16px 35px var(--editable-node-shadow);
-}
-
-.editable-node--sequence-control {
-  min-width: 188px;
-  border-radius: 14px;
-  box-shadow:
-    inset 0 0 0 3px color-mix(in srgb, var(--editable-node-border) 30%, transparent),
-    0 16px 35px var(--editable-node-shadow);
-}
-
-.editable-node--sequence-entity {
-  min-width: 188px;
-  border-radius: 8px;
-  border-width: 2px;
-}
-
-.editable-node--sequence-database {
-  border-radius: 14px;
-  box-shadow:
-    inset 0 6px 0 color-mix(in srgb, var(--editable-node-border) 14%, transparent),
-    inset 0 -6px 0 color-mix(in srgb, var(--editable-node-border) 14%, transparent),
-    0 16px 35px var(--editable-node-shadow);
-}
-
-.editable-node--sequence-collections {
-  border-radius: 14px;
-  box-shadow:
-    4px 4px 0 color-mix(in srgb, var(--editable-node-bg) 86%, var(--editable-node-border)),
-    8px 8px 0 color-mix(in srgb, var(--editable-node-bg) 72%, var(--editable-node-border)),
-    0 16px 35px var(--editable-node-shadow);
-}
-
-.editable-node--sequence-queue {
-  border-radius: 14px;
-  border-style: dotted;
-  border-width: 2px;
-  background-image: linear-gradient(
-    90deg,
-    transparent 0,
-    transparent calc(100% - 14px),
-    color-mix(in srgb, var(--editable-node-border) 22%, transparent) calc(100% - 14px),
-    color-mix(in srgb, var(--editable-node-border) 22%, transparent) 100%
-  );
 }
 
 .editable-node__sequence-lifeline {
@@ -862,11 +812,6 @@ label {
     );
   pointer-events: none;
   opacity: 0.85;
-}
-
-.editable-node--mindmap {
-  min-width: 176px;
-  border-radius: 22px;
 }
 
 .editable-node__content {

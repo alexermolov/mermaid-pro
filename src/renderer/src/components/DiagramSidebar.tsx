@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { DiagramDirection, DiagramType } from '../../../shared/diagram'
 import { diagramTypes, directions } from '../lib/appHelpers'
+import { getDiagramTypeDefinition } from '../lib/diagramTypeRegistry'
 
 type DiagramSidebarProps = {
   diagrams: Array<{ id: string; title: string; diagramType: DiagramType }>
@@ -140,6 +141,7 @@ export function DiagramSidebar({
                           aria-checked={diagramType === item.value}
                           onClick={() => onDiagramTypeChange(item.value)}
                         >
+                          <span className="mode-button__icon">{getDiagramTypeDefinition(item.value).renderIcon()}</span>
                           {item.label}
                         </button>
                       ))}
@@ -155,7 +157,7 @@ export function DiagramSidebar({
                           className={`mode-button${direction === item ? ' mode-button--active' : ''}`}
                           role="radio"
                           aria-checked={direction === item}
-                          disabled={diagramType !== 'flowchart'}
+                          disabled={!getDiagramTypeDefinition(diagramType).supportsDirection}
                           onClick={() => onDirectionChange(item)}
                         >
                           {item}
