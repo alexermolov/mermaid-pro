@@ -25,8 +25,12 @@ type DiagramToolPaletteProps = {
   selectedEdge: VisualEdge | null
   selectedNodeCount: number
   selectedEdgeCount: number
+  sequenceParticipants: Array<{ id: string; label: string }>
+  sequenceMessageSourceId: string
+  sequenceMessageTargetId: string
   onAddNode: () => void
   onAddSequenceMessage: () => void
+  onSequenceMessageDraftChange: (draft: Partial<{ sourceId: string; targetId: string }>) => void
   onDuplicateSelected: () => void
   onSelectedNodeShapeChange: (shape: FlowchartNodeShape) => void
   onSelectedNodeStyleChange: (style: Partial<FlowchartNodeStyle>) => void
@@ -50,8 +54,12 @@ export function DiagramToolPalette({
   selectedEdge,
   selectedNodeCount,
   selectedEdgeCount,
+  sequenceParticipants,
+  sequenceMessageSourceId,
+  sequenceMessageTargetId,
   onAddNode,
   onAddSequenceMessage,
+  onSequenceMessageDraftChange,
   onDuplicateSelected,
   onSelectedNodeShapeChange,
   onSelectedNodeStyleChange,
@@ -71,7 +79,7 @@ export function DiagramToolPalette({
   const canEditSequenceEdge = diagramType === 'sequence' && hasSingleEdgeSelection
   const canEditErEdge = diagramType === 'er' && hasSingleEdgeSelection
   const canDuplicateNodes = selectedNodeCount > 0
-  const canAddSequenceMessage = diagramType === 'sequence' && selectedNodeCount === 2 && selectedEdgeCount === 0
+  const canAddSequenceMessage = diagramType === 'sequence' && Boolean(sequenceMessageSourceId) && Boolean(sequenceMessageTargetId)
   const nodeStyle = selectedNode?.data.style
   const edgeVisualStyle = selectedEdge?.data?.visualStyle
   const selectionLabel = getSelectionLabel(selectedNodeCount, selectedEdgeCount)
@@ -95,7 +103,7 @@ export function DiagramToolPalette({
           <button
             onClick={onAddSequenceMessage}
             disabled={!canAddSequenceMessage}
-            title="Select exactly two participants to add a message between them"
+            title="Add a new message using the selected From and To participants"
           >
             <Plus size={16} />
             Add message
@@ -115,6 +123,39 @@ export function DiagramToolPalette({
           Delete
         </button>
       </div>
+
+      {diagramType === 'sequence' && (
+        <div className="palette-section">
+          <label>
+            From
+            <select
+              value={sequenceMessageSourceId}
+              title="Source participant for the new sequence message"
+              onChange={(event) => onSequenceMessageDraftChange({ sourceId: event.target.value })}
+            >
+              {sequenceParticipants.map((participant) => (
+                <option key={participant.id} value={participant.id}>
+                  {participant.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            To
+            <select
+              value={sequenceMessageTargetId}
+              title="Target participant for the new sequence message"
+              onChange={(event) => onSequenceMessageDraftChange({ targetId: event.target.value })}
+            >
+              {sequenceParticipants.map((participant) => (
+                <option key={participant.id} value={participant.id}>
+                  {participant.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
 
       {canEditFlowchartNode && selectedNode && (
         <div className="palette-section">

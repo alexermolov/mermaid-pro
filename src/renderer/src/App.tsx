@@ -82,6 +82,7 @@ export default function App(): JSX.Element {
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<string[]>([])
+  const [sequenceMessageDraft, setSequenceMessageDraft] = useState({ sourceId: '', targetId: '' })
   const [renderedSvg, setRenderedSvg] = useState('')
   const [status, setStatus] = useState('Ready')
   const [appTheme, setAppTheme] = useState<AppTheme>('dark')
@@ -110,6 +111,15 @@ export default function App(): JSX.Element {
       miniMapStrokeColor: isDarkTheme ? '#60a5fa' : '#2563eb'
     }),
     [isDarkTheme]
+  )
+
+  const sequenceParticipants = useMemo(
+    () =>
+      nodes.map((node) => ({
+        id: node.id,
+        label: node.data.label || node.id
+      })),
+    [nodes]
   )
 
   const updateNodeLabel = useCallback(
@@ -505,10 +515,12 @@ export default function App(): JSX.Element {
         return null
       }
 
+      const edgeSuffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
       return {
         source: connection.source,
         target: connection.target,
-        id: `${connection.source}-${connection.target}-${Date.now().toString(36)}`,
+        id: `${connection.source}-${connection.target}-${edgeSuffix}`,
         animated: true,
         data: diagramType === 'sequence' ? { sequenceMessageType: 'async' } : { lineStyle: 'arrow' }
       }
@@ -523,10 +535,14 @@ export default function App(): JSX.Element {
         return
       }
 
-      setEdges((currentEdges) => addEdge(nextEdge, currentEdges))
+      setEdges((currentEdges) =>
+        diagramType === 'sequence' ? [...currentEdges, nextEdge] : addEdge(nextEdge, currentEdges)
+      )
+      setSelectedEdgeIds([nextEdge.id])
+      setSelectedEdgeId(nextEdge.id)
       setAutoSync(true)
     },
-    [createConnectionEdge, setEdges]
+    [createConnectionEdge, diagramType, setEdges]
   )
 
   const selectedEdge = useMemo(
@@ -544,6 +560,39 @@ export default function App(): JSX.Element {
     setSelectedEdgeIds(params.edges.map((edge) => edge.id))
     setSelectedEdgeId(params.edges[0]?.id ?? null)
   }, [])
+
+  useEffect(() => {
+    if (diagramType !== 'sequence') {
+      return
+    }
+
+    const participantIds = new Set(nodes.map((node) => node.id))
+    const [firstSelectedId, secondSelectedId] = selectedNodeIds
+
+    setSequenceMessageDraft((currentDraft) => {
+      let sourceId = currentDraft.sourceId
+      let targetId = currentDraft.targetId
+
+      if (selectedNodeIds.length >= 2 && participantIds.has(firstSelectedId) && participantIds.has(secondSelectedId)) {
+        sourceId = firstSelectedId
+        targetId = secondSelectedId
+      } else {
+        if (!participantIds.has(sourceId)) {
+          sourceId = nodes[0]?.id ?? ''
+        }
+
+        if (!participantIds.has(targetId)) {
+          targetId = nodes[1]?.id ?? nodes[0]?.id ?? ''
+        }
+      }
+
+      if (sourceId === currentDraft.sourceId && targetId === currentDraft.targetId) {
+        return currentDraft
+      }
+
+      return { sourceId, targetId }
+    })
+  }, [diagramType, nodes, selectedNodeIds])
 
   const deleteSelectedElements = useCallback(() => {
     if (selectedNodeIds.length === 0 && selectedEdgeIds.length === 0) {
@@ -627,12 +676,14 @@ export default function App(): JSX.Element {
   }, [edges, nodes, selectedNodeIds, setEdges, setNodes])
 
   const addSelectedSequenceMessage = useCallback(() => {
-    if (diagramType !== 'sequence' || selectedNodeIds.length !== 2 || selectedEdgeIds.length > 0) {
+    if (diagramType !== 'sequence') {
       return
     }
 
-    const [source, target] = selectedNodeIds
-    const nextEdge = createConnectionEdge({ source, target })
+    const nextEdge = createConnectionEdge({
+      source: sequenceMessageDraft.sourceId,
+      target: sequenceMessageDraft.targetId
+    })
     if (!nextEdge) {
       return
     }
@@ -641,8 +692,8 @@ export default function App(): JSX.Element {
     setSelectedEdgeIds([nextEdge.id])
     setSelectedEdgeId(nextEdge.id)
     setAutoSync(true)
-    setStatus('Sequence message added between selected participants')
-  }, [createConnectionEdge, diagramType, selectedEdgeIds.length, selectedNodeIds, setEdges])
+    setStatus('Sequence message added')
+  }, [createConnectionEdge, diagramType, sequenceMessageDraft.sourceId, sequenceMessageDraft.targetId, setEdges])
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
@@ -1129,8 +1180,17 @@ export default function App(): JSX.Element {
             selectedEdge={selectedEdge}
             selectedNodeCount={selectedNodeIds.length}
             selectedEdgeCount={selectedEdgeIds.length}
+            sequenceParticipants={sequenceParticipants}
+            sequenceMessageSourceId={sequenceMessageDraft.sourceId}
+            sequenceMessageTargetId={sequenceMessageDraft.targetId}
             onAddNode={addNode}
             onAddSequenceMessage={addSelectedSequenceMessage}
+            onSequenceMessageDraftChange={(draft) =>
+              setSequenceMessageDraft((currentDraft) => ({
+                sourceId: draft.sourceId ?? currentDraft.sourceId,
+                targetId: draft.targetId ?? currentDraft.targetId
+              }))
+            }
             onDuplicateSelected={duplicateSelectedNodes}
             onSelectedNodeShapeChange={updateSelectedNodeShape}
             onSelectedNodeStyleChange={updateSelectedNodeStyle}
