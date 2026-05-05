@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Copy, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { DiagramType } from '../../../shared/diagram'
 import {
@@ -46,6 +47,11 @@ type DiagramToolPaletteProps = {
     }>
   ) => void
   onDeleteSelected: () => void
+}
+
+type SelectOption = {
+  value: string
+  label: string
 }
 
 export function DiagramToolPalette({
@@ -126,229 +132,139 @@ export function DiagramToolPalette({
 
       {diagramType === 'sequence' && (
         <div className="palette-section">
-          <label>
-            From
-            <select
-              value={sequenceMessageSourceId}
-              title="Source participant for the new sequence message"
-              onChange={(event) => onSequenceMessageDraftChange({ sourceId: event.target.value })}
-            >
-              {sequenceParticipants.map((participant) => (
-                <option key={participant.id} value={participant.id}>
-                  {participant.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            To
-            <select
-              value={sequenceMessageTargetId}
-              title="Target participant for the new sequence message"
-              onChange={(event) => onSequenceMessageDraftChange({ targetId: event.target.value })}
-            >
-              {sequenceParticipants.map((participant) => (
-                <option key={participant.id} value={participant.id}>
-                  {participant.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <PaletteSelect
+            label="From"
+            value={sequenceMessageSourceId}
+            title="Source participant for the new sequence message"
+            options={sequenceParticipants.map((participant) => ({ value: participant.id, label: participant.label }))}
+            onChange={(value) => onSequenceMessageDraftChange({ sourceId: value })}
+          />
+          <PaletteSelect
+            label="To"
+            value={sequenceMessageTargetId}
+            title="Target participant for the new sequence message"
+            options={sequenceParticipants.map((participant) => ({ value: participant.id, label: participant.label }))}
+            onChange={(value) => onSequenceMessageDraftChange({ targetId: value })}
+          />
         </div>
       )}
 
       {canEditFlowchartNode && selectedNode && (
         <div className="palette-section">
-          <label>
-            Shape
-            <select
-              value={selectedNode.data.shape ?? 'rectangle'}
-              title="Change selected node shape"
-              onChange={(event) => onSelectedNodeShapeChange(event.target.value as FlowchartNodeShape)}
-            >
-              {flowchartNodeShapes.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <PaletteSelect
+            label="Shape"
+            value={selectedNode.data.shape ?? 'rectangle'}
+            title="Change selected node shape"
+            options={flowchartNodeShapes}
+            onChange={(value) => onSelectedNodeShapeChange(value as FlowchartNodeShape)}
+          />
           <div className="palette-grid">
-            <label>
-              Fill
-              <input
-                type="color"
-                value={nodeStyle?.fillColor ?? '#1e293b'}
-                title="Node fill color"
-                onChange={(event) => onSelectedNodeStyleChange({ fillColor: event.target.value })}
-              />
-            </label>
-            <label>
-              Border
-              <input
-                type="color"
-                value={nodeStyle?.strokeColor ?? '#60a5fa'}
-                title="Node border color"
-                onChange={(event) => onSelectedNodeStyleChange({ strokeColor: event.target.value })}
-              />
-            </label>
-            <label>
-              Text
-              <input
-                type="color"
-                value={nodeStyle?.textColor ?? '#f8fafc'}
-                title="Node text color"
-                onChange={(event) => onSelectedNodeStyleChange({ textColor: event.target.value })}
-              />
-            </label>
-            <label>
-              Width
-              <input
-                type="number"
-                min={1}
-                max={12}
-                value={nodeStyle?.borderWidth ?? 1}
-                title="Node border width"
-                onChange={(event) =>
-                  onSelectedNodeStyleChange({
-                    borderWidth: toBoundedNumber(event.target.value, nodeStyle?.borderWidth ?? 1, 1, 12)
-                  })
-                }
-              />
-            </label>
+            <PaletteColorInput
+              label="Fill"
+              value={nodeStyle?.fillColor ?? '#1e293b'}
+              title="Node fill color"
+              onChange={(value) => onSelectedNodeStyleChange({ fillColor: value })}
+            />
+            <PaletteColorInput
+              label="Border"
+              value={nodeStyle?.strokeColor ?? '#60a5fa'}
+              title="Node border color"
+              onChange={(value) => onSelectedNodeStyleChange({ strokeColor: value })}
+            />
+            <PaletteColorInput
+              label="Text"
+              value={nodeStyle?.textColor ?? '#f8fafc'}
+              title="Node text color"
+              onChange={(value) => onSelectedNodeStyleChange({ textColor: value })}
+            />
+            <PaletteNumberInput
+              label="Width"
+              value={nodeStyle?.borderWidth ?? 1}
+              title="Node border width"
+              min={1}
+              max={12}
+              onChange={(value) => onSelectedNodeStyleChange({ borderWidth: value })}
+            />
           </div>
         </div>
       )}
 
       {canEditEdgeLabel && selectedEdge && (
         <div className="palette-section">
-          <label>
-            Edge label
-            <input
-              value={String(selectedEdge.label ?? '')}
-              title="Edit selected edge label"
-              onChange={(event) => onSelectedEdgeLabelChange(event.target.value)}
-              placeholder={getEdgePlaceholder(diagramType)}
-            />
-          </label>
+          <PaletteTextInput
+            label="Edge label"
+            value={String(selectedEdge.label ?? '')}
+            title="Edit selected edge label"
+            placeholder={getEdgePlaceholder(diagramType)}
+            onChange={onSelectedEdgeLabelChange}
+          />
           {canEditSequenceEdge && (
-            <label>
-              Message type
-              <select
-                value={selectedEdge.data?.sequenceMessageType ?? 'async'}
-                title="Change selected sequence message type"
-                onChange={(event) => onSelectedSequenceMessageTypeChange(event.target.value as SequenceMessageType)}
-              >
-                {sequenceMessageTypes.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <PaletteSelect
+              label="Message type"
+              value={selectedEdge.data?.sequenceMessageType ?? 'async'}
+              title="Change selected sequence message type"
+              options={sequenceMessageTypes}
+              onChange={(value) => onSelectedSequenceMessageTypeChange(value as SequenceMessageType)}
+            />
           )}
           {canEditFlowchartEdge && (
             <>
-              <label>
-                Line style
-                <select
-                  value={selectedEdge.data?.lineStyle ?? 'arrow'}
-                  title="Change selected edge style"
-                  onChange={(event) => onSelectedEdgeStyleChange(event.target.value as FlowchartEdgeStyle)}
-                >
-                  {flowchartEdgeStyles.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <PaletteSelect
+                label="Line style"
+                value={selectedEdge.data?.lineStyle ?? 'arrow'}
+                title="Change selected edge style"
+                options={flowchartEdgeStyles}
+                onChange={(value) => onSelectedEdgeStyleChange(value as FlowchartEdgeStyle)}
+              />
               <div className="palette-grid palette-grid--edge">
-                <label>
-                  Color
-                  <input
-                    type="color"
-                    value={edgeVisualStyle?.strokeColor ?? '#60a5fa'}
-                    title="Edge line color"
-                    onChange={(event) => onSelectedEdgeVisualStyleChange({ strokeColor: event.target.value })}
-                  />
-                </label>
-                <label>
-                  Width
-                  <input
-                    type="number"
-                    min={1}
-                    max={12}
-                    value={edgeVisualStyle?.strokeWidth ?? 3}
-                    title="Edge line width"
-                    onChange={(event) =>
-                      onSelectedEdgeVisualStyleChange({
-                        strokeWidth: toBoundedNumber(event.target.value, edgeVisualStyle?.strokeWidth ?? 3, 1, 12)
-                      })
-                    }
-                  />
-                </label>
+                <PaletteColorInput
+                  label="Color"
+                  value={edgeVisualStyle?.strokeColor ?? '#60a5fa'}
+                  title="Edge line color"
+                  onChange={(value) => onSelectedEdgeVisualStyleChange({ strokeColor: value })}
+                />
+                <PaletteNumberInput
+                  label="Width"
+                  value={edgeVisualStyle?.strokeWidth ?? 3}
+                  title="Edge line width"
+                  min={1}
+                  max={12}
+                  onChange={(value) => onSelectedEdgeVisualStyleChange({ strokeWidth: value })}
+                />
               </div>
             </>
           )}
           {canEditErEdge && (
             <>
               <div className="palette-grid palette-grid--edge">
-                <label>
-                  From
-                  <select
-                    value={selectedEdge.data?.erSourceCardinality ?? 'one'}
-                    title="Source cardinality"
-                    onChange={(event) =>
-                      onSelectedEdgeErRelationshipChange({
-                        erSourceCardinality: event.target.value as ErCardinality
-                      })
-                    }
-                  >
-                    {erCardinalityOptions.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  To
-                  <select
-                    value={selectedEdge.data?.erTargetCardinality ?? 'zeroOrMore'}
-                    title="Target cardinality"
-                    onChange={(event) =>
-                      onSelectedEdgeErRelationshipChange({
-                        erTargetCardinality: event.target.value as ErCardinality
-                      })
-                    }
-                  >
-                    {erCardinalityOptions.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <label>
-                Relationship
-                <select
-                  value={selectedEdge.data?.erRelationshipLineStyle ?? 'identifying'}
-                  title="Relationship line style"
-                  onChange={(event) =>
-                    onSelectedEdgeErRelationshipChange({
-                      erRelationshipLineStyle: event.target.value as ErRelationshipLineStyle
-                    })
+                <PaletteSelect
+                  label="From"
+                  value={selectedEdge.data?.erSourceCardinality ?? 'one'}
+                  title="Source cardinality"
+                  options={erCardinalityOptions}
+                  onChange={(value) =>
+                    onSelectedEdgeErRelationshipChange({ erSourceCardinality: value as ErCardinality })
                   }
-                >
-                  {erRelationshipLineStyleOptions.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                />
+                <PaletteSelect
+                  label="To"
+                  value={selectedEdge.data?.erTargetCardinality ?? 'zeroOrMore'}
+                  title="Target cardinality"
+                  options={erCardinalityOptions}
+                  onChange={(value) =>
+                    onSelectedEdgeErRelationshipChange({ erTargetCardinality: value as ErCardinality })
+                  }
+                />
+              </div>
+              <PaletteSelect
+                label="Relationship"
+                value={selectedEdge.data?.erRelationshipLineStyle ?? 'identifying'}
+                title="Relationship line style"
+                options={erRelationshipLineStyleOptions}
+                onChange={(value) =>
+                  onSelectedEdgeErRelationshipChange({ erRelationshipLineStyle: value as ErRelationshipLineStyle })
+                }
+              />
             </>
           )}
           {!canEditFlowchartEdge && !canEditErEdge && (
@@ -368,17 +284,119 @@ export function DiagramToolPalette({
   )
 }
 
-const erCardinalityOptions: Array<{ value: ErCardinality; label: string }> = [
+const erCardinalityOptions: SelectOption[] = [
   { value: 'one', label: 'Exactly one' },
   { value: 'zeroOrOne', label: 'Zero or one' },
   { value: 'oneOrMore', label: 'One or more' },
   { value: 'zeroOrMore', label: 'Zero or more' }
 ]
 
-const erRelationshipLineStyleOptions: Array<{ value: ErRelationshipLineStyle; label: string }> = [
+const erRelationshipLineStyleOptions: SelectOption[] = [
   { value: 'identifying', label: 'Identifying' },
   { value: 'nonIdentifying', label: 'Non-identifying' }
 ]
+
+function PaletteField({ label, children }: { label: string; children: ReactNode }): JSX.Element {
+  return (
+    <label>
+      {label}
+      {children}
+    </label>
+  )
+}
+
+function PaletteSelect({
+  label,
+  value,
+  title,
+  options,
+  onChange
+}: {
+  label: string
+  value: string
+  title: string
+  options: SelectOption[]
+  onChange: (value: string) => void
+}): JSX.Element {
+  return (
+    <PaletteField label={label}>
+      <select value={value} title={title} onChange={(event) => onChange(event.target.value)}>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </PaletteField>
+  )
+}
+
+function PaletteTextInput({
+  label,
+  value,
+  title,
+  placeholder,
+  onChange
+}: {
+  label: string
+  value: string
+  title: string
+  placeholder?: string
+  onChange: (value: string) => void
+}): JSX.Element {
+  return (
+    <PaletteField label={label}>
+      <input value={value} title={title} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
+    </PaletteField>
+  )
+}
+
+function PaletteColorInput({
+  label,
+  value,
+  title,
+  onChange
+}: {
+  label: string
+  value: string
+  title: string
+  onChange: (value: string) => void
+}): JSX.Element {
+  return (
+    <PaletteField label={label}>
+      <input type="color" value={value} title={title} onChange={(event) => onChange(event.target.value)} />
+    </PaletteField>
+  )
+}
+
+function PaletteNumberInput({
+  label,
+  value,
+  title,
+  min,
+  max,
+  onChange
+}: {
+  label: string
+  value: number
+  title: string
+  min: number
+  max: number
+  onChange: (value: number) => void
+}): JSX.Element {
+  return (
+    <PaletteField label={label}>
+      <input
+        type="number"
+        min={min}
+        max={max}
+        value={value}
+        title={title}
+        onChange={(event) => onChange(toBoundedNumber(event.target.value, value, min, max))}
+      />
+    </PaletteField>
+  )
+}
 
 function getSelectionLabel(
   selectedNodeCount: number,

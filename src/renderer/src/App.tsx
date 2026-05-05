@@ -124,128 +124,112 @@ export default function App(): JSX.Element {
     [nodes]
   )
 
-  const updateNodeLabel = useCallback(
-    (id: string, label: string) => {
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => (node.id === id ? { ...node, data: { ...node.data, label } } : node))
-      )
+  const updateNodeById = useCallback(
+    (id: string, updater: (node: VisualNode) => VisualNode) => {
+      setNodes((currentNodes) => currentNodes.map((node) => (node.id === id ? updater(node) : node)))
     },
     [setNodes]
+  )
+
+  const updateEdgeById = useCallback(
+    (id: string, updater: (edge: VisualEdge) => VisualEdge) => {
+      setEdges((currentEdges) => currentEdges.map((edge) => (edge.id === id ? updater(edge) : edge)))
+    },
+    [setEdges]
+  )
+
+  const updateNodeLabel = useCallback(
+    (id: string, label: string) => {
+      updateNodeById(id, (node) => ({ ...node, data: { ...node.data, label } }))
+    },
+    [updateNodeById]
   )
 
   const updateNodeData = useCallback(
     (id: string, data: Partial<EditableVisualNodeData>) => {
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => (node.id === id ? { ...node, data: { ...node.data, ...data } } : node))
-      )
+      updateNodeById(id, (node) => ({ ...node, data: { ...node.data, ...data } }))
       setAutoSync(true)
     },
-    [setNodes]
+    [updateNodeById]
   )
 
   const updateNodeShape = useCallback(
     (id: string, shape: FlowchartNodeShape) => {
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => (node.id === id ? { ...node, data: { ...node.data, shape } } : node))
-      )
+      updateNodeById(id, (node) => ({ ...node, data: { ...node.data, shape } }))
       setAutoSync(true)
     },
-    [setNodes]
+    [updateNodeById]
   )
 
   const updateNodeStyle = useCallback(
     (id: string, style: Partial<FlowchartNodeStyle>) => {
-      setNodes((currentNodes) =>
-        currentNodes.map((node) =>
-          node.id === id
-            ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  style: {
-                    ...(node.data.style ?? {}),
-                    ...style
-                  }
-                }
-              }
-            : node
-        )
-      )
+      updateNodeById(id, (node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          style: {
+            ...(node.data.style ?? {}),
+            ...style
+          }
+        }
+      }))
       setAutoSync(true)
     },
-    [setNodes]
+    [updateNodeById]
   )
 
   const updateEdgeLabel = useCallback(
     (id: string, label: string) => {
-      setEdges((currentEdges) => currentEdges.map((edge) => (edge.id === id ? { ...edge, label } : edge)))
+      updateEdgeById(id, (edge) => ({ ...edge, label }))
       setAutoSync(true)
     },
-    [setEdges]
+    [updateEdgeById]
   )
 
   const updateEdgeVisualStyle = useCallback(
     (id: string, visualStyle: Partial<FlowchartEdgeVisualStyle>) => {
-      setEdges((currentEdges) =>
-        currentEdges.map((edge) =>
-          edge.id === id
-            ? {
-                ...edge,
-                data: {
-                  ...(edge.data ?? {}),
-                  visualStyle: {
-                    ...(edge.data?.visualStyle ?? {}),
-                    ...visualStyle
-                  }
-                }
-              }
-            : edge
-        )
-      )
+      updateEdgeById(id, (edge) => ({
+        ...edge,
+        data: {
+          ...(edge.data ?? {}),
+          visualStyle: {
+            ...(edge.data?.visualStyle ?? {}),
+            ...visualStyle
+          }
+        }
+      }))
       setAutoSync(true)
     },
-    [setEdges]
+    [updateEdgeById]
   )
 
   const updateEdgeStyle = useCallback(
     (id: string, lineStyle: FlowchartEdgeStyle) => {
-      setEdges((currentEdges) =>
-        currentEdges.map((edge) =>
-          edge.id === id
-            ? {
-                ...edge,
-                data: {
-                  ...(edge.data ?? {}),
-                  lineStyle
-                }
-              }
-            : edge
-        )
-      )
+      updateEdgeById(id, (edge) => ({
+        ...edge,
+        data: {
+          ...(edge.data ?? {}),
+          lineStyle
+        }
+      }))
       setAutoSync(true)
     },
-    [setEdges]
+    [updateEdgeById]
   )
 
   const updateEdgeSequenceMessageType = useCallback(
     (id: string, sequenceMessageType: SequenceMessageType) => {
-      setEdges((currentEdges) =>
-        currentEdges.map((edge) =>
-          edge.id === id
-            ? {
-                ...edge,
-                data: {
-                  ...(edge.data ?? {}),
-                  sequenceArrowOperator: undefined,
-                  sequenceMessageType
-                }
-              }
-            : edge
-        )
-      )
+      updateEdgeById(id, (edge) => ({
+        ...edge,
+        data: {
+          ...(edge.data ?? {}),
+          sequenceArrowOperator: undefined,
+          sequenceMessageType
+        }
+      }))
       setAutoSync(true)
     },
-    [setEdges]
+    [updateEdgeById]
   )
 
   const updateEdgeErRelationship = useCallback(
@@ -257,22 +241,16 @@ export default function App(): JSX.Element {
         erRelationshipLineStyle: ErRelationshipLineStyle
       }>
     ) => {
-      setEdges((currentEdges) =>
-        currentEdges.map((edge) =>
-          edge.id === id
-            ? {
-                ...edge,
-                data: {
-                  ...(edge.data ?? {}),
-                  ...relationship
-                }
-              }
-            : edge
-        )
-      )
+      updateEdgeById(id, (edge) => ({
+        ...edge,
+        data: {
+          ...(edge.data ?? {}),
+          ...relationship
+        }
+      }))
       setAutoSync(true)
     },
-    [setEdges]
+    [updateEdgeById]
   )
 
   const flowNodes = useMemo(() => {
