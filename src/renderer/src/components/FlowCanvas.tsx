@@ -4,13 +4,14 @@ import {
   Controls,
   MiniMap,
   ReactFlow,
+  useReactFlow,
   type Connection,
   type Edge,
   type EdgeChange,
   type NodeChange,
   type OnSelectionChangeParams
 } from '@xyflow/react'
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { EditableNode } from './EditableNode'
 import { EditableEdge } from './EditableEdge'
 import type { VisualNode } from '../lib/mermaid'
@@ -32,6 +33,7 @@ type FlowCanvasProps = {
   onEdgesChange: (changes: EdgeChange[]) => void
   onConnect: (connection: Connection) => void
   onSelectionChange: (params: OnSelectionChangeParams) => void
+  fitViewToken: number
   children?: ReactNode
 }
 
@@ -43,6 +45,7 @@ export function FlowCanvas({
   onEdgesChange,
   onConnect,
   onSelectionChange,
+  fitViewToken,
   children
 }: FlowCanvasProps): JSX.Element {
   return (
@@ -61,6 +64,7 @@ export function FlowCanvas({
         deleteKeyCode={['Backspace', 'Delete']}
         fitView
       >
+        <FlowViewportSync fitViewToken={fitViewToken} />
         <Background color={flowTheme.backgroundColor} />
         <MiniMap
           zoomable
@@ -72,4 +76,22 @@ export function FlowCanvas({
       </ReactFlow>
     </section>
   )
+}
+
+function FlowViewportSync({ fitViewToken }: { fitViewToken: number }): null {
+  const { fitView } = useReactFlow()
+
+  useEffect(() => {
+    if (fitViewToken === 0) {
+      return
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      void fitView({ padding: 0.18, duration: 250 })
+    })
+
+    return () => window.cancelAnimationFrame(frameId)
+  }, [fitView, fitViewToken])
+
+  return null
 }

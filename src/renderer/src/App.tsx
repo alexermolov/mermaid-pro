@@ -22,11 +22,11 @@ import { FlowCanvas } from './components/FlowCanvas'
 import { PreviewPanel } from './components/PreviewPanel'
 import {
   isTextInputTarget,
-  layoutNodesForDirection,
   toFileBaseName
 } from './lib/appHelpers'
 import { importDrawioDiagram, isDrawioDiagram } from './lib/drawioImport'
 import {
+  autoLayoutNodes,
   defaultDiagram,
   nextNodeId,
   parseMermaid,
@@ -85,6 +85,7 @@ export default function App(): JSX.Element {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [rightPanelWidth, setRightPanelWidth] = useState(rightPanelDefaultWidth)
   const [isResizingRightPanel, setIsResizingRightPanel] = useState(false)
+  const [fitViewToken, setFitViewToken] = useState(0)
   const [undoStack, setUndoStack] = useState<DiagramSnapshot[]>([])
   const [redoStack, setRedoStack] = useState<DiagramSnapshot[]>([])
   const workspaceRef = useRef<HTMLElement>(null)
@@ -730,11 +731,21 @@ export default function App(): JSX.Element {
     setAutoSync(true)
   }
 
+  function applyAutoLayout(nextDirection = direction): void {
+    setNodes(autoLayoutNodes(nodes, edges, nextDirection))
+    setAutoSync(true)
+  }
+
   function updateDirection(nextDirection: DiagramDirection): void {
     setDirection(nextDirection)
-    setNodes((currentNodes) => layoutNodesForDirection(currentNodes, nextDirection))
-    setAutoSync(true)
+    applyAutoLayout(nextDirection)
     setStatus(`Flow direction changed to ${nextDirection}`)
+  }
+
+  function autoLayoutDiagram(): void {
+    applyAutoLayout(direction)
+    setFitViewToken((currentToken) => currentToken + 1)
+    setStatus('Canvas auto-layout applied')
   }
 
   function syncFromVisual(): void {
@@ -866,6 +877,34 @@ export default function App(): JSX.Element {
       return
     }
 
+    const importedMermaidSnapshot = (() => {
+      try {
+        const parsedDiagram = parseMermaid(result.content)
+
+        return {
+          id: createDiagramId(),
+          title: fileName,
+          diagramType: parsedDiagram.diagramType,
+          direction: parsedDiagram.direction,
+          nodes: parsedDiagram.nodes,
+          edges: parsedDiagram.edges,
+          code: result.content,
+          autoSync: false,
+          appTheme
+        }
+      } catch {
+        return undefined
+      }
+    })()
+
+    if (importedMermaidSnapshot) {
+      resetHistory()
+      setDiagrams([importedMermaidSnapshot])
+      applySnapshot(importedMermaidSnapshot)
+      setStatus(`Opened ${result.filePath}`)
+      return
+    }
+
     resetHistory()
     const importedSnapshot = {
       ...createDefaultDiagramSnapshot(createDiagramId(), appTheme),
@@ -952,6 +991,7 @@ export default function App(): JSX.Element {
         onOpenDiagram={openDiagram}
         onSaveDiagram={saveDiagram}
         onSaveMermaid={saveMermaid}
+        onAutoLayout={autoLayoutDiagram}
         onExportSvg={exportSvg}
         onExportPng={exportPng}
         onToggleTheme={() => setAppTheme((currentTheme) => (currentTheme === 'dark' ? 'light' : 'dark'))}
@@ -995,6 +1035,7 @@ export default function App(): JSX.Element {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           onSelectionChange={onSelectionChange}
+          fitViewToken={fitViewToken}
         >
           <DiagramToolPalette
             diagramType={diagramType}

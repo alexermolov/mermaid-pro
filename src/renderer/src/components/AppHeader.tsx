@@ -7,6 +7,7 @@ import {
   Moon,
   Redo2,
   Save,
+  SlidersHorizontal,
   Sparkles,
   Sun,
   Undo2
@@ -22,6 +23,7 @@ type AppHeaderProps = {
   onOpenDiagram: () => void
   onSaveDiagram: () => void
   onSaveMermaid: () => void
+  onAutoLayout: () => void
   onExportSvg: () => void
   onExportPng: () => void
   onToggleTheme: () => void
@@ -38,6 +40,7 @@ export function AppHeader({
   onOpenDiagram,
   onSaveDiagram,
   onSaveMermaid,
+  onAutoLayout,
   onExportSvg,
   onExportPng,
   onToggleTheme,
@@ -74,6 +77,10 @@ export function AppHeader({
         <button onClick={onSaveMermaid}>
           <FileText size={16} />
           MMD
+        </button>
+        <button onClick={onAutoLayout} title="Reflow the current diagram on the canvas">
+          <SlidersHorizontal size={16} />
+          Auto-layout
         </button>
         <button onClick={onUndo} disabled={!canUndo} title="Undo">
           <Undo2 size={16} />

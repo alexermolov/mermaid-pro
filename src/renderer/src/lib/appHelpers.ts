@@ -1,12 +1,9 @@
 import type { AppTheme, DiagramDirection, DiagramType } from '../../../shared/diagram'
-import type { FlowchartEdgeStyle, FlowchartNodeShape, VisualNode } from './mermaid'
+import type { FlowchartEdgeStyle, FlowchartNodeShape } from './mermaid'
 
 export type { AppTheme }
 
 export const directions: DiagramDirection[] = ['TD', 'LR', 'BT', 'RL']
-
-const visualLayoutOrigin = { x: 120, y: 140 }
-const visualLayoutGap = { x: 240, y: 140 }
 
 export const diagramTypes: Array<{ value: DiagramType; label: string }> = [
   { value: 'flowchart', label: 'Flowchart' },
@@ -97,21 +94,4 @@ export function isTextInputTarget(target: EventTarget | null): boolean {
     target instanceof HTMLSelectElement ||
     target.isContentEditable
   )
-}
-
-export function layoutNodesForDirection(nodes: VisualNode[], direction: DiagramDirection): VisualNode[] {
-  const lastIndex = nodes.length - 1
-
-  return nodes.map((node, index) => {
-    switch (direction) {
-      case 'TD':
-        return { ...node, position: { x: visualLayoutOrigin.x, y: visualLayoutOrigin.y + index * visualLayoutGap.y } }
-      case 'BT':
-        return { ...node, position: { x: visualLayoutOrigin.x, y: visualLayoutOrigin.y + (lastIndex - index) * visualLayoutGap.y } }
-      case 'RL':
-        return { ...node, position: { x: visualLayoutOrigin.x + (lastIndex - index) * visualLayoutGap.x, y: visualLayoutOrigin.y } }
-      case 'LR':
-        return { ...node, position: { x: visualLayoutOrigin.x + index * visualLayoutGap.x, y: visualLayoutOrigin.y } }
-    }
-  })
 }
