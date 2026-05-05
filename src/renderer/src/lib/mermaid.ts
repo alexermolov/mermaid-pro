@@ -62,6 +62,7 @@ export type VisualEdgeData = {
   lineStyle?: FlowchartEdgeStyle
   visualStyle?: FlowchartEdgeVisualStyle
   sequenceMessageType?: SequenceMessageType
+  sequenceArrowOperator?: string
   diagramType?: DiagramType
   sequenceOrder?: number
   erSourceCardinality?: ErCardinality
@@ -118,6 +119,87 @@ const autoLayoutSpacing = {
   node: 72
 }
 
+const flowchartNodeFormatters: Record<FlowchartNodeShape, (id: string, label: string) => string> = {
+  rectangle: (id, label) => `  ${id}["${label}"]`,
+  rounded: (id, label) => `  ${id}("${label}")`,
+  stadium: (id, label) => `  ${id}(["${label}"])`,
+  subroutine: (id, label) => `  ${id}[["${label}"]]`,
+  cylinder: (id, label) => `  ${id}[("${label}")]`,
+  circle: (id, label) => `  ${id}(("${label}"))`,
+  doubleCircle: (id, label) => `  ${id}((("${label}")))`,
+  diamond: (id, label) => `  ${id}{"${label}"}`,
+  hexagon: (id, label) => `  ${id}{{"${label}"}}`,
+  parallelogram: (id, label) => `  ${id}[/"${label}"/]`,
+  trapezoid: (id, label) => `  ${id}[/"${label}"\\]`,
+  inverseTrapezoid: (id, label) => `  ${id}[\\"${label}"/]`,
+  asymmetric: (id, label) => `  ${id}>"${label}"]`
+}
+
+const flowchartLinkFormatters: Record<FlowchartEdgeStyle, (label: string) => string> = {
+  arrow: (label) => (label ? `-->|${label}|` : '-->'),
+  line: (label) => (label ? `---|${label}|` : '---'),
+  dottedArrow: (label) => (label ? `-. ${label} .->` : '-.->'),
+  dottedLine: (label) => (label ? `-. ${label} .-` : '-.-'),
+  thickArrow: (label) => (label ? `== ${label} ==>` : '==>'),
+  thickLine: (label) => (label ? `== ${label} ==` : '===')
+}
+
+const sequenceArrowByMessageType: Record<SequenceMessageType, string> = {
+  sync: '->',
+  async: '->>',
+  dashed: '-->',
+  dashedAsync: '-->>'
+}
+
+const sequenceMessageTypeByArrow: Record<string, SequenceMessageType> = Object.fromEntries(
+  Object.entries(sequenceArrowByMessageType).map(([messageType, arrow]) => [arrow, messageType as SequenceMessageType])
+) as Record<string, SequenceMessageType>
+
+const erCardinalityMarkers: Record<'source' | 'target', Record<ErCardinality, string>> = {
+  source: {
+    one: '||',
+    zeroOrOne: 'o|',
+    oneOrMore: '}|',
+    zeroOrMore: '}o'
+  },
+  target: {
+    one: '||',
+    zeroOrOne: '|o',
+    oneOrMore: '|{',
+    zeroOrMore: 'o{'
+  }
+}
+
+const mermaidParsers: Array<{
+  matches: (header: string) => boolean
+  parse: (lines: string[]) => ParsedMermaidDiagram
+}> = [
+  {
+    matches: (header) => /^(flowchart|graph)\s+(TD|LR|BT|RL)$/.test(header),
+    parse: parseFlowchart
+  },
+  {
+    matches: (header) => header === 'sequenceDiagram',
+    parse: parseSequence
+  },
+  {
+    matches: (header) => header === 'classDiagram',
+    parse: parseClass
+  },
+  {
+    matches: (header) => header === 'stateDiagram-v2' || header === 'stateDiagram',
+    parse: parseState
+  },
+  {
+    matches: (header) => header === 'erDiagram',
+    parse: parseEr
+  },
+  {
+    matches: (header) => header === 'mindmap',
+    parse: parseMindmap
+  }
+]
+
 export function toMermaid(
   nodes: VisualNode[],
   edges: VisualEdge[],
@@ -166,51 +248,11 @@ function toFlowchart(nodes: VisualNode[], edges: VisualEdge[], direction: Diagra
 }
 
 function formatFlowchartNode(id: string, label: string, shape: FlowchartNodeShape = 'rectangle'): string {
-  switch (shape) {
-    case 'rounded':
-      return `  ${id}("${label}")`
-    case 'stadium':
-      return `  ${id}(["${label}"])`
-    case 'subroutine':
-      return `  ${id}[["${label}"]]`
-    case 'cylinder':
-      return `  ${id}[("${label}")]`
-    case 'circle':
-      return `  ${id}(("${label}"))`
-    case 'doubleCircle':
-      return `  ${id}((("${label}")))`
-    case 'diamond':
-      return `  ${id}{"${label}"}`
-    case 'hexagon':
-      return `  ${id}{{"${label}"}}`
-    case 'parallelogram':
-      return `  ${id}[/"${label}"/]`
-    case 'trapezoid':
-      return `  ${id}[/"${label}"\\]`
-    case 'inverseTrapezoid':
-      return `  ${id}[\\"${label}"/]`
-    case 'asymmetric':
-      return `  ${id}>"${label}"]`
-    case 'rectangle':
-      return `  ${id}["${label}"]`
-  }
+  return flowchartNodeFormatters[shape](id, label)
 }
 
 function formatFlowchartLink(lineStyle: FlowchartEdgeStyle = 'arrow', label: string): string {
-  switch (lineStyle) {
-    case 'line':
-      return label ? `---|${label}|` : '---'
-    case 'dottedArrow':
-      return label ? `-. ${label} .->` : '-.->'
-    case 'dottedLine':
-      return label ? `-. ${label} .-` : '-.-'
-    case 'thickArrow':
-      return label ? `== ${label} ==>` : '==>'
-    case 'thickLine':
-      return label ? `== ${label} ==` : '==='
-    case 'arrow':
-      return label ? `-->|${label}|` : '-->'
-  }
+  return flowchartLinkFormatters[lineStyle](label)
 }
 
 function formatFlowchartNodeStyle(id: string, style: FlowchartNodeStyle | undefined): string {
@@ -248,7 +290,8 @@ function toSequenceDiagram(nodes: VisualNode[], edges: VisualEdge[]): string {
     .sort((firstItem, secondItem) => compareSequenceEdges(firstItem.edge, secondItem.edge, firstItem.index, secondItem.index))
     .map(({ edge }) => {
       const label = edge.label ? String(edge.label) : `${edge.source} to ${edge.target}`
-      return `  ${sanitizeId(edge.source)}${formatSequenceArrow(edge.data?.sequenceMessageType)}${sanitizeId(edge.target)}: ${escapeSequenceText(label)}`
+      const operator = edge.data?.sequenceArrowOperator ?? formatSequenceArrow(edge.data?.sequenceMessageType)
+      return `  ${sanitizeId(edge.source)}${operator}${sanitizeId(edge.target)}: ${escapeSequenceText(label)}`
     })
     .join('\n')
 
@@ -396,28 +439,9 @@ export function parseMermaid(code: string): ParsedMermaidDiagram {
 
   const header = lines[0]?.trim() ?? ''
 
-  if (/^(flowchart|graph)\s+(TD|LR|BT|RL)$/.test(header)) {
-    return parseFlowchart(lines)
-  }
-
-  if (header === 'sequenceDiagram') {
-    return parseSequence(lines)
-  }
-
-  if (header === 'classDiagram') {
-    return parseClass(lines)
-  }
-
-  if (header === 'stateDiagram-v2' || header === 'stateDiagram') {
-    return parseState(lines)
-  }
-
-  if (header === 'erDiagram') {
-    return parseEr(lines)
-  }
-
-  if (header === 'mindmap') {
-    return parseMindmap(lines)
+  const matchingParser = mermaidParsers.find((parser) => parser.matches(header))
+  if (matchingParser) {
+    return matchingParser.parse(lines)
   }
 
   throw new Error('Unsupported Mermaid diagram type')
@@ -468,20 +492,7 @@ function formatErRelationship(edge: VisualEdge): string {
 }
 
 function formatErCardinality(cardinality: ErCardinality, side: 'source' | 'target'): string {
-  const sourceMarkers: Record<ErCardinality, string> = {
-    one: '||',
-    zeroOrOne: 'o|',
-    oneOrMore: '}|',
-    zeroOrMore: '}o'
-  }
-  const targetMarkers: Record<ErCardinality, string> = {
-    one: '||',
-    zeroOrOne: '|o',
-    oneOrMore: '|{',
-    zeroOrMore: 'o{'
-  }
-
-  return side === 'source' ? sourceMarkers[cardinality] : targetMarkers[cardinality]
+  return erCardinalityMarkers[side][cardinality]
 }
 
 function escapeLabel(label: string): string {
@@ -489,35 +500,15 @@ function escapeLabel(label: string): string {
 }
 
 function escapeSequenceText(text: string): string {
-  return text.replace(/\s+/g, ' ').trim()
+  return normalizeInlineText(text)
 }
 
 function formatSequenceArrow(messageType: SequenceMessageType = 'async'): string {
-  switch (messageType) {
-    case 'sync':
-      return '->'
-    case 'dashed':
-      return '-->'
-    case 'dashedAsync':
-      return '-->>'
-    case 'async':
-    default:
-      return '->>'
-  }
+  return sequenceArrowByMessageType[messageType]
 }
 
 function parseSequenceArrow(operator: string): SequenceMessageType {
-  switch (operator) {
-    case '->':
-      return 'sync'
-    case '-->':
-      return 'dashed'
-    case '-->>':
-      return 'dashedAsync'
-    case '->>':
-    default:
-      return 'async'
-  }
+  return sequenceMessageTypeByArrow[operator] ?? 'async'
 }
 
 function parseSequenceParticipantRef(reference: string): string {
@@ -553,11 +544,11 @@ function escapeQuotedText(text: string): string {
 }
 
 function escapeClassText(text: string): string {
-  return text.replace(/\s+/g, ' ').trim()
+  return normalizeInlineText(text)
 }
 
 function escapeStateText(text: string): string {
-  return text.replace(/\s+/g, ' ').trim()
+  return normalizeInlineText(text)
 }
 
 function sanitizeErId(id: string): string {
@@ -573,6 +564,10 @@ function sanitizeErRole(text: string): string {
 }
 
 function escapeMindmapText(text: string): string {
+  return normalizeInlineText(text)
+}
+
+function normalizeInlineText(text: string): string {
   return text.replace(/\s+/g, ' ').trim()
 }
 
@@ -658,6 +653,7 @@ function parseSequence(lines: string[]): ParsedMermaidDiagram {
         target: targetId,
         label: label?.trim() || undefined,
         data: {
+          sequenceArrowOperator: operator,
           sequenceMessageType: parseSequenceArrow(operator),
           sequenceOrder: edges.length
         }
