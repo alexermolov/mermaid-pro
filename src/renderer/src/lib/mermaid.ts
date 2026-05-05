@@ -31,6 +31,8 @@ export type FlowchartEdgeVisualStyle = {
   strokeWidth?: number
 }
 
+export type SequenceMessageType = 'sync' | 'async' | 'dashed' | 'dashedAsync'
+
 export type ErCardinality = 'one' | 'zeroOrOne' | 'oneOrMore' | 'zeroOrMore'
 export type ErRelationshipLineStyle = 'identifying' | 'nonIdentifying'
 
@@ -46,6 +48,7 @@ export type VisualNodeData = {
   onDataChange?: (id: string, data: Partial<EditableVisualNodeData>) => void
   diagramType?: DiagramType
   direction?: DiagramDirection
+  sequenceLifelineHeight?: number
 }
 
 export type VisualNode = Node<VisualNodeData>
@@ -58,6 +61,9 @@ export type EditableVisualNodeData = Pick<
 export type VisualEdgeData = {
   lineStyle?: FlowchartEdgeStyle
   visualStyle?: FlowchartEdgeVisualStyle
+  sequenceMessageType?: SequenceMessageType
+  diagramType?: DiagramType
+  sequenceOrder?: number
   erSourceCardinality?: ErCardinality
   erTargetCardinality?: ErCardinality
   erRelationshipLineStyle?: ErRelationshipLineStyle
@@ -238,9 +244,11 @@ function toSequenceDiagram(nodes: VisualNode[], edges: VisualEdge[]): string {
     .join('\n')
 
   const messageLines = edges
-    .map((edge) => {
+    .map((edge, index) => ({ edge, index }))
+    .sort((firstItem, secondItem) => compareSequenceEdges(firstItem.edge, secondItem.edge, firstItem.index, secondItem.index))
+    .map(({ edge }) => {
       const label = edge.label ? String(edge.label) : `${edge.source} to ${edge.target}`
-      return `  ${sanitizeId(edge.source)}->>${sanitizeId(edge.target)}: ${escapeSequenceText(label)}`
+      return `  ${sanitizeId(edge.source)}${formatSequenceArrow(edge.data?.sequenceMessageType)}${sanitizeId(edge.target)}: ${escapeSequenceText(label)}`
     })
     .join('\n')
 
@@ -484,6 +492,62 @@ function escapeSequenceText(text: string): string {
   return text.replace(/\s+/g, ' ').trim()
 }
 
+function formatSequenceArrow(messageType: SequenceMessageType = 'async'): string {
+  switch (messageType) {
+    case 'sync':
+      return '->'
+    case 'dashed':
+      return '-->'
+    case 'dashedAsync':
+      return '-->>'
+    case 'async':
+    default:
+      return '->>'
+  }
+}
+
+function parseSequenceArrow(operator: string): SequenceMessageType {
+  switch (operator) {
+    case '->':
+      return 'sync'
+    case '-->':
+      return 'dashed'
+    case '-->>':
+      return 'dashedAsync'
+    case '->>':
+    default:
+      return 'async'
+  }
+}
+
+function parseSequenceParticipantRef(reference: string): string {
+  return reference.replace(/^[+-]+/, '')
+}
+
+function compareSequenceEdges(
+  firstEdge: VisualEdge,
+  secondEdge: VisualEdge,
+  firstIndex: number,
+  secondIndex: number
+): number {
+  const firstOrder = firstEdge.data?.sequenceOrder
+  const secondOrder = secondEdge.data?.sequenceOrder
+
+  if (typeof firstOrder === 'number' && typeof secondOrder === 'number' && firstOrder !== secondOrder) {
+    return firstOrder - secondOrder
+  }
+
+  if (typeof firstOrder === 'number') {
+    return -1
+  }
+
+  if (typeof secondOrder === 'number') {
+    return 1
+  }
+
+  return firstIndex - secondIndex
+}
+
 function escapeQuotedText(text: string): string {
   return text.replace(/"/g, '\\"').replace(/\s+/g, ' ').trim()
 }
@@ -568,27 +632,43 @@ function parseSequence(lines: string[]): ParsedMermaidDiagram {
       continue
     }
 
-    const participantMatch = line.match(/^participant\s+(\S+)(?:\s+as\s+(.+))?$/)
+    const participantMatch = line.match(/^(participant|actor)\s+(\S+)(?:\s+as\s+(.+))?$/)
     if (participantMatch) {
-      const id = participantMatch[1]
-      const label = normalizeEscapedText(participantMatch[2] ?? id)
+      const id = participantMatch[2]
+      const label = normalizeEscapedText(participantMatch[3] ?? id)
       ensureNode(nodes, id, label)
       continue
     }
 
-    const messageMatch = line.match(/^(\S+)->>(\S+):\s*(.+)$/)
+    const messageMatch = line.match(/^(\S+)\s*(-->>|->>|-->|->)\s*([+-]*\S+)(?:\s*:\s*(.+))?$/)
     if (messageMatch) {
-      const [, sourceId, targetId, label] = messageMatch
+      const [, sourceReference, operator, targetReference, label] = messageMatch
+      const sourceId = parseSequenceParticipantRef(sourceReference)
+      const targetId = parseSequenceParticipantRef(targetReference)
+
+      if (!sourceId || !targetId) {
+        continue
+      }
+
       ensureNode(nodes, sourceId)
       ensureNode(nodes, targetId)
-      edges.push({ id: `${sourceId}-${targetId}-${edges.length + 1}`, source: sourceId, target: targetId, label: label.trim() })
+      edges.push({
+        id: `${sourceId}-${targetId}-${edges.length + 1}`,
+        source: sourceId,
+        target: targetId,
+        label: label?.trim() || undefined,
+        data: {
+          sequenceMessageType: parseSequenceArrow(operator),
+          sequenceOrder: edges.length
+        }
+      })
     }
   }
 
   return {
     diagramType: 'sequence',
     direction: 'LR',
-    nodes: layoutParsedNodes(Array.from(nodes.values()), edges, 'LR'),
+    nodes: layoutSequenceNodes(Array.from(nodes.values())),
     edges
   }
 }
@@ -1285,6 +1365,23 @@ export function autoLayoutNodes(nodes: VisualNode[], edges: VisualEdge[], direct
         }
     }
   })
+}
+
+export function layoutSequenceNodes(nodes: VisualNode[]): VisualNode[] {
+  const origin = { x: 120, y: 80 }
+  const gap = 240
+
+  return nodes.map((node, index) => ({
+    ...node,
+    position: {
+      x: origin.x + index * gap,
+      y: origin.y
+    }
+  }))
+}
+
+export function getSequenceLifelineHeight(messageCount: number): number {
+  return Math.max(180, 96 + messageCount * 56)
 }
 
 function getAutoLayoutNodeSize(node: VisualNode): { width: number; height: number } {

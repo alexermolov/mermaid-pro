@@ -6,7 +6,7 @@ import {
   type EdgeProps
 } from '@xyflow/react'
 import type { CSSProperties } from 'react'
-import type { FlowchartEdgeStyle, VisualEdgeData } from '../lib/mermaid'
+import type { FlowchartEdgeStyle, SequenceMessageType, VisualEdgeData } from '../lib/mermaid'
 
 export type EditableEdgeData = VisualEdgeData & {
   onLabelChange?: (id: string, label: string) => void
@@ -28,20 +28,33 @@ export function EditableEdge({
   data
 }: EditableEdgeProps): JSX.Element {
   const lineStyle = data?.lineStyle ?? 'arrow'
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition
-  })
+  const isSequenceEdge = data?.diagramType === 'sequence'
+  const [edgePath, labelX, labelY] = isSequenceEdge
+    ? getSequencePath({
+        sourceX,
+        sourceY,
+        targetX,
+        targetY,
+        order: data?.sequenceOrder ?? 0
+      })
+    : getBezierPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition
+      })
   const labelText = typeof label === 'string' ? label : ''
   const shouldShowLabelEditor = selected || labelText.length > 0
 
   return (
     <>
-      <BaseEdge path={edgePath} markerEnd={markerEnd} style={getEdgePathStyle(lineStyle, data?.visualStyle)} />
+      <BaseEdge
+        path={edgePath}
+        markerEnd={markerEnd}
+        style={getEdgePathStyle(lineStyle, data?.visualStyle, data?.sequenceMessageType, isSequenceEdge)}
+      />
       {shouldShowLabelEditor && (
         <EdgeLabelRenderer>
           <input
@@ -61,11 +74,19 @@ export function EditableEdge({
 
 function getEdgePathStyle(
   lineStyle: FlowchartEdgeStyle,
-  visualStyle: VisualEdgeData['visualStyle'] | undefined
+  visualStyle: VisualEdgeData['visualStyle'] | undefined,
+  sequenceMessageType: SequenceMessageType | undefined,
+  isSequenceEdge: boolean
 ): CSSProperties {
   const baseStyle: CSSProperties = {
     ...(visualStyle?.strokeColor ? { stroke: visualStyle.strokeColor } : {}),
     ...(visualStyle?.strokeWidth ? { strokeWidth: visualStyle.strokeWidth } : {})
+  }
+
+  if (isSequenceEdge) {
+    return sequenceMessageType === 'dashed' || sequenceMessageType === 'dashedAsync'
+      ? { ...baseStyle, strokeDasharray: '8 6' }
+      : baseStyle
   }
 
   switch (lineStyle) {
@@ -79,4 +100,35 @@ function getEdgePathStyle(
     case 'line':
       return baseStyle
   }
+}
+
+function getSequencePath({
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  order
+}: {
+  sourceX: number
+  sourceY: number
+  targetX: number
+  targetY: number
+  order: number
+}): [string, number, number] {
+  const rowY = Math.max(sourceY, targetY) + 36 + order * 56
+
+  if (Math.abs(sourceX - targetX) < 4) {
+    const loopWidth = 52
+    const loopHeight = 28
+    const path = [
+      `M ${sourceX} ${rowY}`,
+      `L ${sourceX + loopWidth} ${rowY}`,
+      `L ${sourceX + loopWidth} ${rowY + loopHeight}`,
+      `L ${targetX} ${rowY + loopHeight}`
+    ].join(' ')
+
+    return [path, sourceX + loopWidth / 2, rowY + loopHeight / 2]
+  }
+
+  return [`M ${sourceX} ${rowY} L ${targetX} ${rowY}`, (sourceX + targetX) / 2, rowY]
 }

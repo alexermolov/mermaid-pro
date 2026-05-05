@@ -1,5 +1,5 @@
 import type { AppTheme, DiagramDirection, DiagramType } from '../../../shared/diagram'
-import type { FlowchartEdgeStyle, FlowchartNodeShape } from './mermaid'
+import type { FlowchartEdgeStyle, FlowchartNodeShape, SequenceMessageType } from './mermaid'
 
 export type { AppTheme }
 
@@ -37,6 +37,13 @@ export const flowchartEdgeStyles: Array<{ value: FlowchartEdgeStyle; label: stri
   { value: 'dottedLine', label: 'Dotted line' },
   { value: 'thickArrow', label: 'Thick arrow' },
   { value: 'thickLine', label: 'Thick line' }
+]
+
+export const sequenceMessageTypes: Array<{ value: SequenceMessageType; label: string }> = [
+  { value: 'async', label: 'Async message (->>)' },
+  { value: 'sync', label: 'Sync message (->)' },
+  { value: 'dashedAsync', label: 'Async return (-->>)' },
+  { value: 'dashed', label: 'Return (-->)' }
 ]
 
 export function toFileBaseName(title: string): string {

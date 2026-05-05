@@ -4,7 +4,8 @@ import {
   flowchartEdgeStyles,
   flowchartNodeShapes,
   getAddNodeLabel,
-  getEdgePlaceholder
+  getEdgePlaceholder,
+  sequenceMessageTypes
 } from '../lib/appHelpers'
 import type {
   ErCardinality,
@@ -13,6 +14,7 @@ import type {
   FlowchartEdgeVisualStyle,
   FlowchartNodeShape,
   FlowchartNodeStyle,
+  SequenceMessageType,
   VisualEdge,
   VisualNode
 } from '../lib/mermaid'
@@ -29,6 +31,7 @@ type DiagramToolPaletteProps = {
   onSelectedNodeStyleChange: (style: Partial<FlowchartNodeStyle>) => void
   onSelectedEdgeLabelChange: (label: string) => void
   onSelectedEdgeStyleChange: (lineStyle: FlowchartEdgeStyle) => void
+  onSelectedSequenceMessageTypeChange: (messageType: SequenceMessageType) => void
   onSelectedEdgeVisualStyleChange: (visualStyle: Partial<FlowchartEdgeVisualStyle>) => void
   onSelectedEdgeErRelationshipChange: (
     relationship: Partial<{
@@ -52,6 +55,7 @@ export function DiagramToolPalette({
   onSelectedNodeStyleChange,
   onSelectedEdgeLabelChange,
   onSelectedEdgeStyleChange,
+  onSelectedSequenceMessageTypeChange,
   onSelectedEdgeVisualStyleChange,
   onSelectedEdgeErRelationshipChange,
   onDeleteSelected
@@ -62,6 +66,7 @@ export function DiagramToolPalette({
   const canEditFlowchartNode = diagramType === 'flowchart' && hasSingleNodeSelection
   const canEditEdgeLabel = hasSingleEdgeSelection
   const canEditFlowchartEdge = diagramType === 'flowchart' && hasSingleEdgeSelection
+  const canEditSequenceEdge = diagramType === 'sequence' && hasSingleEdgeSelection
   const canEditErEdge = diagramType === 'er' && hasSingleEdgeSelection
   const canDuplicateNodes = selectedNodeCount > 0
   const nodeStyle = selectedNode?.data.style
@@ -172,6 +177,22 @@ export function DiagramToolPalette({
               placeholder={getEdgePlaceholder(diagramType)}
             />
           </label>
+          {canEditSequenceEdge && (
+            <label>
+              Message type
+              <select
+                value={selectedEdge.data?.sequenceMessageType ?? 'async'}
+                title="Change selected sequence message type"
+                onChange={(event) => onSelectedSequenceMessageTypeChange(event.target.value as SequenceMessageType)}
+              >
+                {sequenceMessageTypes.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {canEditFlowchartEdge && (
             <>
               <label>

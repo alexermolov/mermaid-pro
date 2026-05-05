@@ -18,9 +18,23 @@ function getHandlePositions(direction: DiagramDirection = 'TD'): { source: Posit
   }
 }
 
+function getNodeHandlePositions(diagramType: VisualNode['data']['diagramType'], direction: DiagramDirection = 'TD'): {
+  source: Position
+  target: Position
+} {
+  if (diagramType === 'sequence') {
+    return {
+      source: Position.Bottom,
+      target: Position.Bottom
+    }
+  }
+
+  return getHandlePositions(direction)
+}
+
 export function EditableNode({ id, data, selected, isConnectable }: NodeProps<VisualNode>): JSX.Element {
   const updateNodeInternals = useUpdateNodeInternals()
-  const handlePositions = getHandlePositions(data.direction)
+  const handlePositions = getNodeHandlePositions(data.diagramType, data.direction)
   const shape = data.diagramType === 'flowchart' ? (data.shape ?? 'rectangle') : (data.diagramType ?? 'flowchart')
   const nodeStyle = getNodeStyle(data.style)
 
@@ -47,6 +61,9 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
         />
         {renderModeFields(id, data)}
       </div>
+      {data.diagramType === 'sequence' && data.sequenceLifelineHeight ? (
+        <div className="editable-node__sequence-lifeline" style={{ height: `${data.sequenceLifelineHeight}px` }} />
+      ) : null}
       <Handle
         className="editable-node__handle"
         type="source"

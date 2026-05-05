@@ -28,6 +28,8 @@ import { importDrawioDiagram, isDrawioDiagram } from './lib/drawioImport'
 import {
   autoLayoutNodes,
   defaultDiagram,
+  getSequenceLifelineHeight,
+  layoutSequenceNodes,
   nextNodeId,
   parseMermaid,
   toMermaid,
@@ -38,6 +40,7 @@ import {
   type FlowchartEdgeStyle,
   type FlowchartNodeShape,
   type FlowchartNodeStyle,
+  type SequenceMessageType,
   type VisualEdge,
   type VisualNode
 } from './lib/mermaid'
@@ -212,6 +215,26 @@ export default function App(): JSX.Element {
     [setEdges]
   )
 
+  const updateEdgeSequenceMessageType = useCallback(
+    (id: string, sequenceMessageType: SequenceMessageType) => {
+      setEdges((currentEdges) =>
+        currentEdges.map((edge) =>
+          edge.id === id
+            ? {
+                ...edge,
+                data: {
+                  ...(edge.data ?? {}),
+                  sequenceMessageType
+                }
+              }
+            : edge
+        )
+      )
+      setAutoSync(true)
+    },
+    [setEdges]
+  )
+
   const updateEdgeErRelationship = useCallback(
     (
       id: string,
@@ -239,40 +262,51 @@ export default function App(): JSX.Element {
     [setEdges]
   )
 
-  const flowNodes = useMemo(
-    () =>
-      nodes.map((node) => ({
-        ...node,
-        data: {
-          ...node.data,
-          diagramType,
-          direction,
-          onLabelChange: updateNodeLabel,
-          onDataChange: updateNodeData
-        }
-      })),
-    [diagramType, direction, nodes, updateNodeData, updateNodeLabel]
-  )
+  const flowNodes = useMemo(() => {
+    const sequenceLifelineHeight = diagramType === 'sequence' ? getSequenceLifelineHeight(edges.length) : undefined
+
+    return nodes.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        diagramType,
+        direction,
+        sequenceLifelineHeight,
+        onLabelChange: updateNodeLabel,
+        onDataChange: updateNodeData
+      }
+    }))
+  }, [diagramType, direction, edges.length, nodes, updateNodeData, updateNodeLabel])
 
   const flowEdges = useMemo(
     () =>
       edges.map((edge): Edge<EditableEdgeData> => {
         const lineStyle = edge.data?.lineStyle ?? 'arrow'
-        const hasArrow = lineStyle === 'arrow' || lineStyle === 'dottedArrow' || lineStyle === 'thickArrow'
+        const sequenceMessageType = edge.data?.sequenceMessageType ?? 'async'
+        const hasArrow =
+          diagramType === 'sequence' || lineStyle === 'arrow' || lineStyle === 'dottedArrow' || lineStyle === 'thickArrow'
 
         return {
           ...edge,
           type: 'editableEdge',
           markerEnd: hasArrow
-            ? { type: MarkerType.ArrowClosed, color: edge.data?.visualStyle?.strokeColor }
+            ? {
+                type:
+                  diagramType === 'sequence' && (sequenceMessageType === 'sync' || sequenceMessageType === 'dashed')
+                    ? MarkerType.Arrow
+                    : MarkerType.ArrowClosed,
+                color: edge.data?.visualStyle?.strokeColor
+              }
             : undefined,
           data: {
             ...(edge.data ?? {}),
+            diagramType,
+            sequenceOrder: diagramType === 'sequence' ? edges.findIndex((candidate) => candidate.id === edge.id) : undefined,
             onLabelChange: updateEdgeLabel
           }
         }
       }),
-    [edges, updateEdgeLabel]
+    [diagramType, edges, updateEdgeLabel]
   )
 
   const generatedCode = useMemo(
@@ -473,14 +507,14 @@ export default function App(): JSX.Element {
             ...connection,
             id: `${connection.source}-${connection.target}-${Date.now().toString(36)}`,
             animated: true,
-            data: { lineStyle: 'arrow' }
+            data: diagramType === 'sequence' ? { sequenceMessageType: 'async' } : { lineStyle: 'arrow' }
           },
           currentEdges
         )
       )
       setAutoSync(true)
     },
-    [setEdges]
+    [diagramType, setEdges]
   )
 
   const selectedEdge = useMemo(
@@ -660,15 +694,19 @@ export default function App(): JSX.Element {
 
   function addNode(): void {
     const id = nextNodeId(nodes)
-    setNodes((currentNodes) => [
-      ...currentNodes,
-      {
-        id,
-        type: 'editableNode',
-        position: { x: 120 + currentNodes.length * 40, y: 220 + currentNodes.length * 24 },
-        data: createNodeData(diagramType, currentNodes.length + 1)
-      }
-    ])
+    setNodes((currentNodes) => {
+      const nextNodes = [
+        ...currentNodes,
+        {
+          id,
+          type: 'editableNode',
+          position: { x: 120 + currentNodes.length * 40, y: 220 + currentNodes.length * 24 },
+          data: createNodeData(diagramType, currentNodes.length + 1)
+        }
+      ]
+
+      return diagramType === 'sequence' ? layoutSequenceNodes(nextNodes) : nextNodes
+    })
     setAutoSync(true)
   }
 
@@ -704,6 +742,14 @@ export default function App(): JSX.Element {
     updateEdgeStyle(selectedEdgeId, lineStyle)
   }
 
+  function updateSelectedSequenceMessageType(messageType: SequenceMessageType): void {
+    if (!selectedEdgeId) {
+      return
+    }
+
+    updateEdgeSequenceMessageType(selectedEdgeId, messageType)
+  }
+
   function updateSelectedEdgeVisualStyle(visualStyle: Partial<FlowchartEdgeVisualStyle>): void {
     if (!selectedEdgeId) {
       return
@@ -728,11 +774,14 @@ export default function App(): JSX.Element {
 
   function updateDiagramType(nextDiagramType: DiagramType): void {
     setDiagramType(nextDiagramType)
+    if (nextDiagramType === 'sequence') {
+      setNodes((currentNodes) => layoutSequenceNodes(currentNodes))
+    }
     setAutoSync(true)
   }
 
   function applyAutoLayout(nextDirection = direction): void {
-    setNodes(autoLayoutNodes(nodes, edges, nextDirection))
+    setNodes(diagramType === 'sequence' ? layoutSequenceNodes(nodes) : autoLayoutNodes(nodes, edges, nextDirection))
     setAutoSync(true)
   }
 
@@ -1056,6 +1105,7 @@ export default function App(): JSX.Element {
             onSelectedNodeStyleChange={updateSelectedNodeStyle}
             onSelectedEdgeLabelChange={updateSelectedEdgeLabel}
             onSelectedEdgeStyleChange={updateSelectedEdgeStyle}
+            onSelectedSequenceMessageTypeChange={updateSelectedSequenceMessageType}
             onSelectedEdgeVisualStyleChange={updateSelectedEdgeVisualStyle}
             onSelectedEdgeErRelationshipChange={updateSelectedEdgeErRelationship}
             onDeleteSelected={deleteSelectedElements}
