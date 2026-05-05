@@ -29,6 +29,7 @@ import { importDrawioDiagram, isDrawioDiagram } from './lib/drawioImport'
 import {
   defaultDiagram,
   nextNodeId,
+  parseMermaid,
   toMermaid,
   type EditableVisualNodeData,
   type ErCardinality,
@@ -739,7 +740,24 @@ export default function App(): JSX.Element {
   function syncFromVisual(): void {
     setCode(generatedCode)
     setAutoSync(true)
-    setStatus('Mermaid code regenerated from visual editor')
+    setStatus('Mermaid code regenerated from canvas')
+  }
+
+  function syncFromCode(): void {
+    try {
+      const parsedDiagram = parseMermaid(code)
+      setDiagramType(parsedDiagram.diagramType)
+      setDirection(parsedDiagram.direction)
+      setNodes(parsedDiagram.nodes)
+      setEdges(parsedDiagram.edges)
+      setSelectedNodeIds([])
+      setSelectedEdgeIds([])
+      setSelectedEdgeId(null)
+      setAutoSync(true)
+      setStatus('Visual diagram updated from Mermaid code')
+    } catch (error) {
+      setStatus(error instanceof Error ? `Sync failed: ${error.message}` : 'Sync failed')
+    }
   }
 
   const handleRenderStateChange = useCallback((nextStatus: string) => {
@@ -1012,6 +1030,7 @@ export default function App(): JSX.Element {
             code={code}
             autoSync={autoSync}
             isDarkTheme={isDarkTheme}
+            onSyncFromCode={syncFromCode}
             onCodeChange={(nextCode) => {
               setCode(nextCode)
               setAutoSync(false)

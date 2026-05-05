@@ -663,6 +663,15 @@ label {
   padding: 12px 14px;
 }
 
+.panel-heading__title {
+  display: grid;
+  min-width: 0;
+}
+
+.panel-heading__action {
+  padding: 7px 11px;
+}
+
 .panel-heading h2,
 .panel-section h2 {
   color: var(--text-primary);

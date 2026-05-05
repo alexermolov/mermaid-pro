@@ -5,14 +5,22 @@ type CodeEditorPanelProps = {
   autoSync: boolean
   isDarkTheme: boolean
   onCodeChange: (code: string) => void
+  onSyncFromCode: () => void
 }
 
-export function CodeEditorPanel({ code, autoSync, isDarkTheme, onCodeChange }: CodeEditorPanelProps): JSX.Element {
+export function CodeEditorPanel({ code, autoSync, isDarkTheme, onCodeChange, onSyncFromCode }: CodeEditorPanelProps): JSX.Element {
   return (
     <div className="code-panel">
       <div className="panel-heading">
-        <h2>Mermaid code</h2>
-        <span>{autoSync ? 'Auto-synced' : 'Manual mode'}</span>
+        <div className="panel-heading__title">
+          <h2>Mermaid code</h2>
+          <span>{autoSync ? 'Auto-synced' : 'Manual mode'}</span>
+        </div>
+        {!autoSync && (
+          <button type="button" className="panel-heading__action" onClick={onSyncFromCode}>
+            Sync
+          </button>
+        )}
       </div>
       <Editor
         height="100%"

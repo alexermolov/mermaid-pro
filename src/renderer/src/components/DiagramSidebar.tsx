@@ -166,12 +166,12 @@ export function DiagramSidebar({
                 </div>
 
                 <div className="panel-section">
-                  {!autoSync && <p className="warning">Code was edited manually. Use sync to regenerate it from the canvas.</p>}
+                  {!autoSync && <p className="warning">Manual mode: use Sync in the code panel to update the canvas.</p>}
                   <button
                     type="button"
                     onClick={onSyncFromVisual}
                   >
-                    Sync from visual editor
+                    Regenerate code from canvas
                   </button>
                 </div>
               </div>
