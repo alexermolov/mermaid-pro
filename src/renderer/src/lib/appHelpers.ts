@@ -1,4 +1,5 @@
 import type { AppTheme, DiagramDirection, DiagramType } from '../../../shared/diagram'
+import { getEdgeLabelPlaceholder } from './edgePresentationRegistry'
 export { flowchartNodeShapes } from './flowchartShapeRegistry'
 import type {
   FlowchartEdgeStyle,
@@ -74,20 +75,7 @@ export function getAddNodeLabel(diagramType: DiagramType): string {
 }
 
 export function getEdgePlaceholder(diagramType: DiagramType): string {
-  switch (diagramType) {
-    case 'sequence':
-      return 'Select an edge to add a message'
-    case 'class':
-      return 'Select an edge to add a relationship label'
-    case 'state':
-      return 'Select an edge to add a transition label'
-    case 'er':
-      return 'Select an edge to add a relationship name'
-    case 'mindmap':
-      return 'Select an edge to add a branch label'
-    case 'flowchart':
-      return 'Select an edge to add a label'
-  }
+  return getEdgeLabelPlaceholder(diagramType)
 }
 
 export function isTextInputTarget(target: EventTarget | null): boolean {

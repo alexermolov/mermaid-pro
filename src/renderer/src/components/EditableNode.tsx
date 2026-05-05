@@ -3,8 +3,9 @@ import type { NodeProps } from '@xyflow/react'
 import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react'
 import type { CSSProperties } from 'react'
 import type { DiagramDirection } from '../../../shared/diagram'
-import { getFlowchartShapeDefinition, type FlowchartShapeAppearance } from '../lib/flowchartShapeRegistry'
 import type { FlowchartNodeStyle, VisualNode } from '../lib/mermaid'
+import { type FlowchartShapeAppearance } from '../lib/flowchartShapeRegistry'
+import { resolveNodePresentation } from '../lib/nodePresentationRegistry'
 
 function getHandlePositions(direction: DiagramDirection = 'TD'): { source: Position; target: Position } {
   switch (direction) {
@@ -36,11 +37,8 @@ function getNodeHandlePositions(diagramType: VisualNode['data']['diagramType'], 
 export function EditableNode({ id, data, selected, isConnectable }: NodeProps<VisualNode>): JSX.Element {
   const updateNodeInternals = useUpdateNodeInternals()
   const handlePositions = getNodeHandlePositions(data.diagramType, data.direction)
-  const shapeClasses = getNodeShapeClasses(data)
-  const isFlowchartShape = data.diagramType === 'flowchart'
-  const flowchartShape = data.shape ?? 'rectangle'
-  const flowchartShapeDefinition = isFlowchartShape ? getFlowchartShapeDefinition(flowchartShape) : undefined
-  const nodeStyle = getNodeStyle(data.style, isFlowchartShape, flowchartShapeDefinition?.layout)
+  const presentation = resolveNodePresentation(data)
+  const nodeStyle = getNodeStyle(data.style, presentation.usesSvgShape, presentation.layout)
 
   useEffect(() => {
     updateNodeInternals(id)
@@ -48,11 +46,11 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
 
   return (
     <div
-      className={`editable-node ${shapeClasses.join(' ')} ${selected && !isFlowchartShape ? 'editable-node--selected' : ''}`}
+      className={`editable-node ${presentation.classNames.join(' ')} ${selected && !presentation.usesSvgShape ? 'editable-node--selected' : ''}`}
       style={nodeStyle}
     >
-      {flowchartShapeDefinition ? (
-        <FlowchartNodeShapeLayer definition={flowchartShapeDefinition} style={data.style} selected={selected} />
+      {presentation.renderShape ? (
+        <FlowchartNodeShapeLayer renderShape={presentation.renderShape} style={data.style} selected={selected} />
       ) : null}
       <Handle
         className="editable-node__handle"
@@ -79,19 +77,6 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
       />
     </div>
   )
-}
-
-function getNodeShapeClasses(data: VisualNode['data']): string[] {
-  if (data.diagramType === 'flowchart') {
-    return ['editable-node--flowchart']
-  }
-
-  if (data.diagramType === 'sequence') {
-    const sequenceKind = data.sequenceParticipantType ?? (data.sequenceParticipantKind === 'actor' ? 'actor' : 'participant')
-    return ['editable-node--sequence', `editable-node--sequence-${sequenceKind}`]
-  }
-
-  return [`editable-node--${data.diagramType ?? 'flowchart'}`]
 }
 
 function renderModeFields(id: string, data: VisualNode['data']): JSX.Element | null {
@@ -140,11 +125,11 @@ function renderModeFields(id: string, data: VisualNode['data']): JSX.Element | n
 }
 
 function FlowchartNodeShapeLayer({
-  definition,
+  renderShape,
   style,
   selected
 }: {
-  definition: ReturnType<typeof getFlowchartShapeDefinition>
+  renderShape: (appearance: FlowchartShapeAppearance) => JSX.Element
   style?: FlowchartNodeStyle
   selected: boolean
 }): JSX.Element {
@@ -158,7 +143,7 @@ function FlowchartNodeShapeLayer({
       aria-hidden="true"
       style={{ filter: `drop-shadow(0 16px 35px ${appearance.shadowColor})` }}
     >
-      {definition.render(appearance)}
+      {renderShape(appearance)}
     </svg>
   )
 }

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   addEdge,
-  MarkerType,
   useEdgesState,
   useNodesState,
   type Connection,
@@ -20,6 +19,9 @@ import { DiagramToolPalette } from './components/DiagramToolPalette'
 import type { EditableEdgeData } from './components/EditableEdge'
 import { FlowCanvas } from './components/FlowCanvas'
 import { PreviewPanel } from './components/PreviewPanel'
+import {
+  resolveEdgeMarkerEnd,
+} from './lib/edgePresentationRegistry'
 import {
   isTextInputTarget,
   toFileBaseName
@@ -289,27 +291,17 @@ export default function App(): JSX.Element {
   const flowEdges = useMemo(
     () =>
       edges.map((edge): Edge<EditableEdgeData> => {
-        const lineStyle = edge.data?.lineStyle ?? 'arrow'
-        const sequenceMessageType = edge.data?.sequenceMessageType ?? 'async'
-        const hasArrow =
-          diagramType === 'sequence' || lineStyle === 'arrow' || lineStyle === 'dottedArrow' || lineStyle === 'thickArrow'
+        const strokeColor = edge.data?.visualStyle?.strokeColor ?? 'var(--edge-color)'
 
         return {
           ...edge,
           type: 'editableEdge',
-          markerEnd: hasArrow
-            ? {
-                type:
-                  diagramType === 'sequence' && (sequenceMessageType === 'sync' || sequenceMessageType === 'dashed')
-                    ? MarkerType.Arrow
-                    : MarkerType.ArrowClosed,
-                color: edge.data?.visualStyle?.strokeColor ?? 'var(--edge-color)'
-              }
-            : undefined,
+          markerEnd: resolveEdgeMarkerEnd(diagramType, edge.data, strokeColor),
           data: {
             ...(edge.data ?? {}),
             diagramType,
-            sequenceOrder: diagramType === 'sequence' ? edges.findIndex((candidate) => candidate.id === edge.id) : undefined,
+            sequenceOrder:
+              diagramType === 'sequence' ? edges.findIndex((candidate) => candidate.id === edge.id) : undefined,
             onLabelChange: updateEdgeLabel
           }
         }
