@@ -1,6 +1,6 @@
 {
   "name": "mermaid-pro",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "description": "Desktop visual Mermaid diagram editor built with Electron, React and Vite.",
   "license": "MIT",
   "private": true,
