@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import type { DiagramType } from '../../../shared/diagram'
 import { getFlowchartShapeDefinition, type FlowchartShapeAppearance } from './flowchartShapeRegistry'
-import type { VisualNodeData } from './mermaid'
+import type { SequenceParticipantPresentation, VisualNodeData } from './mermaid'
 
 export type NodePresentation = {
   classNames: string[]
@@ -29,11 +29,12 @@ const nodePresentationRegistry: Record<DiagramType, NodePresentationResolver> = 
   sequence: (data) => {
     const sequencePresentation =
       data.sequenceParticipantType ?? (data.sequenceParticipantKind === 'actor' ? 'actor' : 'participant')
+    const sequenceDefinition = getSequencePresentationDefinition(sequencePresentation)
 
     return {
       classNames: ['editable-node--sequence', `editable-node--sequence-${sequencePresentation}`],
-      renderShape: (appearance) => renderSequenceShape(sequencePresentation, appearance),
-      layout: getSequenceLayout(sequencePresentation),
+      renderShape: sequenceDefinition.renderShape,
+      layout: sequenceDefinition.layout,
       labelPlaceholder: 'Participant name'
     }
   },
@@ -97,6 +98,16 @@ const nodePresentationRegistry: Record<DiagramType, NodePresentationResolver> = 
 
 export function resolveNodePresentation(data: VisualNodeData): NodePresentation {
   return nodePresentationRegistry[data.diagramType ?? defaultDiagramType](data)
+}
+
+export function getSequencePresentationDefinition(sequencePresentation: SequenceParticipantPresentation): {
+  layout: CSSProperties
+  renderShape: (appearance: FlowchartShapeAppearance) => JSX.Element
+} {
+  return {
+    layout: getSequenceLayout(sequencePresentation),
+    renderShape: (appearance) => renderSequenceShape(sequencePresentation, appearance)
+  }
 }
 
 function renderClassShape(appearance: FlowchartShapeAppearance): JSX.Element {

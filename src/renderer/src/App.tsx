@@ -904,9 +904,18 @@ export default function App(): JSX.Element {
 
   function updateDiagramType(nextDiagramType: DiagramType): void {
     setDiagramType(nextDiagramType)
-    if (nextDiagramType === 'sequence') {
-      setNodes((currentNodes) => layoutSequenceNodes(currentNodes))
-    }
+    setNodes((currentNodes) => {
+      if (nextDiagramType === 'sequence') {
+        return layoutSequenceNodes(currentNodes)
+      }
+
+      if (getDiagramTypeDefinition(nextDiagramType).supportsDirection) {
+        return autoLayoutNodes(currentNodes, edges, direction)
+      }
+
+      return currentNodes
+    })
+    requestFitView()
     setAutoSync(true)
   }
 

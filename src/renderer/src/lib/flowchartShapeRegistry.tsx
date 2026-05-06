@@ -379,10 +379,10 @@ export const flowchartShapeRegistry: Record<FlowchartNodeShape, FlowchartShapeDe
   },
   cloud: {
     label: 'Cloud',
-    layout: { minWidth: 196, minHeight: 96 },
+    layout: { minWidth: 164, minHeight: 96 },
     render: (appearance) => (
       <path
-        d="M 24 76 C 10 76, 6 54, 18 46 C 16 28, 34 18, 48 24 C 56 10, 78 10, 84 26 C 96 24, 104 34, 100 48 C 110 54, 106 76, 88 76 Z"
+        d="M 24 76 C 16 76, 14 63, 18 56 C 14 43, 22 30, 34 30 C 38 19, 49 14, 59 17 C 66 12, 76 14, 82 22 C 89 22, 93 29, 91 36 C 96 40, 96 51, 90 57 C 92 67, 85 76, 76 76 Z"
         fill={appearance.fill}
         stroke={appearance.stroke}
         strokeWidth={appearance.strokeWidth}

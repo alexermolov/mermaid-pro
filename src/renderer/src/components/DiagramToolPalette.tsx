@@ -9,7 +9,8 @@ import {
   sequenceParticipantPresentations,
   sequenceMessageTypes
 } from '../lib/appHelpers'
-import { getFlowchartShapeDefinition } from '../lib/flowchartShapeRegistry'
+import { getFlowchartShapeDefinition, type FlowchartShapeAppearance } from '../lib/flowchartShapeRegistry'
+import { getSequencePresentationDefinition } from '../lib/nodePresentationRegistry'
 import type {
   ErCardinality,
   ErRelationshipLineStyle,
@@ -201,13 +202,20 @@ export function DiagramToolPalette({
 
       {canEditSequenceNode && selectedNode && (
         <div className="palette-section">
-          <PaletteSelect
+          <PaletteShapePicker
             label="Participant type"
             value={selectedNode.data.sequenceParticipantType ?? selectedNode.data.sequenceParticipantKind ?? 'participant'}
-            title="Change selected sequence participant type"
             options={sequenceParticipantPresentations}
+            appearance={{
+              fill: nodeStyle?.fillColor ?? 'var(--editable-node-bg)',
+              stroke: nodeStyle?.strokeColor ?? 'var(--editable-node-border)',
+              strokeWidth: Math.min(4, Math.max(1.5, nodeStyle?.borderWidth ?? 1.8))
+            }}
             onChange={(value) =>
               onSelectedSequenceParticipantPresentationChange(value as SequenceParticipantPresentation)
+            }
+            renderPreview={(value, appearance) =>
+              getSequencePresentationDefinition(value as SequenceParticipantPresentation).renderShape(appearance)
             }
           />
         </div>
@@ -337,21 +345,25 @@ function PaletteShapePicker({
   value,
   options,
   appearance,
-  onChange
+  onChange,
+  renderPreview
 }: {
   label: string
   value: string
   options: SelectOption[]
   appearance: { fill: string; stroke: string; strokeWidth: number }
   onChange: (value: string) => void
+  renderPreview?: (value: string, appearance: FlowchartShapeAppearance) => JSX.Element
 }): JSX.Element {
   return (
     <div className="palette-field">
       <span className="palette-field-label">{label}</span>
       <div className="shape-palette" role="listbox" aria-label={label}>
         {options.map((option) => {
-          const definition = getFlowchartShapeDefinition(option.value as FlowchartNodeShape)
           const isSelected = option.value === value
+          const previewShape = renderPreview
+            ? renderPreview(option.value, appearance)
+            : getFlowchartShapeDefinition(option.value as FlowchartNodeShape).render(appearance)
 
           return (
             <button
@@ -365,7 +377,7 @@ function PaletteShapePicker({
             >
               <span className="shape-palette__preview" aria-hidden="true">
                 <svg viewBox="0 0 100 100" focusable="false">
-                  {definition.render(appearance)}
+                  {previewShape}
                 </svg>
               </span>
               <span className="shape-palette__label">{option.label}</span>
