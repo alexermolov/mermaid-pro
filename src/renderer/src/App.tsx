@@ -321,7 +321,7 @@ export default function App(): JSX.Element {
         return {
           ...edge,
           type: 'editableEdge',
-          className: diagramType === 'sequence' ? 'editable-edge editable-edge--sequence' : 'editable-edge',
+          className: `editable-edge editable-edge--${diagramType}`,
           reconnectable: true,
           data: {
             ...(edge.data ?? {}),

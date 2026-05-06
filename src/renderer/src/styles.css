@@ -997,6 +997,11 @@ label {
   fill: color-mix(in srgb, var(--editable-handle-bg) 84%, white 16%);
 }
 
+.editable-edge--flowchart .react-flow__edgeupdater {
+  stroke-width: 1.5px;
+  r: 4;
+}
+
 .editable-edge--sequence .react-flow__edgeupdater {
   transform: translateY(16px);
 }
