@@ -944,6 +944,29 @@ label {
   color: var(--text-muted);
 }
 
+.sequence-order-handle {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--editable-handle-border);
+  border-radius: 50%;
+  color: var(--text-primary);
+  background: var(--editable-handle-bg);
+  font-size: 16px;
+  font-weight: 700;
+  pointer-events: all;
+  box-shadow: 0 4px 12px var(--shadow-panel);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  user-select: none;
+}
+
+.sequence-order-handle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 18px var(--shadow-panel);
+}
+
 .react-flow__controls-button {
   color: var(--text-primary);
   background: var(--control-bg);
@@ -956,4 +979,32 @@ label {
 
 .react-flow__controls-button svg {
   fill: currentColor;
+}
+
+.react-flow__edgeupdater {
+  cursor: grab;
+  pointer-events: all;
+  opacity: 1;
+  z-index: 1000;
+  transition: fill 150ms ease, stroke 150ms ease;
+  fill: var(--editable-handle-bg);
+  stroke: var(--editable-handle-border);
+  stroke-width: 2px;
+  r: 5;
+}
+
+.react-flow__edgeupdater:hover {
+  fill: color-mix(in srgb, var(--editable-handle-bg) 84%, white 16%);
+}
+
+.editable-edge--sequence .react-flow__edgeupdater {
+  transform: translateY(16px);
+}
+
+.react-flow__edgeupdater-source {
+  left: -10px;
+}
+
+.react-flow__edgeupdater-target {
+  right: -10px;
 }

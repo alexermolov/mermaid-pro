@@ -4,11 +4,13 @@ import {
   type Edge,
   type EdgeProps
 } from '@xyflow/react'
+import { useState, useCallback, useEffect } from 'react'
 import { resolveEdgeMarkers, resolveEdgePresentation, type ResolvedEdgeMarker } from '../lib/edgePresentationRegistry'
 import type { VisualEdgeData } from '../lib/mermaid'
 
 export type EditableEdgeData = VisualEdgeData & {
   onLabelChange?: (id: string, label: string) => void
+  onSequenceOrderChange?: (id: string, deltaY: number) => void
 }
 
 type EditableEdgeProps = EdgeProps<Edge<EditableEdgeData>>
@@ -44,6 +46,50 @@ export function EditableEdge({
   )
   const [edgePath, labelX, labelY] = presentation.path
   const markerIds = createEdgeMarkerIds(id)
+  const isSequence = data?.diagramType === 'sequence'
+  const showSequenceHandle = isSequence && selected
+  
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStartY, setDragStartY] = useState(0)
+  const [currentDeltaY, setCurrentDeltaY] = useState(0)
+  
+  const handleMouseDown = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation()
+    event.preventDefault()
+    setIsDragging(true)
+    setDragStartY(event.clientY)
+    setCurrentDeltaY(0)
+  }, [])
+  
+  useEffect(() => {
+    if (!isDragging) return
+    
+    const handleMouseMove = (event: MouseEvent): void => {
+      event.stopPropagation()
+      event.preventDefault()
+      const deltaY = event.clientY - dragStartY
+      setCurrentDeltaY(deltaY)
+    }
+    
+    const handleMouseUp = (event: MouseEvent): void => {
+      event.stopPropagation()
+      event.preventDefault()
+      setIsDragging(false)
+      const finalDeltaY = event.clientY - dragStartY
+      if (Math.abs(finalDeltaY) > 10) {
+        data?.onSequenceOrderChange?.(id, finalDeltaY)
+      }
+      setCurrentDeltaY(0)
+    }
+    
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging, dragStartY, data, id])
 
   return (
     <>
@@ -76,6 +122,22 @@ export function EditableEdge({
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`
             }}
           />
+        </EdgeLabelRenderer>
+      )}
+      {showSequenceHandle && (
+        <EdgeLabelRenderer>
+          <div
+            className="sequence-order-handle nodrag nopan"
+            onMouseDown={handleMouseDown}
+            style={{
+              transform: `translate(-50%, -50%) translate(${labelX - 80}px, ${labelY + (isDragging ? currentDeltaY * 0.15 : 0)}px)`,
+              cursor: isDragging ? 'grabbing' : 'grab',
+              opacity: isDragging ? 0.8 : 1
+            }}
+            title="Drag to reorder message"
+          >
+            ⋮
+          </div>
         </EdgeLabelRenderer>
       )}
     </>

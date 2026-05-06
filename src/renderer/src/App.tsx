@@ -270,6 +270,35 @@ export default function App(): JSX.Element {
     [updateEdgeById]
   )
 
+  const updateSequenceOrder = useCallback(
+    (id: string, deltaY: number) => {
+      if (diagramType !== 'sequence') return
+      
+      const currentIndex = edges.findIndex((edge) => edge.id === id)
+      if (currentIndex === -1) return
+      
+      const rowHeight = 56
+      const newIndex = Math.max(0, Math.min(edges.length - 1, currentIndex + Math.round(deltaY / rowHeight)))
+      
+      if (newIndex === currentIndex) return
+      
+      setEdges((currentEdges) => {
+        const reordered = [...currentEdges]
+        const [movedEdge] = reordered.splice(currentIndex, 1)
+        reordered.splice(newIndex, 0, movedEdge)
+        return reordered.map((edge, index) => ({
+          ...edge,
+          data: {
+            ...(edge.data ?? {}),
+            sequenceOrder: index
+          }
+        }))
+      })
+      setAutoSync(true)
+    },
+    [diagramType, edges, setEdges]
+  )
+
   const flowNodes = useMemo(() => {
     const sequenceLifelineHeight = diagramType === 'sequence' ? getSequenceLifelineHeight(edges.length) : undefined
 
@@ -292,16 +321,19 @@ export default function App(): JSX.Element {
         return {
           ...edge,
           type: 'editableEdge',
+          className: diagramType === 'sequence' ? 'editable-edge editable-edge--sequence' : 'editable-edge',
+          reconnectable: true,
           data: {
             ...(edge.data ?? {}),
             diagramType,
             sequenceOrder:
               diagramType === 'sequence' ? edges.findIndex((candidate) => candidate.id === edge.id) : undefined,
-            onLabelChange: updateEdgeLabel
+            onLabelChange: updateEdgeLabel,
+            onSequenceOrderChange: updateSequenceOrder
           }
         }
       }),
-    [diagramType, edges, updateEdgeLabel]
+    [diagramType, edges, updateEdgeLabel, updateSequenceOrder]
   )
 
   const generatedCode = useMemo(
@@ -528,6 +560,30 @@ export default function App(): JSX.Element {
       setAutoSync(true)
     },
     [createConnectionEdge, diagramType, setEdges]
+  )
+
+  const onReconnect = useCallback(
+    (oldEdge: Edge, newConnection: Connection) => {
+      if (!newConnection.source || !newConnection.target) {
+        return
+      }
+
+      setEdges((currentEdges) =>
+        currentEdges.map((edge) =>
+          edge.id === oldEdge.id
+            ? {
+                ...edge,
+                source: newConnection.source!,
+                target: newConnection.target!,
+                sourceHandle: newConnection.sourceHandle,
+                targetHandle: newConnection.targetHandle
+              }
+            : edge
+        )
+      )
+      setAutoSync(true)
+    },
+    [setEdges]
   )
 
   const selectedEdge = useMemo(
@@ -1164,6 +1220,7 @@ export default function App(): JSX.Element {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onReconnect={onReconnect}
           onSelectionChange={onSelectionChange}
           fitViewToken={fitViewToken}
         >

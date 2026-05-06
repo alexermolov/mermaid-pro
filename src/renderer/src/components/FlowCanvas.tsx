@@ -32,6 +32,7 @@ type FlowCanvasProps = {
   onNodesChange: (changes: NodeChange<VisualNode>[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
   onConnect: (connection: Connection) => void
+  onReconnect: (oldEdge: Edge, newConnection: Connection) => void
   onSelectionChange: (params: OnSelectionChangeParams) => void
   fitViewToken: number
   children?: ReactNode
@@ -44,6 +45,7 @@ export function FlowCanvas({
   onNodesChange,
   onEdgesChange,
   onConnect,
+  onReconnect,
   onSelectionChange,
   fitViewToken,
   children
@@ -59,9 +61,12 @@ export function FlowCanvas({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onReconnect={onReconnect}
         onSelectionChange={onSelectionChange}
         connectionMode={ConnectionMode.Loose}
         deleteKeyCode={['Backspace', 'Delete']}
+        edgesReconnectable={true}
+        reconnectRadius={20}
         fitView
       >
         <FlowViewportSync fitViewToken={fitViewToken} />
