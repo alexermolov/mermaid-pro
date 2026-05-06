@@ -554,6 +554,138 @@ label {
   background: var(--canvas-bg);
 }
 
+.timeline-editor-panel {
+  display: grid;
+  min-height: 0;
+}
+
+.timeline-editor {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: auto auto 1fr;
+  gap: 14px;
+  padding: 16px;
+}
+
+.timeline-editor__header,
+.timeline-editor__meta,
+.timeline-section-card__header,
+.timeline-period-card__header,
+.timeline-card-actions,
+.timeline-inline-actions,
+.timeline-event-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.timeline-editor__header,
+.timeline-section-card__header,
+.timeline-period-card__header {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.timeline-editor__header h2,
+.timeline-section-card h3,
+.timeline-period-card h4 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.timeline-editor__header p,
+.timeline-empty-state p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.timeline-editor__meta {
+  gap: 12px;
+}
+
+.timeline-editor__sections,
+.timeline-period-list,
+.timeline-event-list {
+  display: grid;
+}
+
+.timeline-editor__sections {
+  min-height: 0;
+  align-content: start;
+  gap: 14px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.timeline-section-card,
+.timeline-period-card,
+.timeline-empty-state {
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--panel-bg) 88%, transparent);
+  box-shadow: 0 18px 54px var(--shadow-panel);
+}
+
+.timeline-section-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.timeline-period-list {
+  gap: 10px;
+}
+
+.timeline-period-card {
+  display: grid;
+  gap: 10px;
+  background: var(--panel-section-bg);
+  padding: 12px;
+}
+
+.timeline-event-list {
+  gap: 8px;
+}
+
+.timeline-event-row {
+  gap: 10px;
+}
+
+.timeline-field {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  flex: 1;
+}
+
+.timeline-field > span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.timeline-card-actions,
+.timeline-inline-actions {
+  gap: 6px;
+}
+
+.timeline-card-actions {
+  flex-shrink: 0;
+}
+
+.timeline-card-actions button,
+.timeline-inline-actions button {
+  padding: 8px 10px;
+}
+
+.timeline-card-actions--row {
+  align-self: end;
+}
+
+.timeline-empty-state {
+  padding: 18px;
+}
+
 .diagram-tool-palette {
   position: absolute;
   top: 12px;

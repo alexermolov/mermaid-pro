@@ -19,6 +19,7 @@ import { DiagramToolPalette } from './components/DiagramToolPalette'
 import type { EditableEdgeData } from './components/EditableEdge'
 import { FlowCanvas } from './components/FlowCanvas'
 import { PreviewPanel } from './components/PreviewPanel'
+import { TimelineEditorPanel } from './components/TimelineEditorPanel'
 import {
   isTextInputTarget,
   toFileBaseName
@@ -59,6 +60,7 @@ import {
   type VisualEdge,
   type VisualNode
 } from './lib/mermaid'
+import { createDefaultTimelineCode } from './lib/timeline'
 
 const historyLimit = 80
 const rightPanelMinWidth = 420
@@ -816,8 +818,8 @@ export default function App(): JSX.Element {
   }, [isResizingRightPanel, isSidebarCollapsed])
 
   function addNode(): void {
-    if (diagramTypeDefinition.editorMode === 'code') {
-      setStatus(`${diagramTypeDefinition.label} is edited in the code panel`)
+    if (diagramTypeDefinition.editorMode === 'form') {
+      setStatus(`${diagramTypeDefinition.label} is edited in the timeline form`)
       return
     }
 
@@ -913,14 +915,14 @@ export default function App(): JSX.Element {
 
     setDiagramType(nextDiagramType)
 
-    if (nextDiagramTypeDefinition.editorMode === 'code') {
+    if (nextDiagramTypeDefinition.editorMode === 'form') {
       setDirection('LR')
       setNodes([])
       setEdges([])
       setSelectedNodeIds([])
       setSelectedEdgeIds([])
       setSelectedEdgeId(null)
-      setCode(nextDiagramTypeDefinition.defaultCode ?? 'timeline')
+      setCode(nextDiagramTypeDefinition.defaultCode ?? createDefaultTimelineCode())
       setAutoSync(false)
       requestFitView()
       setStatus(`${nextDiagramTypeDefinition.label} mode enabled`)
@@ -943,7 +945,7 @@ export default function App(): JSX.Element {
   }
 
   function applyAutoLayout(nextDirection = direction): void {
-    if (diagramTypeDefinition.editorMode === 'code') {
+    if (diagramTypeDefinition.editorMode === 'form') {
       setStatus(`${diagramTypeDefinition.label} does not use canvas auto-layout`)
       return
     }
@@ -970,8 +972,8 @@ export default function App(): JSX.Element {
   }
 
   function syncFromVisual(): void {
-    if (diagramTypeDefinition.editorMode === 'code') {
-      setStatus(`${diagramTypeDefinition.label} is edited directly in Mermaid code`)
+    if (diagramTypeDefinition.editorMode === 'form') {
+      setStatus(`${diagramTypeDefinition.label} is regenerated from the timeline form`)
       return
     }
 
@@ -997,11 +999,18 @@ export default function App(): JSX.Element {
       setStatus(
         parsedDiagramTypeDefinition.editorMode === 'visual'
           ? 'Visual diagram updated from Mermaid code'
-          : `${parsedDiagramTypeDefinition.label} code loaded`
+          : `${parsedDiagramTypeDefinition.label} form updated from Mermaid code`
       )
     } catch (error) {
       setStatus(error instanceof Error ? `Sync failed: ${error.message}` : 'Sync failed')
     }
+  }
+
+  function updateTimelineDocument(nextCode: string, nextDirection: DiagramDirection, nextStatus: string): void {
+    setCode(nextCode)
+    setDirection(nextDirection)
+    setAutoSync(false)
+    setStatus(nextStatus)
   }
 
   const handleRenderStateChange = useCallback((nextStatus: string) => {
@@ -1261,46 +1270,50 @@ export default function App(): JSX.Element {
           onToggleCollapsed={() => setIsSidebarCollapsed((current) => !current)}
         />
 
-        <FlowCanvas
-          nodes={flowNodes}
-          edges={flowEdges}
-          flowTheme={flowTheme}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onReconnect={onReconnect}
-          onSelectionChange={onSelectionChange}
-          fitViewToken={fitViewToken}
-        >
-          <DiagramToolPalette
-            diagramType={diagramType}
-            selectedNode={selectedNode}
-            selectedEdge={selectedEdge}
-            selectedNodeCount={selectedNodeIds.length}
-            selectedEdgeCount={selectedEdgeIds.length}
-            sequenceParticipants={sequenceParticipants}
-            sequenceMessageSourceId={sequenceMessageDraft.sourceId}
-            sequenceMessageTargetId={sequenceMessageDraft.targetId}
-            onAddNode={addNode}
-            onAddSequenceMessage={addSelectedSequenceMessage}
-            onSequenceMessageDraftChange={(draft) =>
-              setSequenceMessageDraft((currentDraft) => ({
-                sourceId: draft.sourceId ?? currentDraft.sourceId,
-                targetId: draft.targetId ?? currentDraft.targetId
-              }))
-            }
-            onDuplicateSelected={duplicateSelectedNodes}
-            onSelectedNodeShapeChange={updateSelectedNodeShape}
-            onSelectedSequenceParticipantPresentationChange={updateSelectedSequenceParticipantPresentation}
-            onSelectedNodeStyleChange={updateSelectedNodeStyle}
-            onSelectedEdgeLabelChange={updateSelectedEdgeLabel}
-            onSelectedEdgeStyleChange={updateSelectedEdgeStyle}
-            onSelectedSequenceMessageTypeChange={updateSelectedSequenceMessageType}
-            onSelectedEdgeVisualStyleChange={updateSelectedEdgeVisualStyle}
-            onSelectedEdgeErRelationshipChange={updateSelectedEdgeErRelationship}
-            onDeleteSelected={deleteSelectedElements}
-          />
-        </FlowCanvas>
+        {diagramTypeDefinition.editorMode === 'visual' ? (
+          <FlowCanvas
+            nodes={flowNodes}
+            edges={flowEdges}
+            flowTheme={flowTheme}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onReconnect={onReconnect}
+            onSelectionChange={onSelectionChange}
+            fitViewToken={fitViewToken}
+          >
+            <DiagramToolPalette
+              diagramType={diagramType}
+              selectedNode={selectedNode}
+              selectedEdge={selectedEdge}
+              selectedNodeCount={selectedNodeIds.length}
+              selectedEdgeCount={selectedEdgeIds.length}
+              sequenceParticipants={sequenceParticipants}
+              sequenceMessageSourceId={sequenceMessageDraft.sourceId}
+              sequenceMessageTargetId={sequenceMessageDraft.targetId}
+              onAddNode={addNode}
+              onAddSequenceMessage={addSelectedSequenceMessage}
+              onSequenceMessageDraftChange={(draft) =>
+                setSequenceMessageDraft((currentDraft) => ({
+                  sourceId: draft.sourceId ?? currentDraft.sourceId,
+                  targetId: draft.targetId ?? currentDraft.targetId
+                }))
+              }
+              onDuplicateSelected={duplicateSelectedNodes}
+              onSelectedNodeShapeChange={updateSelectedNodeShape}
+              onSelectedSequenceParticipantPresentationChange={updateSelectedSequenceParticipantPresentation}
+              onSelectedNodeStyleChange={updateSelectedNodeStyle}
+              onSelectedEdgeLabelChange={updateSelectedEdgeLabel}
+              onSelectedEdgeStyleChange={updateSelectedEdgeStyle}
+              onSelectedSequenceMessageTypeChange={updateSelectedSequenceMessageType}
+              onSelectedEdgeVisualStyleChange={updateSelectedEdgeVisualStyle}
+              onSelectedEdgeErRelationshipChange={updateSelectedEdgeErRelationship}
+              onDeleteSelected={deleteSelectedElements}
+            />
+          </FlowCanvas>
+        ) : (
+          <TimelineEditorPanel code={code} onTimelineChange={updateTimelineDocument} />
+        )}
 
         <div
           className="workspace-resizer"
@@ -1317,6 +1330,7 @@ export default function App(): JSX.Element {
           <CodeEditorPanel
             code={code}
             autoSync={autoSync}
+            editorMode={diagramTypeDefinition.editorMode}
             isDarkTheme={isDarkTheme}
             onSyncFromCode={syncFromCode}
             onCodeChange={(nextCode) => {

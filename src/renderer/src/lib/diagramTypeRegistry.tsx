@@ -2,7 +2,7 @@ import type { JSX } from 'react'
 import type { DiagramType } from '../../../shared/diagram'
 import type { EditableVisualNodeData } from './mermaid'
 
-export type DiagramEditorMode = 'visual' | 'code'
+export type DiagramEditorMode = 'visual' | 'form'
 
 type DiagramTypeDefinition = {
   label: string
@@ -121,7 +121,7 @@ export const diagramTypeRegistry = {
     addNodeLabel: 'Edit timeline code',
     nodeLabelPlaceholder: 'Time period',
     supportsDirection: false,
-    editorMode: 'code',
+    editorMode: 'form',
     defaultCode: [
       'timeline',
       '    title Project delivery timeline',

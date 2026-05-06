@@ -169,8 +169,8 @@ export function DiagramSidebar({
                 </div>
 
                 <div className="panel-section">
-                  {diagramTypeDefinition.editorMode === 'code' ? (
-                    <p className="warning">Timeline is code-first. Edit Mermaid directly in the code panel.</p>
+                  {diagramTypeDefinition.editorMode === 'form' ? (
+                    <p className="warning">Timeline uses the structured form editor in the center panel and mirrors changes to Mermaid code.</p>
                   ) : (
                     <>
                       {!autoSync && <p className="warning">Manual mode: use Sync in the code panel to update the canvas.</p>}

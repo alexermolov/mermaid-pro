@@ -99,7 +99,7 @@ export function DiagramToolPalette({
   const edgeVisualStyle = selectedEdge?.data?.visualStyle
   const selectionLabel = getSelectionLabel(selectedNodeCount, selectedEdgeCount)
 
-  if (diagramTypeDefinition.editorMode === 'code') {
+  if (diagramTypeDefinition.editorMode === 'form') {
     return (
       <aside className="diagram-tool-palette nodrag nopan" aria-label="Diagram tools">
         <div className="palette-header">
@@ -107,11 +107,10 @@ export function DiagramToolPalette({
             <SlidersHorizontal size={16} />
             <span>{diagramTypeDefinition.label}</span>
           </div>
-          <span>Code-first mode</span>
+          <span>Form editor mode</span>
         </div>
         <p className="palette-hint">
-          Timeline diagrams are edited directly in Mermaid code. Use the code panel to add sections, periods and events,
-          and the preview updates from that source.
+          Timeline diagrams use the dedicated form editor rather than the node-and-edge canvas.
         </p>
       </aside>
     )
