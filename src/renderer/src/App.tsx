@@ -29,6 +29,8 @@ import {
   cloneSerializable,
   cloneSnapshot,
   createDefaultDiagramSnapshot,
+  createDiagramSnapshotFromGraph,
+  createDiagramSnapshotFromMermaidCode,
   createDiagramId,
   getSnapshotKey,
   isProjectFile,
@@ -44,9 +46,9 @@ import {
   autoLayoutNodes,
   defaultDiagram,
   getSequenceLifelineHeight,
+  graphToMermaidText,
   layoutSequenceNodes,
   nextNodeId,
-  parseMermaid,
   toMermaid,
   type EditableVisualNodeData,
   type ErCardinality,
@@ -984,13 +986,13 @@ export default function App(): JSX.Element {
 
   function syncFromCode(): void {
     try {
-      const parsedDiagram = parseMermaid(code)
-      const parsedDiagramTypeDefinition = getDiagramTypeDefinition(parsedDiagram.diagramType)
+      const parsedSnapshot = createDiagramSnapshotFromMermaidCode(code)
+      const parsedDiagramTypeDefinition = getDiagramTypeDefinition(parsedSnapshot.diagramType)
 
-      setDiagramType(parsedDiagram.diagramType)
-      setDirection(parsedDiagram.direction)
-      setNodes(parsedDiagram.nodes)
-      setEdges(parsedDiagram.edges)
+      setDiagramType(parsedSnapshot.diagramType)
+      setDirection(parsedSnapshot.direction)
+      setNodes(parsedSnapshot.nodes)
+      setEdges(parsedSnapshot.edges)
       setSelectedNodeIds([])
       setSelectedEdgeIds([])
       setSelectedEdgeId(null)
@@ -1096,18 +1098,20 @@ export default function App(): JSX.Element {
     setTitle(fileName)
 
     if (drawioImport) {
-      const importedCode = toMermaid(drawioImport.nodes, drawioImport.edges, 'LR', 'flowchart')
-      const importedSnapshot = {
-        id: createDiagramId(),
-        title: fileName,
-        diagramType: 'flowchart' as const,
-        direction: 'LR' as const,
-        nodes: drawioImport.nodes,
-        edges: drawioImport.edges,
-        code: importedCode,
-        autoSync: true,
-        appTheme
-      }
+      const importedSnapshot = createDiagramSnapshotFromGraph(
+        {
+          diagramType: 'flowchart',
+          direction: 'LR',
+          nodes: drawioImport.nodes,
+          edges: drawioImport.edges
+        },
+        {
+          id: createDiagramId(),
+          title: fileName,
+          autoSync: true,
+          appTheme
+        }
+      )
 
       resetHistory()
       setDiagrams([importedSnapshot])
@@ -1121,19 +1125,12 @@ export default function App(): JSX.Element {
 
     const importedMermaidSnapshot = (() => {
       try {
-        const parsedDiagram = parseMermaid(result.content)
-
-        return {
+        return createDiagramSnapshotFromMermaidCode(result.content, {
           id: createDiagramId(),
           title: fileName,
-          diagramType: parsedDiagram.diagramType,
-          direction: parsedDiagram.direction,
-          nodes: parsedDiagram.nodes,
-          edges: parsedDiagram.edges,
-          code: result.content,
           autoSync: false,
           appTheme
-        }
+        })
       } catch {
         return undefined
       }

@@ -2,6 +2,8 @@ import type { AppTheme, DiagramDirection, DiagramDocument, DiagramType, ProjectD
 import type { EditableEdgeData } from '../components/EditableEdge'
 import {
   defaultDiagram,
+  graphToMermaidText,
+  mermaidTextToGraph,
   toMermaid,
   type VisualEdge,
   type VisualNode
@@ -160,6 +162,65 @@ export function createDefaultDiagramSnapshot(id: string, appTheme: AppTheme = 'd
     code: toMermaid(defaultDiagram.nodes, defaultDiagram.edges, defaultDiagram.direction, defaultDiagram.type),
     autoSync: true,
     appTheme
+  }
+}
+
+export function createDiagramSnapshotFromMermaidCode(
+  code: string,
+  options: {
+    id?: string
+    title?: string
+    autoSync?: boolean
+    appTheme?: AppTheme
+  } = {}
+): DiagramSnapshot {
+  const parsedDiagram = mermaidTextToGraph(code)
+
+  return {
+    id: options.id ?? createDiagramId(),
+    title: options.title ?? defaultDiagram.title,
+    diagramType: parsedDiagram.diagramType,
+    direction: parsedDiagram.direction,
+    nodes: toSerializableNodes(parsedDiagram.nodes),
+    edges: toSerializableEdges(parsedDiagram.edges),
+    code,
+    autoSync: options.autoSync ?? false,
+    appTheme: options.appTheme ?? 'dark'
+  }
+}
+
+export function createDiagramSnapshotFromGraph(
+  graph: {
+    diagramType: DiagramType
+    direction: DiagramDirection
+    nodes: VisualNode[]
+    edges: VisualEdge[]
+  },
+  options: {
+    id?: string
+    title?: string
+    autoSync?: boolean
+    appTheme?: AppTheme
+  } = {}
+): DiagramSnapshot {
+  const nodes = toSerializableNodes(graph.nodes)
+  const edges = toSerializableEdges(graph.edges)
+
+  return {
+    id: options.id ?? createDiagramId(),
+    title: options.title ?? defaultDiagram.title,
+    diagramType: graph.diagramType,
+    direction: graph.direction,
+    nodes,
+    edges,
+    code: graphToMermaidText({
+      diagramType: graph.diagramType,
+      direction: graph.direction,
+      nodes,
+      edges
+    }),
+    autoSync: options.autoSync ?? true,
+    appTheme: options.appTheme ?? 'dark'
   }
 }
 

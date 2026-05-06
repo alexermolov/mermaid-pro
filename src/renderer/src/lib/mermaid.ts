@@ -68,6 +68,8 @@ export type FlowchartNodeStyle = {
   borderWidth?: number
 }
 
+export type FlowchartClassStyleMap = Record<string, FlowchartNodeStyle>
+
 export type FlowchartEdgeVisualStyle = {
   strokeColor?: string
   strokeWidth?: number
@@ -89,6 +91,8 @@ export type VisualNodeData = {
   stateDescription?: string
   shape?: FlowchartNodeShape
   style?: FlowchartNodeStyle
+  flowchartClassNames?: string[]
+  flowchartClassStyles?: FlowchartClassStyleMap
   sequenceParticipantKind?: SequenceParticipantKind
   sequenceParticipantType?: SequenceParticipantType
   onLabelChange?: (id: string, label: string) => void
@@ -158,6 +162,21 @@ export type ParsedMermaidDiagram = {
   direction: DiagramDirection
   nodes: VisualNode[]
   edges: VisualEdge[]
+}
+
+export type MermaidGraph = ParsedMermaidDiagram
+
+export type MermaidGraphInput = {
+  direction: DiagramDirection
+  nodes: VisualNode[]
+  edges: VisualEdge[]
+} & ({ diagramType: DiagramType } | { type: DiagramType })
+
+type ParsedFlowchartNodeDescriptor = {
+  id: string
+  label: string
+  shape?: FlowchartNodeShape
+  classNames?: string[]
 }
 
 const autoLayoutOrigin = { x: 120, y: 120 }
@@ -448,6 +467,11 @@ export function toMermaid(
   }
 }
 
+export function graphToMermaidText(graph: MermaidGraphInput): string {
+  const diagramType = 'diagramType' in graph ? graph.diagramType : graph.type
+  return toMermaid(graph.nodes, graph.edges, graph.direction, diagramType)
+}
+
 function toTimelineDiagram(direction: DiagramDirection): string {
   return [
     direction === 'TD' ? 'timeline TD' : 'timeline',
@@ -459,6 +483,8 @@ function toTimelineDiagram(direction: DiagramDirection): string {
 }
 
 function toFlowchart(nodes: VisualNode[], edges: VisualEdge[], direction: DiagramDirection): string {
+  const { classDefinitionLines, classAssignmentLines, nodeStyleLines } = formatFlowchartClassLines(nodes)
+
   const nodeLines = nodes
     .map((node) => formatFlowchartNode(sanitizeId(node.id), escapeLabel(node.data.label || node.id), node.data.shape))
     .join('\n')
@@ -470,17 +496,22 @@ function toFlowchart(nodes: VisualNode[], edges: VisualEdge[], direction: Diagra
     })
     .join('\n')
 
-  const nodeStyleLines = nodes
-    .map((node) => formatFlowchartNodeStyle(sanitizeId(node.id), node.data.style))
-    .filter(Boolean)
-    .join('\n')
-
   const edgeStyleLines = edges
     .map((edge, index) => formatFlowchartEdgeStyle(index, edge.data?.visualStyle))
     .filter(Boolean)
     .join('\n')
 
-  return [`flowchart ${direction}`, nodeLines, edgeLines, nodeStyleLines, edgeStyleLines].filter(Boolean).join('\n')
+  return [
+    `flowchart ${direction}`,
+    classDefinitionLines,
+    nodeLines,
+    edgeLines,
+    classAssignmentLines,
+    nodeStyleLines,
+    edgeStyleLines
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 function formatFlowchartNode(id: string, label: string, shape: FlowchartNodeShape = 'rectangle'): string {
@@ -492,14 +523,113 @@ function formatFlowchartLink(lineStyle: FlowchartEdgeStyle = 'arrow', label: str
 }
 
 function formatFlowchartNodeStyle(id: string, style: FlowchartNodeStyle | undefined): string {
-  const declarations = [
+  const declarations = formatFlowchartNodeStyleDeclarations(style)
+
+  return declarations.length > 0 ? `  style ${id} ${declarations.join(',')}` : ''
+}
+
+function formatFlowchartClassLines(nodes: VisualNode[]): {
+  classDefinitionLines: string
+  classAssignmentLines: string
+  nodeStyleLines: string
+} {
+  const classDefinitions = new Map<string, FlowchartNodeStyle>()
+  const classAssignmentLines: string[] = []
+  const nodeStyleLines: string[] = []
+
+  for (const node of nodes) {
+    const nodeId = sanitizeId(node.id)
+    const classNames = node.data.flowchartClassNames?.filter(Boolean) ?? []
+    const classStyles = node.data.flowchartClassStyles ?? {}
+
+    for (const className of classNames) {
+      const classStyle = classStyles[className]
+      if (!classStyle || Object.keys(classStyle).length === 0) {
+        continue
+      }
+
+      classDefinitions.set(className, {
+        ...(classDefinitions.get(className) ?? {}),
+        ...classStyle
+      })
+    }
+
+    if (classNames.length > 0) {
+      classAssignmentLines.push(`  class ${nodeId} ${classNames.join(',')}`)
+    }
+
+    const residualStyle = subtractFlowchartNodeStyle(
+      node.data.style,
+      mergeFlowchartClassStyleList(classNames, classStyles)
+    )
+    const nodeStyleLine = formatFlowchartNodeStyle(nodeId, residualStyle)
+    if (nodeStyleLine) {
+      nodeStyleLines.push(nodeStyleLine)
+    }
+  }
+
+  const classDefinitionLines = Array.from(classDefinitions.entries())
+    .map(([className, style]) => formatFlowchartClassDefinition(className, style))
+    .filter(Boolean)
+    .join('\n')
+
+  return {
+    classDefinitionLines,
+    classAssignmentLines: classAssignmentLines.join('\n'),
+    nodeStyleLines: nodeStyleLines.join('\n')
+  }
+}
+
+function formatFlowchartClassDefinition(className: string, style: FlowchartNodeStyle): string {
+  const declarations = formatFlowchartNodeStyleDeclarations(style)
+  return declarations.length > 0 ? `  classDef ${className} ${declarations.join(',')}` : ''
+}
+
+function formatFlowchartNodeStyleDeclarations(style: FlowchartNodeStyle | undefined): string[] {
+  return [
     style?.fillColor ? `fill:${style.fillColor}` : '',
     style?.strokeColor ? `stroke:${style.strokeColor}` : '',
     style?.textColor ? `color:${style.textColor}` : '',
     style?.borderWidth ? `stroke-width:${style.borderWidth}px` : ''
   ].filter(Boolean)
+}
 
-  return declarations.length > 0 ? `  style ${id} ${declarations.join(',')}` : ''
+function subtractFlowchartNodeStyle(
+  style: FlowchartNodeStyle | undefined,
+  inheritedStyle: FlowchartNodeStyle | undefined
+): FlowchartNodeStyle | undefined {
+  if (!style) {
+    return undefined
+  }
+
+  const residualStyle: FlowchartNodeStyle = {
+    ...(style.fillColor !== undefined && style.fillColor !== inheritedStyle?.fillColor ? { fillColor: style.fillColor } : {}),
+    ...(style.strokeColor !== undefined && style.strokeColor !== inheritedStyle?.strokeColor
+      ? { strokeColor: style.strokeColor }
+      : {}),
+    ...(style.textColor !== undefined && style.textColor !== inheritedStyle?.textColor ? { textColor: style.textColor } : {}),
+    ...(style.borderWidth !== undefined && style.borderWidth !== inheritedStyle?.borderWidth
+      ? { borderWidth: style.borderWidth }
+      : {})
+  }
+
+  return Object.keys(residualStyle).length > 0 ? residualStyle : undefined
+}
+
+function mergeFlowchartClassStyleList(
+  classNames: string[],
+  classStyles: FlowchartClassStyleMap
+): FlowchartNodeStyle | undefined {
+  if (classNames.length === 0) {
+    return undefined
+  }
+
+  const mergedStyle = classNames.reduce<FlowchartNodeStyle>((result, className) => {
+    const classStyle = classStyles[className]
+    return classStyle ? { ...result, ...classStyle } : result
+  }, {})
+
+  return Object.keys(mergedStyle).length > 0 ? mergedStyle : undefined
 }
 
 function formatFlowchartEdgeStyle(index: number, style: FlowchartEdgeVisualStyle | undefined): string {
@@ -683,6 +813,31 @@ export function parseMermaid(code: string): ParsedMermaidDiagram {
   }
 
   throw new Error('Unsupported Mermaid diagram type')
+}
+
+export function mermaidTextToGraph(code: string): MermaidGraph {
+  return parseMermaid(code)
+}
+
+export function normalizeMermaidInput(input: string | MermaidGraphInput): { graph: MermaidGraph; code: string } {
+  if (typeof input === 'string') {
+    return {
+      graph: mermaidTextToGraph(input),
+      code: input
+    }
+  }
+
+  const graph: MermaidGraph = {
+    diagramType: 'diagramType' in input ? input.diagramType : input.type,
+    direction: input.direction,
+    nodes: input.nodes,
+    edges: input.edges
+  }
+
+  return {
+    graph,
+    code: graphToMermaidText(graph)
+  }
 }
 
 function sanitizeId(id: string): string {
@@ -882,6 +1037,8 @@ function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
   const nodes = new Map<string, VisualNode>()
   const edges: VisualEdge[] = []
   const edgeIndexById = new Map<number, string>()
+  const classStyles = new Map<string, FlowchartNodeStyle>()
+  const nodeClassAssignments = new Map<string, string[]>()
   let linkIndex = 0
 
   for (const rawLine of lines.slice(1)) {
@@ -891,11 +1048,19 @@ function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
       continue
     }
 
+    if (line.startsWith('classDef ')) {
+      applyFlowchartClassDefinition(line, classStyles)
+      continue
+    }
+
+    if (line.startsWith('class ')) {
+      applyFlowchartClassAssignment(line, nodeClassAssignments)
+      continue
+    }
+
     if (
       line === 'end' ||
       line.startsWith('subgraph ') ||
-      line.startsWith('classDef ') ||
-      line.startsWith('class ') ||
       line.startsWith('click ')
     ) {
       continue
@@ -911,12 +1076,41 @@ function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
       continue
     }
 
-    if (tryParseFlowchartEdge(line, nodes, edges, edgeIndexById, linkIndex)) {
+    if (tryParseFlowchartEdge(line, nodes, edges, edgeIndexById, nodeClassAssignments, linkIndex)) {
       linkIndex += 1
       continue
     }
 
-    tryParseFlowchartNode(line, nodes)
+    tryParseFlowchartNode(line, nodes, nodeClassAssignments)
+  }
+
+  for (const node of nodes.values()) {
+    const classNames = nodeClassAssignments.get(node.id)
+    if (classNames && classNames.length > 0) {
+      node.data.flowchartClassNames = [...classNames]
+
+      const assignedClassStyles = classNames.reduce<FlowchartClassStyleMap>((result, className) => {
+        const classStyle = classStyles.get(className)
+        if (classStyle && Object.keys(classStyle).length > 0) {
+          result[className] = { ...classStyle }
+        }
+        return result
+      }, {})
+
+      if (Object.keys(assignedClassStyles).length > 0) {
+        node.data.flowchartClassStyles = assignedClassStyles
+      }
+    }
+
+    const classStyle = mergeAssignedFlowchartClassStyles(node.id, nodeClassAssignments, classStyles)
+    if (!classStyle) {
+      continue
+    }
+
+    node.data.style = {
+      ...classStyle,
+      ...(node.data.style ?? {})
+    }
   }
 
   return {
@@ -1185,12 +1379,17 @@ function parseTimeline(lines: string[]): ParsedMermaidDiagram {
   }
 }
 
-function tryParseFlowchartNode(line: string, nodes: Map<string, VisualNode>): boolean {
+function tryParseFlowchartNode(
+  line: string,
+  nodes: Map<string, VisualNode>,
+  nodeClassAssignments: Map<string, string[]>
+): boolean {
   const descriptor = parseFlowchartNodeDescriptor(line)
   if (!descriptor) {
     return false
   }
 
+  recordFlowchartNodeClasses(nodeClassAssignments, descriptor.id, descriptor.classNames)
   ensureNode(nodes, descriptor.id, descriptor.label, {
     ...(descriptor.shape ? { shape: descriptor.shape } : {})
   })
@@ -1202,6 +1401,7 @@ function tryParseFlowchartEdge(
   nodes: Map<string, VisualNode>,
   edges: VisualEdge[],
   edgeIndexById: Map<number, string>,
+  nodeClassAssignments: Map<string, string[]>,
   linkIndex: number
 ): boolean {
   const parsedEdges = parseFlowchartEdgeExpressions(line)
@@ -1210,8 +1410,8 @@ function tryParseFlowchartEdge(
   }
 
   parsedEdges.forEach((parsedEdge, offset) => {
-    const sourceNode = ensureNodeFromFlowchartDescriptor(nodes, parsedEdge.source)
-    const targetNode = ensureNodeFromFlowchartDescriptor(nodes, parsedEdge.target)
+    const sourceNode = ensureNodeFromFlowchartDescriptor(nodes, parsedEdge.source, nodeClassAssignments)
+    const targetNode = ensureNodeFromFlowchartDescriptor(nodes, parsedEdge.target, nodeClassAssignments)
     const edgeId = `${sourceNode.id}-${targetNode.id}-${edges.length + 1}`
 
     edges.push({
@@ -1235,13 +1435,42 @@ function applyFlowchartNodeStyle(line: string, nodes: Map<string, VisualNode>): 
 
   const [, id, declarationText] = styleMatch
   const node = ensureNode(nodes, id)
-  const declarations = parseStyleDeclarations(declarationText)
   node.data.style = {
     ...(node.data.style ?? {}),
-    ...(declarations.fill ? { fillColor: declarations.fill } : {}),
-    ...(declarations.stroke ? { strokeColor: declarations.stroke } : {}),
-    ...(declarations.color ? { textColor: declarations.color } : {}),
-    ...(declarations['stroke-width'] ? { borderWidth: parsePixelValue(declarations['stroke-width']) } : {})
+    ...parseFlowchartNodeStyleDeclarationText(declarationText)
+  }
+}
+
+function applyFlowchartClassDefinition(line: string, classStyles: Map<string, FlowchartNodeStyle>): void {
+  const definitionMatch = line.match(/^classDef\s+([^\s]+)\s+(.+?);?$/)
+  if (!definitionMatch) {
+    return
+  }
+
+  const [, classNamesText, declarationText] = definitionMatch
+  const style = parseFlowchartNodeStyleDeclarationText(declarationText)
+  const classNames = classNamesText.split(',').map((className) => className.trim()).filter(Boolean)
+
+  for (const className of classNames) {
+    classStyles.set(className, {
+      ...(classStyles.get(className) ?? {}),
+      ...style
+    })
+  }
+}
+
+function applyFlowchartClassAssignment(line: string, nodeClassAssignments: Map<string, string[]>): void {
+  const assignmentMatch = line.match(/^class\s+([^\s]+)\s+([^;]+?);?$/)
+  if (!assignmentMatch) {
+    return
+  }
+
+  const [, nodeIdsText, classNamesText] = assignmentMatch
+  const nodeIds = nodeIdsText.split(',').map((nodeId) => nodeId.trim()).filter(Boolean)
+  const classNames = classNamesText.split(',').map((className) => className.trim()).filter(Boolean)
+
+  for (const nodeId of nodeIds) {
+    recordFlowchartNodeClasses(nodeClassAssignments, nodeId, classNames)
   }
 }
 
@@ -1292,6 +1521,16 @@ function parseStyleDeclarations(text: string): Record<string, string> {
   }, {})
 }
 
+function parseFlowchartNodeStyleDeclarationText(text: string): FlowchartNodeStyle {
+  const declarations = parseStyleDeclarations(text)
+  return {
+    ...(declarations.fill ? { fillColor: declarations.fill } : {}),
+    ...(declarations.stroke ? { strokeColor: declarations.stroke } : {}),
+    ...(declarations.color ? { textColor: declarations.color } : {}),
+    ...(declarations['stroke-width'] ? { borderWidth: parsePixelValue(declarations['stroke-width']) } : {})
+  }
+}
+
 function parsePixelValue(value: string): number | undefined {
   const numericValue = Number.parseFloat(value.replace(/px$/i, ''))
   return Number.isFinite(numericValue) ? numericValue : undefined
@@ -1299,12 +1538,15 @@ function parsePixelValue(value: string): number | undefined {
 
 function parseFlowchartNodeDescriptor(
   descriptorText: string
-): { id: string; label: string; shape?: FlowchartNodeShape } | undefined {
-  const descriptor = stripFlowchartClassReferences(descriptorText.trim())
+): ParsedFlowchartNodeDescriptor | undefined {
+  const { descriptor, classNames } = splitFlowchartDescriptorClasses(descriptorText.trim())
   const expandedDescriptor = parseExpandedFlowchartNodeDescriptor(descriptor)
 
   if (expandedDescriptor) {
-    return expandedDescriptor
+    return {
+      ...expandedDescriptor,
+      ...(classNames.length > 0 ? { classNames } : {})
+    }
   }
 
   for (const [shape, pattern] of flowchartDescriptorPatterns) {
@@ -1314,7 +1556,8 @@ function parseFlowchartNodeDescriptor(
       return {
         id,
         label: normalizeFlowchartLabel(label),
-        shape
+        shape,
+        ...(classNames.length > 0 ? { classNames } : {})
       }
     }
   }
@@ -1323,23 +1566,34 @@ function parseFlowchartNodeDescriptor(
   if (plainIdMatch) {
     return {
       id: plainIdMatch[1],
-      label: plainIdMatch[1]
+      label: plainIdMatch[1],
+      ...(classNames.length > 0 ? { classNames } : {})
     }
   }
 
   return undefined
 }
 
-function stripFlowchartClassReferences(descriptor: string): string {
-  return descriptor.replace(/:::[A-Za-z0-9_:-]+(?:\s*:::[A-Za-z0-9_:-]+)*\s*$/, '').trim()
+function splitFlowchartDescriptorClasses(descriptor: string): { descriptor: string; classNames: string[] } {
+  const match = descriptor.match(/^(.*?)(:::[A-Za-z0-9_:-]+(?:\s*:::[A-Za-z0-9_:-]+)*)\s*$/)
+  if (!match) {
+    return { descriptor, classNames: [] }
+  }
+
+  const [, baseDescriptor, suffix] = match
+  const classNames = Array.from(suffix.matchAll(/:::([A-Za-z0-9_:-]+)/g)).map((item) => item[1]).filter(Boolean)
+  return {
+    descriptor: baseDescriptor.trim(),
+    classNames
+  }
 }
 
 function parseFlowchartEdgeExpression(
   line: string
 ):
   | {
-      source: { id: string; label: string; shape?: FlowchartNodeShape }
-      target: { id: string; label: string; shape?: FlowchartNodeShape }
+      source: ParsedFlowchartNodeDescriptor
+      target: ParsedFlowchartNodeDescriptor
       label?: string
       lineStyle: FlowchartEdgeStyle
     }
@@ -1385,8 +1639,8 @@ function parseFlowchartEdgeExpressions(
   line: string
 ):
   | Array<{
-      source: { id: string; label: string; shape?: FlowchartNodeShape }
-      target: { id: string; label: string; shape?: FlowchartNodeShape }
+      source: ParsedFlowchartNodeDescriptor
+      target: ParsedFlowchartNodeDescriptor
       label?: string
       lineStyle: FlowchartEdgeStyle
     }>
@@ -1404,8 +1658,8 @@ function parseChainedFlowchartEdgeExpressions(
   line: string
 ):
   | Array<{
-      source: { id: string; label: string; shape?: FlowchartNodeShape }
-      target: { id: string; label: string; shape?: FlowchartNodeShape }
+      source: ParsedFlowchartNodeDescriptor
+      target: ParsedFlowchartNodeDescriptor
       label?: string
       lineStyle: FlowchartEdgeStyle
     }>
@@ -1470,8 +1724,8 @@ function createFlowchartEdgeDescriptor(
   label?: string
 ):
   | {
-      source: { id: string; label: string; shape?: FlowchartNodeShape }
-      target: { id: string; label: string; shape?: FlowchartNodeShape }
+      source: ParsedFlowchartNodeDescriptor
+      target: ParsedFlowchartNodeDescriptor
       label?: string
       lineStyle: FlowchartEdgeStyle
     }
@@ -1493,11 +1747,50 @@ function createFlowchartEdgeDescriptor(
 
 function ensureNodeFromFlowchartDescriptor(
   nodes: Map<string, VisualNode>,
-  descriptor: { id: string; label: string; shape?: FlowchartNodeShape }
+  descriptor: ParsedFlowchartNodeDescriptor,
+  nodeClassAssignments: Map<string, string[]>
 ): VisualNode {
+  recordFlowchartNodeClasses(nodeClassAssignments, descriptor.id, descriptor.classNames)
   return ensureNode(nodes, descriptor.id, descriptor.label, {
     ...(descriptor.shape ? { shape: descriptor.shape } : {})
   })
+}
+
+function recordFlowchartNodeClasses(
+  nodeClassAssignments: Map<string, string[]>,
+  nodeId: string,
+  classNames: string[] | undefined
+): void {
+  if (!classNames || classNames.length === 0) {
+    return
+  }
+
+  const existingClassNames = nodeClassAssignments.get(nodeId) ?? []
+  for (const className of classNames) {
+    if (!existingClassNames.includes(className)) {
+      existingClassNames.push(className)
+    }
+  }
+
+  nodeClassAssignments.set(nodeId, existingClassNames)
+}
+
+function mergeAssignedFlowchartClassStyles(
+  nodeId: string,
+  nodeClassAssignments: Map<string, string[]>,
+  classStyles: Map<string, FlowchartNodeStyle>
+): FlowchartNodeStyle | undefined {
+  const classNames = nodeClassAssignments.get(nodeId)
+  if (!classNames || classNames.length === 0) {
+    return undefined
+  }
+
+  const mergedStyle = classNames.reduce<FlowchartNodeStyle>((result, className) => {
+    const classStyle = classStyles.get(className)
+    return classStyle ? { ...result, ...classStyle } : result
+  }, {})
+
+  return Object.keys(mergedStyle).length > 0 ? mergedStyle : undefined
 }
 
 function parseFlowchartShape(token: string): FlowchartNodeShape {

@@ -1,0 +1,59 @@
+graph TD 
+    classDef class_important stroke:#f00 
+    classDef class_default stroke:#0f0 
+    classDef class_fault stroke:#00f 
+    classDef class_fake stroke:#0bc 
+    classDef class_container stroke:#f90 
+    classDef class_endworkflow stroke:#00f 
+ 
+    STEP_0["0 "]:::class_default 
+    STEP_1{"fa:fa-repeat 1 "}:::class_important 
+    STEP_3["3 ControlBlocksStep"]:::class_default 
+    STEP_3_0{"if"}:::class_fake 
+    STEP_5["5 Delay"]:::class_default 
+    STEP_3_1{"if"}:::class_fake 
+    STEP_3_2{"if"}:::class_fake 
+    STEP_12["12 WaitFor"]:::class_default 
+    STEP_12_0{"if"}:::class_fake 
+    STEP_14["14 ManageLockStep"]:::class_default 
+    STEP_15["15 SetEventDataStep"]:::class_default 
+    STEP_3_3{"if"}:::class_fake 
+    STEP_6{{"fa:fa-ban 6 FaultStep"}}:::class_fault 
+    STEP_23["23 ManageLockStep"]:::class_default 
+    STEP_23_0{"if"}:::class_fake 
+    STEP_29["29 "]:::class_default 
+    STEP_29_0{"if"}:::class_fake 
+    STEP_31["31 BlockNotifyStep"]:::class_default 
+    STEP_31_0{"if"}:::class_fake 
+    STEP_32{{"fa:fa-ban 32 FaultStep"}}:::class_fault 
+    STEP_37{{"fa:fa-flag-checkered 37 EndWorkflow"}}:::class_endworkflow 
+    STEP_24{{"fa:fa-ban 24 FaultStep"}}:::class_fault 
+    STEP_18{{"fa:fa-ban 18 FaultStep"}}:::class_fault 
+    STEP_0 --> STEP_1 
+    STEP_1 -- "exit" --> STEP_18 
+    STEP_1 -- "data =><br/>((((Convert(data.BlockControlOutcome,<br/>Int32) != 4) AndAlso<br/>(Convert(data.BlockControlOutcome,<br/>Int32) != 1)) AndAlso<br/>(Convert(data.BlockControlOutcome,<br/>Int32) != 5)) AndAlso<br/>(Convert(data.BlockControlOutcome,<br/>Int32) != 7))" --> STEP_23 
+    STEP_1 -- "data =><br/>((((Convert(data.BlockControlOutcome,<br/>Int32) != 4) AndAlso<br/>(Convert(data.BlockControlOutcome,<br/>Int32) != 1)) AndAlso<br/>(Convert(data.BlockControlOutcome,<br/>Int32) != 5)) AndAlso<br/>(Convert(data.BlockControlOutcome,<br/>Int32) != 7))" --> STEP_3 
+    STEP_3 --> STEP_3_0 
+    STEP_3_0 -- "Else" --> STEP_3_1 
+    STEP_3_0 --> STEP_5 
+    STEP_5 -. "↻" .-> STEP_1 
+    STEP_3_1 -- "data =><br/>(Convert(data.BlockControlOutcome,<br/>Int32) == 6)" --> STEP_6 
+    STEP_3_1 -- "Else" --> STEP_3_2 
+    STEP_3_2 -- "Else" --> STEP_3_3 
+    STEP_3_2 --> STEP_12 
+    STEP_12 --> STEP_12_0 
+    STEP_12_0 -- "Else" --> STEP_1 
+    STEP_12_0 --> STEP_14 
+    STEP_14 --> STEP_15 
+    STEP_15 -. "↻" .-> STEP_1 
+    STEP_3_3 -- "Else" --> STEP_1 
+    STEP_3_3 --> STEP_1 
+    STEP_23 --> STEP_23_0 
+    STEP_23_0 -- "data =><br/>Not(data.ManageLockStep_Finished)" --> STEP_24 
+    STEP_23_0 -- "Else" --> STEP_29 
+    STEP_29 --> STEP_29_0 
+    STEP_29_0 -- "Else" --> STEP_37 
+    STEP_29_0 --> STEP_31 
+    STEP_31 --> STEP_31_0 
+    STEP_31_0 -- "data =><br/>Not(data.BlockNotifyStep_Finished)" --> STEP_32 
+    STEP_31_0 -- "Else" --> STEP_37
