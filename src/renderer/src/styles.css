@@ -682,6 +682,60 @@ label {
   align-self: end;
 }
 
+.timeline-drag-handle {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 6px 4px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.timeline-drag-handle:active {
+  cursor: grabbing;
+}
+
+.timeline-drag-handle:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--panel-bg) 55%, transparent);
+}
+
+.timeline-drag-handle:focus-visible {
+  outline: 2px solid var(--accent-focus, #6b9fff);
+  outline-offset: 2px;
+}
+
+.timeline-drag-handle--compact {
+  padding: 4px 2px;
+  align-self: end;
+}
+
+.timeline-drag-overlay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--panel-bg) 94%, transparent);
+  box-shadow: 0 12px 36px var(--shadow-panel);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  max-width: min(360px, 90vw);
+}
+
+.timeline-drag-overlay span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .timeline-empty-state {
   padding: 18px;
 }

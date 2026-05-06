@@ -25,6 +25,26 @@ export type TimelineDocument = {
   sections: TimelineSection[]
 }
 
+/** Mermaid timeline rejects an event token immediately after `:` with nothing; use this instead of empty. */
+const TIMELINE_EMPTY_EVENT_PLACEHOLDER = '\u2014'
+
+function splitOnFirstColon(line: string): [string, string] {
+  const idx = line.indexOf(':')
+  if (idx === -1) {
+    return [line, '']
+  }
+  return [line.slice(0, idx), line.slice(idx + 1)]
+}
+
+function eventTextForMermaid(text: string): string {
+  const t = text.trim()
+  return t.length > 0 ? t : TIMELINE_EMPTY_EVENT_PLACEHOLDER
+}
+
+function eventTextFromMermaid(text: string): string {
+  return text.trim() === TIMELINE_EMPTY_EVENT_PLACEHOLDER ? '' : text
+}
+
 export function createDefaultTimelineCode(): string {
   return serializeTimelineDocument({
     direction: 'LR',
@@ -154,12 +174,16 @@ export function parseTimelineCode(code: string): TimelineDocument {
       continue
     }
 
-    const parts = line.split(/\s*:\s*/)
-    const periodLabel = (parts.shift() ?? '').trim()
-    const eventTexts = parts.map((part) => part.trim()).filter((part) => part.length > 0)
+    const [head, tail] = splitOnFirstColon(line)
+    const periodLabel = head.trim()
     const currentSection = ensureSection()
 
     if (periodLabel.length > 0) {
+      const eventTexts = tail
+        .split(/\s*:\s*/)
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0)
+        .map(eventTextFromMermaid)
       const nextPeriodIndex = currentSection.periods.length
       currentSection.periods.push({
         id: `period-${currentSectionIndex}-${nextPeriodIndex}`,
@@ -179,10 +203,11 @@ export function parseTimelineCode(code: string): TimelineDocument {
 
     const currentPeriod = currentSection.periods[currentPeriodIndex]
     const nextEventStartIndex = currentPeriod.events.length
-    const continuationEvents = (eventTexts.length > 0 ? eventTexts : ['']).map((text, eventIndex) => ({
-      id: `event-${currentSectionIndex}-${currentPeriodIndex}-${nextEventStartIndex + eventIndex}`,
-      text
-    }))
+    const continuationText = eventTextFromMermaid(tail.trim())
+    const continuationEvents =
+      continuationText.length > 0
+        ? [{ id: `event-${currentSectionIndex}-${currentPeriodIndex}-${nextEventStartIndex}`, text: continuationText }]
+        : [{ id: `event-${currentSectionIndex}-${currentPeriodIndex}-${nextEventStartIndex}`, text: '' }]
     currentPeriod.events = [...currentPeriod.events, ...continuationEvents]
   }
 
@@ -211,12 +236,12 @@ export function serializeTimelineDocument(document: TimelineDocument): string {
     periods.forEach((period, periodIndex) => {
       const periodLabel = period.label.trim() || `Period ${periodIndex + 1}`
       const events = period.events.length > 0 ? period.events : [{ id: `event-${sectionIndex}-${periodIndex}-0`, text: '' }]
-      const firstEvent = events[0]?.text.trim() ?? ''
+      const firstEvent = eventTextForMermaid(events[0]?.text ?? '')
 
       lines.push(`        ${periodLabel} : ${firstEvent}`)
 
       events.slice(1).forEach((event) => {
-        lines.push(`                 : ${event.text.trim()}`)
+        lines.push(`                 : ${eventTextForMermaid(event.text)}`)
       })
     })
   })
