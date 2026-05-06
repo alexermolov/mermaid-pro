@@ -351,17 +351,17 @@ const flowchartNodeFormatters: Record<FlowchartNodeShape, (id: string, label: st
 }
 
 const flowchartLinkFormatters: Record<FlowchartEdgeStyle, (label: string) => string> = {
-  arrow: (label) => (label ? `-->|${label}|` : '-->'),
-  line: (label) => (label ? `---|${label}|` : '---'),
-  dottedArrow: (label) => (label ? `-. ${label} .->` : '-.->'),
-  dottedLine: (label) => (label ? `-. ${label} .-` : '-.-'),
-  thickArrow: (label) => (label ? `== ${label} ==>` : '==>'),
-  thickLine: (label) => (label ? `== ${label} ==` : '==='),
-  circleEdge: (label) => (label ? `--o|${label}|` : '--o'),
-  crossEdge: (label) => (label ? `--x|${label}|` : '--x'),
-  bidirectionalArrow: (label) => (label ? `<-->|${label}|` : '<-->'),
-  bidirectionalCircle: (label) => (label ? `o--o|${label}|` : 'o--o'),
-  bidirectionalCross: (label) => (label ? `x--x|${label}|` : 'x--x')
+  arrow: (label) => (label ? `-- "${escapeQuotedText(label)}" -->` : '-->'),
+  line: (label) => (label ? `-- "${escapeQuotedText(label)}" ---` : '---'),
+  dottedArrow: (label) => (label ? `-. "${escapeQuotedText(label)}" .->` : '-.->'),
+  dottedLine: (label) => (label ? `-. "${escapeQuotedText(label)}" .-` : '-.-'),
+  thickArrow: (label) => (label ? `== "${escapeQuotedText(label)}" ==>` : '==>'),
+  thickLine: (label) => (label ? `== "${escapeQuotedText(label)}" ==` : '==='),
+  circleEdge: (label) => (label ? `--o|${escapeFlowchartPipeLabel(label)}|` : '--o'),
+  crossEdge: (label) => (label ? `--x|${escapeFlowchartPipeLabel(label)}|` : '--x'),
+  bidirectionalArrow: (label) => (label ? `<-->|${escapeFlowchartPipeLabel(label)}|` : '<-->'),
+  bidirectionalCircle: (label) => (label ? `o--o|${escapeFlowchartPipeLabel(label)}|` : 'o--o'),
+  bidirectionalCross: (label) => (label ? `x--x|${escapeFlowchartPipeLabel(label)}|` : 'x--x')
 }
 
 const sequenceArrowByMessageType: Record<SequenceMessageType, string> = {
@@ -465,7 +465,7 @@ function toFlowchart(nodes: VisualNode[], edges: VisualEdge[], direction: Diagra
 
   const edgeLines = edges
     .map((edge) => {
-      const label = edge.label ? escapeLabel(String(edge.label)) : ''
+      const label = edge.label ? String(edge.label) : ''
       return `  ${sanitizeId(edge.source)} ${formatFlowchartLink(edge.data?.lineStyle, label)} ${sanitizeId(edge.target)}`
     })
     .join('\n')
@@ -869,6 +869,10 @@ function escapeMindmapText(text: string): string {
 
 function normalizeInlineText(text: string): string {
   return text.replace(/\s+/g, ' ').trim()
+}
+
+function escapeFlowchartPipeLabel(text: string): string {
+  return normalizeInlineText(text).replace(/\|/g, '\\|')
 }
 
 function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
@@ -1296,7 +1300,7 @@ function parsePixelValue(value: string): number | undefined {
 function parseFlowchartNodeDescriptor(
   descriptorText: string
 ): { id: string; label: string; shape?: FlowchartNodeShape } | undefined {
-  const descriptor = descriptorText.trim()
+  const descriptor = stripFlowchartClassReferences(descriptorText.trim())
   const expandedDescriptor = parseExpandedFlowchartNodeDescriptor(descriptor)
 
   if (expandedDescriptor) {
@@ -1326,6 +1330,10 @@ function parseFlowchartNodeDescriptor(
   return undefined
 }
 
+function stripFlowchartClassReferences(descriptor: string): string {
+  return descriptor.replace(/:::[A-Za-z0-9_:-]+(?:\s*:::[A-Za-z0-9_:-]+)*\s*$/, '').trim()
+}
+
 function parseFlowchartEdgeExpression(
   line: string
 ):
@@ -1340,6 +1348,17 @@ function parseFlowchartEdgeExpression(
   if (pipeLabelMatch) {
     const [, sourceText, linkToken, label, targetText] = pipeLabelMatch
     return createFlowchartEdgeDescriptor(sourceText, targetText, parseFlowchartLineStyle(linkToken), normalizeEscapedText(label))
+  }
+
+  const quotedLabelMatch = line.match(/^(.*?)\s+(--|-\.|==)\s+"((?:\\.|[^"])*)"\s+(-->|---|\.->|\.\-|==>|==)\s+(.*?)$/)
+  if (quotedLabelMatch) {
+    const [, sourceText, startToken, label, endToken, targetText] = quotedLabelMatch
+    const lineStyle = parseFlowchartLineStylePair(startToken, endToken)
+    if (!lineStyle) {
+      return undefined
+    }
+
+    return createFlowchartEdgeDescriptor(sourceText, targetText, lineStyle, normalizeEscapedText(label))
   }
 
   const spacedLabelMatch = line.match(/^(.*?)\s+(--|-\.|==)\s+(.+?)\s+(-->|---|\.->|\.\-|==>|==)\s+(.*?)$/)
@@ -1610,9 +1629,12 @@ function ensureNode(
 ): VisualNode {
   const existingNode = nodes.get(id)
   if (existingNode) {
+    const shouldUpdateLabel =
+      Boolean(label) && (!existingNode.data.label || existingNode.data.label === id || label !== id)
+
     existingNode.data = {
       ...existingNode.data,
-      ...(label ? { label } : {}),
+      ...(shouldUpdateLabel ? { label } : {}),
       ...(data ?? {})
     }
     return existingNode
