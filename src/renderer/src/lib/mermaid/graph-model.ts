@@ -1,0 +1,41 @@
+import type { VisualNode, VisualNodeData } from './types'
+
+export function nextNodeId(nodes: VisualNode[]): string {
+  return `node_${nodes.length + 1}_${Date.now().toString(36)}`
+}
+
+export function ensureNode(
+  nodes: Map<string, VisualNode>,
+  id: string,
+  label?: string,
+  data?: Partial<VisualNodeData>
+): VisualNode {
+  const existingNode = nodes.get(id)
+  if (existingNode) {
+    const shouldUpdateLabel =
+      Boolean(label) && (!existingNode.data.label || existingNode.data.label === id || label !== id)
+
+    existingNode.data = {
+      ...existingNode.data,
+      ...(shouldUpdateLabel ? { label } : {}),
+      ...(data ?? {})
+    }
+    return existingNode
+  }
+
+  const nextNode = createParsedNode(id, label ?? id, data)
+  nodes.set(id, nextNode)
+  return nextNode
+}
+
+export function createParsedNode(id: string, label: string, data?: Partial<VisualNodeData>): VisualNode {
+  return {
+    id,
+    type: 'editableNode',
+    position: { x: 0, y: 0 },
+    data: {
+      label,
+      ...(data ?? {})
+    }
+  }
+}
