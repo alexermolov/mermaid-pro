@@ -107,7 +107,7 @@ export function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
   return {
     diagramType: 'flowchart',
     direction,
-    nodes: autoLayoutNodes(Array.from(nodes.values()), edges, direction),
+    nodes: autoLayoutNodes(Array.from(nodes.values()), edges, direction, 'flowchart'),
     edges
   }
 }

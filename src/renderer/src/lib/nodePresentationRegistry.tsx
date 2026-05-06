@@ -122,16 +122,24 @@ export function getSequencePresentationDefinition(sequencePresentation: Sequence
 
 function renderClassShape(appearance: FlowchartShapeAppearance): JSX.Element {
   return (
-    <>
-      <rect x="1.5" y="1.5" width="97" height="97" rx="16" ry="16" fill={appearance.fill} stroke={appearance.stroke} strokeWidth={appearance.strokeWidth} />
-      <line x1="8" y1="30" x2="92" y2="30" stroke={appearance.stroke} strokeWidth={appearance.strokeWidth} />
-      <line x1="8" y1="62" x2="92" y2="62" stroke={appearance.stroke} strokeWidth={appearance.strokeWidth} />
-    </>
+    <rect x="1.5" y="1.5" width="97" height="97" rx="16" ry="16" fill={appearance.fill} stroke={appearance.stroke} strokeWidth={appearance.strokeWidth} />
   )
 }
 
 function renderStateShape(appearance: FlowchartShapeAppearance): JSX.Element {
-  return <rect x="3" y="16" width="94" height="68" rx="34" ry="34" fill={appearance.fill} stroke={appearance.stroke} strokeWidth={appearance.strokeWidth} />
+  return (
+    <rect
+      x="1.5"
+      y="1.5"
+      width="97"
+      height="97"
+      rx="22"
+      ry="22"
+      fill={appearance.fill}
+      stroke={appearance.stroke}
+      strokeWidth={appearance.strokeWidth}
+    />
+  )
 }
 
 function renderErShape(appearance: FlowchartShapeAppearance): JSX.Element {

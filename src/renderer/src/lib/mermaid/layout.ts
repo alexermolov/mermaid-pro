@@ -1,35 +1,71 @@
 import dagre from 'dagre'
-import type { DiagramDirection } from '../../../../shared/diagram'
+import type { DiagramDirection, DiagramType } from '../../../../shared/diagram'
 import type { VisualEdge, VisualNode } from './types'
 
 const autoLayoutOrigin = { x: 120, y: 120 }
-const autoLayoutSpacing = {
-  rank: 160,
-  node: 72
+
+/** Dagre / fallback gaps: wide form cards (~220px) need extra room for edge paths and arrowheads. */
+function isWideFormDiagram(diagramType?: DiagramType): boolean {
+  return diagramType === 'class' || diagramType === 'er' || diagramType === 'state'
 }
 
-export function autoLayoutNodes(nodes: VisualNode[], edges: VisualEdge[], direction: DiagramDirection): VisualNode[] {
+function getAutoLayoutSpacing(diagramType?: DiagramType): { rank: number; node: number } {
+  if (diagramType === 'class') {
+    return { rank: 380, node: 170 }
+  }
+  if (isWideFormDiagram(diagramType)) {
+    return { rank: 300, node: 140 }
+  }
+  return { rank: 160, node: 72 }
+}
+
+function getTreeLayoutGaps(diagramType?: DiagramType): { primary: number; secondary: number } {
+  if (diagramType === 'class') {
+    return { primary: 440, secondary: 220 }
+  }
+  if (isWideFormDiagram(diagramType)) {
+    return { primary: 360, secondary: 200 }
+  }
+  return { primary: 260, secondary: 180 }
+}
+
+function getLinearLayoutGap(diagramType?: DiagramType): { x: number; y: number } {
+  if (diagramType === 'class') {
+    return { x: 400, y: 190 }
+  }
+  if (isWideFormDiagram(diagramType)) {
+    return { x: 340, y: 170 }
+  }
+  return { x: 240, y: 140 }
+}
+
+export function autoLayoutNodes(
+  nodes: VisualNode[],
+  edges: VisualEdge[],
+  direction: DiagramDirection,
+  diagramType?: DiagramType
+): VisualNode[] {
   const origin = { x: 240, y: 180 }
-  const primaryGap = 260
-  const secondaryGap = 180
+  const { primary: primaryGap, secondary: secondaryGap } = getTreeLayoutGaps(diagramType)
   const nodeOrder = new Map(nodes.map((node, index) => [node.id, index]))
+  const dagreSpacing = getAutoLayoutSpacing(diagramType)
 
   if (nodes.length <= 1 || edges.length === 0) {
-    return layoutParsedNodesLinearly(nodes, direction)
+    return layoutParsedNodesLinearly(nodes, direction, diagramType)
   }
 
   const graph = new dagre.graphlib.Graph()
   graph.setDefaultEdgeLabel(() => ({}))
   graph.setGraph({
     rankdir: direction,
-    ranksep: autoLayoutSpacing.rank,
-    nodesep: autoLayoutSpacing.node,
+    ranksep: dagreSpacing.rank,
+    nodesep: dagreSpacing.node,
     marginx: autoLayoutOrigin.x,
     marginy: autoLayoutOrigin.y
   })
 
   for (const node of nodes) {
-    graph.setNode(node.id, getAutoLayoutNodeSize(node))
+    graph.setNode(node.id, getAutoLayoutNodeSize(node, diagramType))
   }
 
   let hasUsableEdge = false
@@ -197,7 +233,7 @@ export function getSequenceLifelineHeight(messageCount: number): number {
   return Math.max(180, 96 + messageCount * 56)
 }
 
-function getAutoLayoutNodeSize(node: VisualNode): { width: number; height: number } {
+function getAutoLayoutNodeSize(node: VisualNode, diagramType?: DiagramType): { width: number; height: number } {
   const textSections = [
     node.data.label,
     node.data.classAttributes,
@@ -210,19 +246,31 @@ function getAutoLayoutNodeSize(node: VisualNode): { width: number; height: numbe
   const longestLineLength = Math.max(...lines.map((line) => line.length), 12)
   const lineCount = Math.max(lines.length, 1)
 
-  return {
-    width: clamp(180, 360, 56 + longestLineLength * 7),
-    height: clamp(56, 280, 28 + lineCount * 22)
+  let width = clamp(180, 360, 56 + longestLineLength * 7)
+  let height = clamp(56, 280, 28 + lineCount * 22)
+
+  if (diagramType === 'class') {
+    width = Math.max(220, width)
+    const classHeight = 28 + lineCount * 22
+    height = clamp(132, 400, Math.max(height, classHeight))
+  } else if (diagramType === 'er') {
+    width = Math.max(220, width)
+    height = Math.max(116, height)
+  } else if (diagramType === 'state') {
+    width = Math.max(220, width)
+    height = Math.max(108, height)
   }
+
+  return { width, height }
 }
 
 function clamp(minimum: number, maximum: number, value: number): number {
   return Math.min(maximum, Math.max(minimum, value))
 }
 
-function layoutParsedNodesLinearly(nodes: VisualNode[], direction: DiagramDirection): VisualNode[] {
+function layoutParsedNodesLinearly(nodes: VisualNode[], direction: DiagramDirection, diagramType?: DiagramType): VisualNode[] {
   const origin = { x: 120, y: 140 }
-  const gap = { x: 240, y: 140 }
+  const gap = getLinearLayoutGap(diagramType)
   const lastIndex = nodes.length - 1
 
   return nodes.map((node, index) => {

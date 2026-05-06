@@ -50,7 +50,7 @@ export function parseEr(lines: string[]): ParsedMermaidDiagram {
   return {
     diagramType: 'er',
     direction: 'LR',
-    nodes: autoLayoutNodes(Array.from(nodes.values()), edges, 'LR'),
+    nodes: autoLayoutNodes(Array.from(nodes.values()), edges, 'LR', 'er'),
     edges
   }
 }

@@ -41,7 +41,7 @@ export function parseState(lines: string[]): ParsedMermaidDiagram {
   return {
     diagramType: 'state',
     direction: 'TD',
-    nodes: autoLayoutNodes(Array.from(nodes.values()), edges, 'TD'),
+    nodes: autoLayoutNodes(Array.from(nodes.values()), edges, 'TD', 'state'),
     edges
   }
 }

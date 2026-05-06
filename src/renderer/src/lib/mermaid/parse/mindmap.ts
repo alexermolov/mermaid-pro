@@ -37,7 +37,7 @@ export function parseMindmap(lines: string[]): ParsedMermaidDiagram {
   return {
     diagramType: 'mindmap',
     direction: 'LR',
-    nodes: autoLayoutNodes(nodes, edges, 'LR'),
+    nodes: autoLayoutNodes(nodes, edges, 'LR', 'mindmap'),
     edges
   }
 }

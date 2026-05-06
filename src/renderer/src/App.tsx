@@ -931,13 +931,16 @@ export default function App(): JSX.Element {
       return
     }
 
+    const nextLayoutDirection = layoutDirectionForDiagramType(nextDiagramType, direction)
+    setDirection(nextLayoutDirection)
+
     setNodes((currentNodes) => {
       if (nextDiagramType === 'sequence') {
         return layoutSequenceNodes(currentNodes)
       }
 
-      if (getDiagramTypeDefinition(nextDiagramType).supportsDirection) {
-        return autoLayoutNodes(currentNodes, edges, direction)
+      if (nextDiagramTypeDefinition.editorMode === 'visual') {
+        return autoLayoutNodes(currentNodes, edges, nextLayoutDirection, nextDiagramType)
       }
 
       return currentNodes
@@ -952,7 +955,9 @@ export default function App(): JSX.Element {
       return
     }
 
-    setNodes(diagramType === 'sequence' ? layoutSequenceNodes(nodes) : autoLayoutNodes(nodes, edges, nextDirection))
+    setNodes(
+      diagramType === 'sequence' ? layoutSequenceNodes(nodes) : autoLayoutNodes(nodes, edges, nextDirection, diagramType)
+    )
     setAutoSync(true)
   }
 
@@ -1348,6 +1353,22 @@ export default function App(): JSX.Element {
       </section>
     </main>
   )
+}
+
+function layoutDirectionForDiagramType(
+  diagramType: DiagramType,
+  currentDirection: DiagramDirection
+): DiagramDirection {
+  switch (diagramType) {
+    case 'class':
+    case 'er':
+    case 'mindmap':
+      return 'LR'
+    case 'state':
+      return 'TD'
+    default:
+      return currentDirection
+  }
 }
 
 function clamp(value: number, min: number, max: number): number {

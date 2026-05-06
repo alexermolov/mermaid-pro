@@ -55,7 +55,7 @@ export function parseClass(lines: string[]): ParsedMermaidDiagram {
   return {
     diagramType: 'class',
     direction: 'LR',
-    nodes: autoLayoutNodes(Array.from(nodes.values()), edges, 'LR'),
+    nodes: autoLayoutNodes(Array.from(nodes.values()), edges, 'LR', 'class'),
     edges
   }
 }

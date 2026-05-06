@@ -962,7 +962,6 @@ label {
 }
 
 .panel-heading span {
-  max-width: 56%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1060,6 +1059,22 @@ label {
 
 .editable-node--sequence {
   overflow: visible;
+}
+
+.editable-node--class .editable-node__content > input {
+  border-bottom: 1.5px solid color-mix(in srgb, var(--editable-node-border) 88%, transparent);
+  padding-bottom: 10px;
+  margin-bottom: 0;
+}
+
+.editable-node--class .editable-node__content > textarea:first-of-type {
+  border-bottom: 1.5px solid color-mix(in srgb, var(--editable-node-border) 88%, transparent);
+  padding-bottom: 10px;
+}
+
+.editable-node--class.editable-node--selected .editable-node__content > input,
+.editable-node--class.editable-node--selected .editable-node__content > textarea:first-of-type {
+  border-bottom-color: color-mix(in srgb, #7c3aed 82%, transparent);
 }
 
 .editable-node__sequence-lifeline {
