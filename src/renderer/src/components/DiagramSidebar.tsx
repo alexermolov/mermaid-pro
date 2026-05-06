@@ -39,6 +39,7 @@ export function DiagramSidebar({
   const [isDiagramListOpen, setIsDiagramListOpen] = useState(true)
   const [isDiagramSettingsOpen, setIsDiagramSettingsOpen] = useState(true)
   const activeDiagramRef = useRef<HTMLButtonElement | null>(null)
+  const diagramTypeDefinition = getDiagramTypeDefinition(diagramType)
 
   useEffect(() => {
     if (!isCollapsed && isDiagramListOpen) {
@@ -157,7 +158,7 @@ export function DiagramSidebar({
                           className={`mode-button${direction === item ? ' mode-button--active' : ''}`}
                           role="radio"
                           aria-checked={direction === item}
-                          disabled={!getDiagramTypeDefinition(diagramType).supportsDirection}
+                          disabled={!diagramTypeDefinition.supportsDirection}
                           onClick={() => onDirectionChange(item)}
                         >
                           {item}
@@ -168,13 +169,19 @@ export function DiagramSidebar({
                 </div>
 
                 <div className="panel-section">
-                  {!autoSync && <p className="warning">Manual mode: use Sync in the code panel to update the canvas.</p>}
-                  <button
-                    type="button"
-                    onClick={onSyncFromVisual}
-                  >
-                    Regenerate code from canvas
-                  </button>
+                  {diagramTypeDefinition.editorMode === 'code' ? (
+                    <p className="warning">Timeline is code-first. Edit Mermaid directly in the code panel.</p>
+                  ) : (
+                    <>
+                      {!autoSync && <p className="warning">Manual mode: use Sync in the code panel to update the canvas.</p>}
+                      <button
+                        type="button"
+                        onClick={onSyncFromVisual}
+                      >
+                        Regenerate code from canvas
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )}

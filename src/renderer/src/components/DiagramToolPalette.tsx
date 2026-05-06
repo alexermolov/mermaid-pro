@@ -9,6 +9,7 @@ import {
   sequenceParticipantPresentations,
   sequenceMessageTypes
 } from '../lib/appHelpers'
+import { getDiagramTypeDefinition } from '../lib/diagramTypeRegistry'
 import { getFlowchartShapeDefinition, type FlowchartShapeAppearance } from '../lib/flowchartShapeRegistry'
 import { getSequencePresentationDefinition } from '../lib/nodePresentationRegistry'
 import type {
@@ -82,6 +83,7 @@ export function DiagramToolPalette({
   onSelectedEdgeErRelationshipChange,
   onDeleteSelected
 }: DiagramToolPaletteProps): JSX.Element {
+  const diagramTypeDefinition = getDiagramTypeDefinition(diagramType)
   const hasSelection = selectedNodeCount > 0 || selectedEdgeCount > 0
   const hasSingleNodeSelection = selectedNodeCount === 1 && selectedEdgeCount === 0 && Boolean(selectedNode)
   const hasSingleEdgeSelection = selectedEdgeCount === 1 && selectedNodeCount === 0 && Boolean(selectedEdge)
@@ -96,6 +98,24 @@ export function DiagramToolPalette({
   const nodeStyle = selectedNode?.data.style
   const edgeVisualStyle = selectedEdge?.data?.visualStyle
   const selectionLabel = getSelectionLabel(selectedNodeCount, selectedEdgeCount)
+
+  if (diagramTypeDefinition.editorMode === 'code') {
+    return (
+      <aside className="diagram-tool-palette nodrag nopan" aria-label="Diagram tools">
+        <div className="palette-header">
+          <div className="palette-title">
+            <SlidersHorizontal size={16} />
+            <span>{diagramTypeDefinition.label}</span>
+          </div>
+          <span>Code-first mode</span>
+        </div>
+        <p className="palette-hint">
+          Timeline diagrams are edited directly in Mermaid code. Use the code panel to add sections, periods and events,
+          and the preview updates from that source.
+        </p>
+      </aside>
+    )
+  }
 
   return (
     <aside className="diagram-tool-palette nodrag nopan" aria-label="Diagram tools">

@@ -7,7 +7,7 @@ export type DiagramNodeData = {
 export type DiagramNode = Node<DiagramNodeData>
 export type DiagramEdge = Edge
 
-export type DiagramType = 'flowchart' | 'sequence' | 'class' | 'state' | 'er' | 'mindmap'
+export type DiagramType = 'flowchart' | 'sequence' | 'class' | 'state' | 'er' | 'mindmap' | 'timeline'
 
 export type DiagramDirection = 'TD' | 'LR' | 'BT' | 'RL'
 

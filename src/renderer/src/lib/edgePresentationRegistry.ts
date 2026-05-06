@@ -34,6 +34,7 @@ const edgePresentationRegistry: Record<DiagramType, EdgePresentationResolver> = 
   state: createFlowLikeResolver('Select an edge to add a transition label'),
   er: createFlowLikeResolver('Select an edge to add a relationship name'),
   mindmap: createFlowLikeResolver('Select an edge to add a branch label'),
+  timeline: createFlowLikeResolver('Timeline is edited directly in Mermaid code'),
   sequence: {
     getLabelPlaceholder: () => 'Select an edge to add a message',
     getMarkers: (data) => ({

@@ -229,7 +229,8 @@ function isDiagramType(value: unknown): value is DiagramType {
     value === 'class' ||
     value === 'state' ||
     value === 'er' ||
-    value === 'mindmap'
+    value === 'mindmap' ||
+    value === 'timeline'
   )
 }
 

@@ -417,6 +417,10 @@ const mermaidParsers: Array<{
   {
     matches: (header) => header === 'mindmap',
     parse: parseMindmap
+  },
+  {
+    matches: (header) => /^timeline(?:\s+(LR|TD))?$/.test(header),
+    parse: parseTimeline
   }
 ]
 
@@ -437,9 +441,21 @@ export function toMermaid(
       return toErDiagram(nodes, edges)
     case 'mindmap':
       return toMindmap(nodes, edges)
+    case 'timeline':
+      return toTimelineDiagram(direction)
     case 'flowchart':
       return toFlowchart(nodes, edges, direction)
   }
+}
+
+function toTimelineDiagram(direction: DiagramDirection): string {
+  return [
+    direction === 'TD' ? 'timeline TD' : 'timeline',
+    '    title Untitled timeline',
+    '    section Phase 1',
+    '        Milestone 1 : Describe the first event',
+    '        Milestone 2 : Add another event'
+  ].join('\n')
 }
 
 function toFlowchart(nodes: VisualNode[], edges: VisualEdge[], direction: DiagramDirection): string {
@@ -1150,6 +1166,18 @@ function parseMindmap(lines: string[]): ParsedMermaidDiagram {
     direction: 'LR',
     nodes: layoutParsedNodes(nodes, edges, 'LR'),
     edges
+  }
+}
+
+function parseTimeline(lines: string[]): ParsedMermaidDiagram {
+  const header = lines[0]?.trim() ?? 'timeline'
+  const direction = /\bTD$/.test(header) ? 'TD' : 'LR'
+
+  return {
+    diagramType: 'timeline',
+    direction,
+    nodes: [],
+    edges: []
   }
 }
 

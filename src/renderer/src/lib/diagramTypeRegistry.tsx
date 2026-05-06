@@ -2,11 +2,15 @@ import type { JSX } from 'react'
 import type { DiagramType } from '../../../shared/diagram'
 import type { EditableVisualNodeData } from './mermaid'
 
+export type DiagramEditorMode = 'visual' | 'code'
+
 type DiagramTypeDefinition = {
   label: string
   addNodeLabel: string
   nodeLabelPlaceholder: string
   supportsDirection: boolean
+  editorMode: DiagramEditorMode
+  defaultCode?: string
   createNodeData: (index: number) => EditableVisualNodeData
   renderIcon: () => JSX.Element
 }
@@ -17,6 +21,7 @@ export const diagramTypeRegistry = {
     addNodeLabel: 'Add node',
     nodeLabelPlaceholder: 'Node label',
     supportsDirection: true,
+    editorMode: 'visual',
     createNodeData: (index) => ({ label: `Node ${index}` }),
     renderIcon: () => (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -31,6 +36,7 @@ export const diagramTypeRegistry = {
     addNodeLabel: 'Add participant',
     nodeLabelPlaceholder: 'Participant name',
     supportsDirection: false,
+    editorMode: 'visual',
     createNodeData: (index) => ({ label: `Participant ${index}` }),
     renderIcon: () => (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -47,6 +53,7 @@ export const diagramTypeRegistry = {
     addNodeLabel: 'Add class',
     nodeLabelPlaceholder: 'Class name',
     supportsDirection: false,
+    editorMode: 'visual',
     createNodeData: (index) => ({
       label: `Class${index}`,
       classAttributes: '+String name',
@@ -64,6 +71,7 @@ export const diagramTypeRegistry = {
     addNodeLabel: 'Add state',
     nodeLabelPlaceholder: 'State name',
     supportsDirection: false,
+    editorMode: 'visual',
     createNodeData: (index) => ({
       label: `State ${index}`,
       stateDescription: 'entry action'
@@ -80,6 +88,7 @@ export const diagramTypeRegistry = {
     addNodeLabel: 'Add entity',
     nodeLabelPlaceholder: 'Entity name',
     supportsDirection: false,
+    editorMode: 'visual',
     createNodeData: (index) => ({
       label: `Entity ${index}`,
       erAttributes: 'string name'
@@ -98,11 +107,39 @@ export const diagramTypeRegistry = {
     addNodeLabel: 'Add topic',
     nodeLabelPlaceholder: 'Topic',
     supportsDirection: false,
+    editorMode: 'visual',
     createNodeData: (index) => ({ label: `Topic ${index}` }),
     renderIcon: () => (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="3.5" />
         <path d="M 12 8 V 4 M 8 12 H 4 M 16 12 H 20 M 9.2 14.8 L 6 18 M 14.8 14.8 L 18 18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      </svg>
+    )
+  },
+  timeline: {
+    label: 'Timeline',
+    addNodeLabel: 'Edit timeline code',
+    nodeLabelPlaceholder: 'Time period',
+    supportsDirection: false,
+    editorMode: 'code',
+    defaultCode: [
+      'timeline',
+      '    title Project delivery timeline',
+      '    section Discovery',
+      '        Week 1 : Kickoff',
+      '        Week 2 : Research : Interviews',
+      '    section Delivery',
+      '        Week 3 : Design review',
+      '        Week 4 : Release'
+    ].join('\n'),
+    createNodeData: (index) => ({ label: `Milestone ${index}` }),
+    renderIcon: () => (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M 4 12 H 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+        <circle cx="7" cy="12" r="1.7" />
+        <circle cx="12" cy="12" r="1.7" />
+        <circle cx="17" cy="12" r="1.7" />
+        <path d="M 7 7 V 10 M 12 14 V 17 M 17 7 V 10" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
       </svg>
     )
   }

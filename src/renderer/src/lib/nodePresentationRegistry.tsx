@@ -93,6 +93,12 @@ const nodePresentationRegistry: Record<DiagramType, NodePresentationResolver> = 
     layout: { minWidth: 176, minHeight: 84 },
     renderShape: renderMindmapShape,
     labelPlaceholder: 'Topic'
+  }),
+  timeline: () => ({
+    classNames: ['editable-node--mindmap'],
+    layout: { minWidth: 176, minHeight: 84 },
+    renderShape: renderMindmapShape,
+    labelPlaceholder: 'Time period'
   })
 }
 

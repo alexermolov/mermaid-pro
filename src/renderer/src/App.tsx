@@ -103,6 +103,7 @@ export default function App(): JSX.Element {
   const hasLoadedLastProjectRef = useRef(false)
   const canExport = Boolean(renderedSvg)
   const isDarkTheme = appTheme === 'dark'
+  const diagramTypeDefinition = getDiagramTypeDefinition(diagramType)
   const workspaceStyle = {
     '--right-panel-width': `${rightPanelWidth}px`
   } as CSSProperties
@@ -815,6 +816,11 @@ export default function App(): JSX.Element {
   }, [isResizingRightPanel, isSidebarCollapsed])
 
   function addNode(): void {
+    if (diagramTypeDefinition.editorMode === 'code') {
+      setStatus(`${diagramTypeDefinition.label} is edited in the code panel`)
+      return
+    }
+
     const id = nextNodeId(nodes)
     setNodes((currentNodes) => {
       const nextNodes = [
@@ -903,7 +909,24 @@ export default function App(): JSX.Element {
   }
 
   function updateDiagramType(nextDiagramType: DiagramType): void {
+    const nextDiagramTypeDefinition = getDiagramTypeDefinition(nextDiagramType)
+
     setDiagramType(nextDiagramType)
+
+    if (nextDiagramTypeDefinition.editorMode === 'code') {
+      setDirection('LR')
+      setNodes([])
+      setEdges([])
+      setSelectedNodeIds([])
+      setSelectedEdgeIds([])
+      setSelectedEdgeId(null)
+      setCode(nextDiagramTypeDefinition.defaultCode ?? 'timeline')
+      setAutoSync(false)
+      requestFitView()
+      setStatus(`${nextDiagramTypeDefinition.label} mode enabled`)
+      return
+    }
+
     setNodes((currentNodes) => {
       if (nextDiagramType === 'sequence') {
         return layoutSequenceNodes(currentNodes)
@@ -920,6 +943,11 @@ export default function App(): JSX.Element {
   }
 
   function applyAutoLayout(nextDirection = direction): void {
+    if (diagramTypeDefinition.editorMode === 'code') {
+      setStatus(`${diagramTypeDefinition.label} does not use canvas auto-layout`)
+      return
+    }
+
     setNodes(diagramType === 'sequence' ? layoutSequenceNodes(nodes) : autoLayoutNodes(nodes, edges, nextDirection))
     setAutoSync(true)
   }
@@ -942,6 +970,11 @@ export default function App(): JSX.Element {
   }
 
   function syncFromVisual(): void {
+    if (diagramTypeDefinition.editorMode === 'code') {
+      setStatus(`${diagramTypeDefinition.label} is edited directly in Mermaid code`)
+      return
+    }
+
     setCode(generatedCode)
     setAutoSync(true)
     setStatus('Mermaid code regenerated from canvas')
@@ -950,6 +983,8 @@ export default function App(): JSX.Element {
   function syncFromCode(): void {
     try {
       const parsedDiagram = parseMermaid(code)
+      const parsedDiagramTypeDefinition = getDiagramTypeDefinition(parsedDiagram.diagramType)
+
       setDiagramType(parsedDiagram.diagramType)
       setDirection(parsedDiagram.direction)
       setNodes(parsedDiagram.nodes)
@@ -957,9 +992,13 @@ export default function App(): JSX.Element {
       setSelectedNodeIds([])
       setSelectedEdgeIds([])
       setSelectedEdgeId(null)
-      setAutoSync(true)
+      setAutoSync(parsedDiagramTypeDefinition.editorMode === 'visual')
       requestFitView()
-      setStatus('Visual diagram updated from Mermaid code')
+      setStatus(
+        parsedDiagramTypeDefinition.editorMode === 'visual'
+          ? 'Visual diagram updated from Mermaid code'
+          : `${parsedDiagramTypeDefinition.label} code loaded`
+      )
     } catch (error) {
       setStatus(error instanceof Error ? `Sync failed: ${error.message}` : 'Sync failed')
     }
