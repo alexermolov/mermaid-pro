@@ -45,12 +45,14 @@ const nodePresentationRegistry: Record<DiagramType, NodePresentationResolver> = 
     renderFields: (id, data) => (
       <>
         <textarea
+          className="nodrag nopan"
           value={data.classAttributes ?? ''}
           onChange={(event) => data.onDataChange?.(id, { classAttributes: event.target.value })}
           placeholder="+String name"
           rows={3}
         />
         <textarea
+          className="nodrag nopan"
           value={data.classMethods ?? ''}
           onChange={(event) => data.onDataChange?.(id, { classMethods: event.target.value })}
           placeholder="+method()"
@@ -66,6 +68,7 @@ const nodePresentationRegistry: Record<DiagramType, NodePresentationResolver> = 
     renderShape: renderStateShape,
     renderFields: (id, data) => (
       <textarea
+        className="nodrag nopan"
         value={data.stateDescription ?? ''}
         onChange={(event) => data.onDataChange?.(id, { stateDescription: event.target.value })}
         placeholder="entry action"
@@ -80,6 +83,7 @@ const nodePresentationRegistry: Record<DiagramType, NodePresentationResolver> = 
     renderShape: renderErShape,
     renderFields: (id, data) => (
       <textarea
+        className="nodrag nopan"
         value={data.erAttributes ?? ''}
         onChange={(event) => data.onDataChange?.(id, { erAttributes: event.target.value })}
         placeholder="string name"

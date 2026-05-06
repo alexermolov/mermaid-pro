@@ -58,8 +58,9 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
         position={handlePositions.target}
         isConnectable={isConnectable}
       />
-      <div className="editable-node__content nodrag nopan">
+      <div className="editable-node__content">
         <input
+          className="nodrag nopan"
           value={data.label}
           onChange={(event) => data.onLabelChange?.(id, event.target.value)}
           placeholder={presentation.labelPlaceholder}

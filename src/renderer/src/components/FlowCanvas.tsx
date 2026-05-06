@@ -65,7 +65,7 @@ export function FlowCanvas({
         onSelectionChange={onSelectionChange}
         connectionMode={ConnectionMode.Loose}
         deleteKeyCode={['Backspace', 'Delete']}
-        edgesReconnectable={true}
+        edgesReconnectable={false}
         reconnectRadius={20}
         fitView
       >

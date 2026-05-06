@@ -325,7 +325,7 @@ export default function App(): JSX.Element {
           ...edge,
           type: 'editableEdge',
           className: `editable-edge editable-edge--${diagramType}`,
-          reconnectable: true,
+          reconnectable: Boolean(edge.selected),
           data: {
             ...(edge.data ?? {}),
             diagramType,

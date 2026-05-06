@@ -2042,7 +2042,10 @@ function splitTopLevelFlowchartGroup(text: string): string[] {
 }
 
 function normalizeFlowchartLabel(text: string): string {
-  return normalizeEscapedText(text)
+  const normalizedText = normalizeEscapedText(text)
+  const labelWithoutLeadingIcon = normalizedText.replace(/^(?:fa[a-z]*):fa-[A-Za-z0-9-]+\s+/i, '')
+
+  return labelWithoutLeadingIcon || normalizedText
 }
 
 function normalizeMindmapLabel(content: string): string {
