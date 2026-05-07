@@ -14,6 +14,10 @@ export type NodePresentation = {
 type NodePresentationResolver = (data: VisualNodeData) => NodePresentation
 
 const defaultDiagramType: DiagramType = 'flowchart'
+const erBaseWidth = 220
+const erMaxWidth = 460
+const erBaseHeight = 116
+const erMaxHeight = 340
 
 const nodePresentationRegistry: Record<DiagramType, NodePresentationResolver> = {
   flowchart: (data) => {
@@ -83,9 +87,9 @@ const nodePresentationRegistry: Record<DiagramType, NodePresentationResolver> = 
     ),
     labelPlaceholder: 'State name'
   }),
-  er: () => ({
+  er: (data) => ({
     classNames: ['editable-node--er'],
-    layout: { width: 220, minWidth: 220, minHeight: 116 },
+    layout: getErLayout(data),
     renderShape: renderErShape,
     renderFields: (id, data) => (
       <textarea
@@ -155,6 +159,36 @@ function renderErShape(appearance: FlowchartShapeAppearance): JSX.Element {
       <line x1="14" y1="32" x2="86" y2="32" stroke={appearance.stroke} strokeWidth={appearance.strokeWidth} />
     </>
   )
+}
+
+function getErLayout(data: VisualNodeData): CSSProperties {
+  const attributeLines = splitLines(data.erAttributes)
+  const longestAttributeLength = attributeLines.reduce((maxLength, line) => Math.max(maxLength, line.length), 0)
+  const longestVisibleLine = Math.max(data.label.length, longestAttributeLength)
+  const attributesCount = Math.max(attributeLines.length, 4)
+  const estimatedWidth = erBaseWidth + Math.max(0, longestVisibleLine - 18) * 7
+  const estimatedHeight = erBaseHeight + Math.max(0, attributesCount - 4) * 18
+
+  return {
+    width: clamp(estimatedWidth, erBaseWidth, erMaxWidth),
+    minWidth: erBaseWidth,
+    minHeight: clamp(estimatedHeight, erBaseHeight, erMaxHeight)
+  }
+}
+
+function splitLines(text: string | undefined): string[] {
+  if (!text) {
+    return []
+  }
+
+  return text
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .filter((line) => line.length > 0)
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
 }
 
 function renderMindmapShape(appearance: FlowchartShapeAppearance): JSX.Element {

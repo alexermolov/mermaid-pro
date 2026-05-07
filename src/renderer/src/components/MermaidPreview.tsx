@@ -7,6 +7,8 @@ type MermaidPreviewProps = {
   theme: 'light' | 'dark'
   onSvgChange: (svg: string) => void
   onRenderStateChange: (status: string) => void
+  /** Secondary instance (e.g. lightbox): do not clear/update parent export or status bar */
+  suppressParentNotify?: boolean
 }
 
 const mermaidThemeVariables = {
@@ -40,7 +42,8 @@ export function MermaidPreview({
   containerRef,
   theme,
   onSvgChange,
-  onRenderStateChange
+  onRenderStateChange,
+  suppressParentNotify = false
 }: MermaidPreviewProps): JSX.Element {
   const [svg, setSvg] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -65,16 +68,20 @@ export function MermaidPreview({
           setSvg(result.svg)
           setError(null)
           setIsRendering(false)
-          onSvgChange(result.svg)
-          onRenderStateChange('Preview is up to date')
+          if (!suppressParentNotify) {
+            onSvgChange(result.svg)
+            onRenderStateChange('Preview is up to date')
+          }
         }
       } catch (caughtError) {
         if (!cancelled) {
           setSvg('')
           setError(caughtError instanceof Error ? caughtError.message : 'Unable to render diagram')
           setIsRendering(false)
-          onSvgChange('')
-          onRenderStateChange('Preview has Mermaid errors')
+          if (!suppressParentNotify) {
+            onSvgChange('')
+            onRenderStateChange('Preview has Mermaid errors')
+          }
         }
       }
     }
@@ -82,8 +89,10 @@ export function MermaidPreview({
     setSvg('')
     setError(null)
     setIsRendering(true)
-    onSvgChange('')
-    onRenderStateChange('Rendering preview...')
+    if (!suppressParentNotify) {
+      onSvgChange('')
+      onRenderStateChange('Rendering preview...')
+    }
     const timeoutId = window.setTimeout(() => {
       render()
     }, 200)
@@ -92,7 +101,7 @@ export function MermaidPreview({
       cancelled = true
       window.clearTimeout(timeoutId)
     }
-  }, [code, onRenderStateChange, onSvgChange, renderId, theme])
+  }, [code, onRenderStateChange, onSvgChange, renderId, suppressParentNotify, theme])
 
   return (
     <div className="preview-panel" ref={containerRef}>

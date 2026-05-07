@@ -951,8 +951,170 @@ label {
   min-width: 0;
 }
 
+.panel-heading__actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-heading__icon-action {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 34px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border-control);
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--control-bg) 88%, transparent);
+}
+
+.panel-heading__icon-action:hover:not(:disabled) {
+  border-color: var(--border-control-hover);
+  color: var(--text-primary);
+  background: var(--control-bg-hover);
+}
+
+.panel-heading__icon-action svg {
+  flex-shrink: 0;
+}
+
 .panel-heading__action {
   padding: 7px 11px;
+}
+
+.lightbox-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: min(20px, 3vw);
+  pointer-events: none;
+}
+
+.lightbox-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  border: 0;
+  background: rgba(2, 6, 23, 0.62);
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-shell[data-theme='light'] .lightbox-modal__backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.lightbox-modal--open .lightbox-modal__backdrop {
+  opacity: 1;
+}
+
+.lightbox-modal__surface {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(96vw, 1180px);
+  height: min(90vh, 880px);
+  max-height: 90vh;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--panel-bg);
+  box-shadow: 0 28px 100px rgba(2, 6, 23, 0.45);
+  pointer-events: auto;
+  opacity: 0;
+  transform: scale(0.82);
+  transform-origin: center center;
+  transition:
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lightbox-modal--open .lightbox-modal__surface {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-modal__backdrop {
+    transition-duration: 0.05s;
+  }
+
+  .lightbox-modal__surface {
+    transition-duration: 0.05s;
+    transform: scale(0.995);
+  }
+
+  .lightbox-modal--open .lightbox-modal__surface {
+    transform: scale(1);
+  }
+}
+
+.lightbox-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+
+.lightbox-modal__header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.lightbox-modal__close {
+  flex-shrink: 0;
+}
+
+.lightbox-modal__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.lightbox-modal__body--code {
+  padding: 0;
+}
+
+.lightbox-modal__body--preview {
+  padding: 0;
+  overflow: auto;
+}
+
+.lightbox-modal__preview-host {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+}
+
+.lightbox-modal__preview-host .preview-panel {
+  min-height: min(76vh, 720px);
+  padding: clamp(20px, 4vw, 40px);
+}
+
+.lightbox-modal__preview-host .preview-canvas svg {
+  max-width: min(94vw, 1600px);
+  width: auto;
+  height: auto;
+}
+
+.lightbox-modal__preview-host .preview-error {
+  max-width: min(640px, 92vw);
+  margin-inline: auto;
 }
 
 .panel-heading h2,
@@ -1075,6 +1237,24 @@ label {
 .editable-node--class.editable-node--selected .editable-node__content > input,
 .editable-node--class.editable-node--selected .editable-node__content > textarea:first-of-type {
   border-bottom-color: color-mix(in srgb, #7c3aed 82%, transparent);
+}
+
+.editable-node--er .editable-node__content > input {
+  border-bottom: 1.5px solid color-mix(in srgb, var(--editable-node-border) 88%, transparent);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding-bottom: 10px;
+}
+
+.editable-node--er.editable-node--selected .editable-node__content > input {
+  border-bottom-color: color-mix(in srgb, #7c3aed 82%, transparent);
+}
+
+.editable-node--er .editable-node__content > textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-align: left;
 }
 
 .editable-node__sequence-lifeline {

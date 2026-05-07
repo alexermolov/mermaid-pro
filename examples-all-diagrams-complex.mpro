@@ -1,0 +1,2426 @@
+{
+  "format": "mermaid-pro",
+  "version": 2,
+  "title": "Complex Mermaid Diagram Examples",
+  "selectedDiagramId": "diagram-flowchart",
+  "theme": "dark",
+  "diagrams": [
+    {
+      "id": "diagram-flowchart",
+      "title": "Flowchart - Distributed Order Processing",
+      "type": "flowchart",
+      "direction": "LR",
+      "nodes": [
+        {
+          "id": "WEB",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 150
+          },
+          "data": {
+            "label": "Web App",
+            "shape": "rectangle"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "MOB",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 278
+          },
+          "data": {
+            "label": "Mobile App",
+            "shape": "rectangle"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "API",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 406
+          },
+          "data": {
+            "label": "Partner API",
+            "shape": "rectangle"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "GW",
+          "type": "editableNode",
+          "position": {
+            "x": 460,
+            "y": 285
+          },
+          "data": {
+            "label": "API Gateway",
+            "shape": "rectangle",
+            "flowchartClassNames": [
+              "service"
+            ],
+            "flowchartClassStyles": {
+              "service": {
+                "fillColor": "#0b3b5a",
+                "strokeColor": "#7dd3fc",
+                "textColor": "#e0f2fe"
+              }
+            },
+            "style": {
+              "fillColor": "#0b3b5a",
+              "strokeColor": "#7dd3fc",
+              "textColor": "#e0f2fe"
+            }
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "WAF",
+          "type": "editableNode",
+          "position": {
+            "x": 800,
+            "y": 285
+          },
+          "data": {
+            "label": "WAF / Rate Limit",
+            "shape": "rectangle"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "AUTH",
+          "type": "editableNode",
+          "position": {
+            "x": 1140,
+            "y": 285
+          },
+          "data": {
+            "label": "Auth Service",
+            "shape": "rectangle",
+            "flowchartClassNames": [
+              "service"
+            ],
+            "flowchartClassStyles": {
+              "service": {
+                "fillColor": "#0b3b5a",
+                "strokeColor": "#7dd3fc",
+                "textColor": "#e0f2fe"
+              }
+            },
+            "style": {
+              "fillColor": "#0b3b5a",
+              "strokeColor": "#7dd3fc",
+              "textColor": "#e0f2fe"
+            }
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "ORCH",
+          "type": "editableNode",
+          "position": {
+            "x": 1480,
+            "y": 285
+          },
+          "data": {
+            "label": "Order Orchestrator",
+            "shape": "rectangle",
+            "flowchartClassNames": [
+              "service"
+            ],
+            "flowchartClassStyles": {
+              "service": {
+                "fillColor": "#0b3b5a",
+                "strokeColor": "#7dd3fc",
+                "textColor": "#e0f2fe"
+              }
+            },
+            "style": {
+              "fillColor": "#0b3b5a",
+              "strokeColor": "#7dd3fc",
+              "textColor": "#e0f2fe"
+            }
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "INV",
+          "type": "editableNode",
+          "position": {
+            "x": 2162,
+            "y": 120
+          },
+          "data": {
+            "label": "Inventory Service",
+            "shape": "rectangle",
+            "flowchartClassNames": [
+              "service"
+            ],
+            "flowchartClassStyles": {
+              "service": {
+                "fillColor": "#0b3b5a",
+                "strokeColor": "#7dd3fc",
+                "textColor": "#e0f2fe"
+              }
+            },
+            "style": {
+              "fillColor": "#0b3b5a",
+              "strokeColor": "#7dd3fc",
+              "textColor": "#e0f2fe"
+            }
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "PAY",
+          "type": "editableNode",
+          "position": {
+            "x": 1822,
+            "y": 342
+          },
+          "data": {
+            "label": "Payment Service",
+            "shape": "rectangle",
+            "flowchartClassNames": [
+              "critical"
+            ],
+            "flowchartClassStyles": {
+              "critical": {
+                "fillColor": "#7f1d1d",
+                "strokeColor": "#fecaca",
+                "textColor": "#fee2e2",
+                "borderWidth": 2
+              }
+            },
+            "style": {
+              "fillColor": "#7f1d1d",
+              "strokeColor": "#fecaca",
+              "textColor": "#fee2e2",
+              "borderWidth": 2
+            }
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "SHIP",
+          "type": "editableNode",
+          "position": {
+            "x": 1822,
+            "y": 490
+          },
+          "data": {
+            "label": "Shipment Service",
+            "shape": "rectangle",
+            "flowchartClassNames": [
+              "service"
+            ],
+            "flowchartClassStyles": {
+              "service": {
+                "fillColor": "#0b3b5a",
+                "strokeColor": "#7dd3fc",
+                "textColor": "#e0f2fe"
+              }
+            },
+            "style": {
+              "fillColor": "#0b3b5a",
+              "strokeColor": "#7dd3fc",
+              "textColor": "#e0f2fe"
+            }
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "NOTIF",
+          "type": "editableNode",
+          "position": {
+            "x": 2502,
+            "y": 342
+          },
+          "data": {
+            "label": "Notification Service",
+            "shape": "rectangle",
+            "flowchartClassNames": [
+              "service"
+            ],
+            "flowchartClassStyles": {
+              "service": {
+                "fillColor": "#0b3b5a",
+                "strokeColor": "#7dd3fc",
+                "textColor": "#e0f2fe"
+              }
+            },
+            "style": {
+              "fillColor": "#0b3b5a",
+              "strokeColor": "#7dd3fc",
+              "textColor": "#e0f2fe"
+            }
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "ODB",
+          "type": "editableNode",
+          "position": {
+            "x": 1822,
+            "y": 214
+          },
+          "data": {
+            "label": "Orders DB",
+            "shape": "cylinder",
+            "flowchartClassNames": [
+              "store"
+            ],
+            "flowchartClassStyles": {
+              "store": {
+                "fillColor": "#14532d",
+                "strokeColor": "#86efac",
+                "textColor": "#dcfce7"
+              }
+            },
+            "style": {
+              "fillColor": "#14532d",
+              "strokeColor": "#86efac",
+              "textColor": "#dcfce7"
+            }
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "IDB",
+          "type": "editableNode",
+          "position": {
+            "x": 2510,
+            "y": 120
+          },
+          "data": {
+            "label": "Inventory DB",
+            "shape": "cylinder",
+            "flowchartClassNames": [
+              "store"
+            ],
+            "flowchartClassStyles": {
+              "store": {
+                "fillColor": "#14532d",
+                "strokeColor": "#86efac",
+                "textColor": "#dcfce7"
+              }
+            },
+            "style": {
+              "fillColor": "#14532d",
+              "strokeColor": "#86efac",
+              "textColor": "#dcfce7"
+            }
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "BUS",
+          "type": "editableNode",
+          "position": {
+            "x": 2162,
+            "y": 453
+          },
+          "data": {
+            "label": "Event Bus",
+            "shape": "cylinder",
+            "flowchartClassNames": [
+              "store"
+            ],
+            "flowchartClassStyles": {
+              "store": {
+                "fillColor": "#14532d",
+                "strokeColor": "#86efac",
+                "textColor": "#dcfce7"
+              }
+            },
+            "style": {
+              "fillColor": "#14532d",
+              "strokeColor": "#86efac",
+              "textColor": "#dcfce7"
+            }
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "DLQ",
+          "type": "editableNode",
+          "position": {
+            "x": 2510,
+            "y": 517
+          },
+          "data": {
+            "label": "Dead Letter Queue",
+            "shape": "cylinder",
+            "flowchartClassNames": [
+              "critical",
+              "store"
+            ],
+            "flowchartClassStyles": {
+              "critical": {
+                "fillColor": "#7f1d1d",
+                "strokeColor": "#fecaca",
+                "textColor": "#fee2e2",
+                "borderWidth": 2
+              },
+              "store": {
+                "fillColor": "#14532d",
+                "strokeColor": "#86efac",
+                "textColor": "#dcfce7"
+              }
+            },
+            "style": {
+              "fillColor": "#14532d",
+              "strokeColor": "#86efac",
+              "textColor": "#dcfce7",
+              "borderWidth": 2
+            }
+          },
+          "selected": false,
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "id": "WEB-GW-1",
+          "source": "WEB",
+          "target": "GW",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "MOB-GW-2",
+          "source": "MOB",
+          "target": "GW",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "API-GW-3",
+          "source": "API",
+          "target": "GW",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "GW-WAF-4",
+          "source": "GW",
+          "target": "WAF",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "WAF-AUTH-5",
+          "source": "WAF",
+          "target": "AUTH",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "AUTH-ORCH-6",
+          "source": "AUTH",
+          "target": "ORCH",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "ORCH-INV-7",
+          "source": "ORCH",
+          "target": "INV",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "ORCH-PAY-8",
+          "source": "ORCH",
+          "target": "PAY",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "ORCH-SHIP-9",
+          "source": "ORCH",
+          "target": "SHIP",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "INV-IDB-10",
+          "source": "INV",
+          "target": "IDB",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "ORCH-ODB-11",
+          "source": "ORCH",
+          "target": "ODB",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "ORCH-BUS-12",
+          "source": "ORCH",
+          "target": "BUS",
+          "label": "publish",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "PAY-BUS-13",
+          "source": "PAY",
+          "target": "BUS",
+          "label": "payment.failed",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "SHIP-BUS-14",
+          "source": "SHIP",
+          "target": "BUS",
+          "label": "shipment.created",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "BUS-NOTIF-15",
+          "source": "BUS",
+          "target": "NOTIF",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "BUS-DLQ-16",
+          "source": "BUS",
+          "target": "DLQ",
+          "label": "poison message",
+          "data": {
+            "lineStyle": "dottedArrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "PAY-INV-17",
+          "source": "PAY",
+          "target": "INV",
+          "label": "rollback reserve",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        },
+        {
+          "id": "INV-ORCH-18",
+          "source": "INV",
+          "target": "ORCH",
+          "label": "out_of_stock",
+          "data": {
+            "lineStyle": "arrow"
+          },
+          "selected": false
+        }
+      ],
+      "autoSync": false,
+      "theme": "dark",
+      "code": "flowchart LR\n    classDef critical fill:#7f1d1d,stroke:#fecaca,color:#fee2e2,stroke-width:2px\n    classDef service fill:#0b3b5a,stroke:#7dd3fc,color:#e0f2fe\n    classDef store fill:#14532d,stroke:#86efac,color:#dcfce7\n\n    subgraph Client[Client Channels]\n      WEB[Web App]\n      MOB[Mobile App]\n      API[Partner API]\n    end\n\n    subgraph Edge[Edge Layer]\n      GW[API Gateway]\n      WAF[WAF / Rate Limit]\n      AUTH[Auth Service]\n    end\n\n    subgraph Core[Core Domain]\n      ORCH[Order Orchestrator]\n      INV[Inventory Service]\n      PAY[Payment Service]\n      SHIP[Shipment Service]\n      NOTIF[Notification Service]\n    end\n\n    subgraph Data[Data & Events]\n      ODB[(Orders DB)]\n      IDB[(Inventory DB)]\n      BUS[(Event Bus)]\n      DLQ[(Dead Letter Queue)]\n    end\n\n    WEB --> GW\n    MOB --> GW\n    API --> GW\n    GW --> WAF --> AUTH --> ORCH\n\n    ORCH --> INV\n    ORCH --> PAY\n    ORCH --> SHIP\n\n    INV --> IDB\n    ORCH --> ODB\n\n    ORCH -- publish --> BUS\n    PAY -- payment.failed --> BUS\n    SHIP -- shipment.created --> BUS\n    BUS --> NOTIF\n    BUS -. poison message .-> DLQ\n\n    PAY -- rollback reserve --> INV\n    INV -- out_of_stock --> ORCH\n\n    class PAY,DLQ critical\n    class GW,AUTH,ORCH,INV,SHIP,NOTIF service\n    class ODB,IDB,BUS,DLQ store"
+    },
+    {
+      "id": "diagram-sequence",
+      "title": "Sequence - Checkout Saga",
+      "type": "sequence",
+      "direction": "LR",
+      "nodes": [
+        {
+          "id": "U",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 80
+          },
+          "data": {
+            "label": "User",
+            "sequenceParticipantKind": "actor"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "UI",
+          "type": "editableNode",
+          "position": {
+            "x": 360,
+            "y": 80
+          },
+          "data": {
+            "label": "WebUI",
+            "sequenceParticipantKind": "participant"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "GW",
+          "type": "editableNode",
+          "position": {
+            "x": 600,
+            "y": 80
+          },
+          "data": {
+            "label": "ApiGateway",
+            "sequenceParticipantKind": "participant"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "OR",
+          "type": "editableNode",
+          "position": {
+            "x": 840,
+            "y": 80
+          },
+          "data": {
+            "label": "OrderService",
+            "sequenceParticipantKind": "participant"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "IV",
+          "type": "editableNode",
+          "position": {
+            "x": 1080,
+            "y": 80
+          },
+          "data": {
+            "label": "InventoryService",
+            "sequenceParticipantKind": "participant"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "PY",
+          "type": "editableNode",
+          "position": {
+            "x": 1320,
+            "y": 80
+          },
+          "data": {
+            "label": "PaymentService",
+            "sequenceParticipantKind": "participant"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "SH",
+          "type": "editableNode",
+          "position": {
+            "x": 1560,
+            "y": 80
+          },
+          "data": {
+            "label": "ShippingService",
+            "sequenceParticipantKind": "participant"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "NT",
+          "type": "editableNode",
+          "position": {
+            "x": 1800,
+            "y": 80
+          },
+          "data": {
+            "label": "NotificationService",
+            "sequenceParticipantKind": "participant"
+          },
+          "selected": false,
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "id": "U-UI-1",
+          "source": "U",
+          "target": "UI",
+          "label": "clickCheckout()",
+          "data": {
+            "sequenceArrowOperator": "->>",
+            "sequenceMessageType": "async",
+            "sequenceOrder": 0
+          },
+          "selected": false
+        },
+        {
+          "id": "UI-GW-2",
+          "source": "UI",
+          "target": "GW",
+          "label": "POST /checkout",
+          "data": {
+            "sequenceArrowOperator": "->>",
+            "sequenceMessageType": "async",
+            "sequenceOrder": 1
+          },
+          "selected": false
+        },
+        {
+          "id": "GW-OR-3",
+          "source": "GW",
+          "target": "OR",
+          "label": "createOrder(cartId,userId)",
+          "data": {
+            "sequenceArrowOperator": "->>",
+            "sequenceMessageType": "async",
+            "sequenceOrder": 2
+          },
+          "selected": false
+        },
+        {
+          "id": "OR-IV-4",
+          "source": "OR",
+          "target": "IV",
+          "label": "reserve(items)",
+          "data": {
+            "sequenceArrowOperator": "->>",
+            "sequenceMessageType": "async",
+            "sequenceOrder": 3
+          },
+          "selected": false
+        },
+        {
+          "id": "IV-OR-5",
+          "source": "IV",
+          "target": "OR",
+          "label": "reservationId",
+          "data": {
+            "sequenceArrowOperator": "-->>",
+            "sequenceMessageType": "dashedAsync",
+            "sequenceOrder": 4
+          },
+          "selected": false
+        },
+        {
+          "id": "OR-PY-6",
+          "source": "OR",
+          "target": "PY",
+          "label": "authorize(amount,token)",
+          "data": {
+            "sequenceArrowOperator": "->>",
+            "sequenceMessageType": "async",
+            "sequenceOrder": 5
+          },
+          "selected": false
+        },
+        {
+          "id": "PY-OR-7",
+          "source": "PY",
+          "target": "OR",
+          "label": "authId",
+          "data": {
+            "sequenceArrowOperator": "-->>",
+            "sequenceMessageType": "dashedAsync",
+            "sequenceOrder": 6
+          },
+          "selected": false
+        },
+        {
+          "id": "OR-SH-8",
+          "source": "OR",
+          "target": "SH",
+          "label": "createShipment(orderId,addressId)",
+          "data": {
+            "sequenceArrowOperator": "->>",
+            "sequenceMessageType": "async",
+            "sequenceOrder": 7
+          },
+          "selected": false
+        },
+        {
+          "id": "SH-OR-9",
+          "source": "SH",
+          "target": "OR",
+          "label": "shipmentId",
+          "data": {
+            "sequenceArrowOperator": "-->>",
+            "sequenceMessageType": "dashedAsync",
+            "sequenceOrder": 8
+          },
+          "selected": false
+        },
+        {
+          "id": "OR-NT-10",
+          "source": "OR",
+          "target": "NT",
+          "label": "sendOrderConfirmed(orderId,userId)",
+          "data": {
+            "sequenceArrowOperator": "->>",
+            "sequenceMessageType": "async",
+            "sequenceOrder": 9
+          },
+          "selected": false
+        },
+        {
+          "id": "NT-U-11",
+          "source": "NT",
+          "target": "U",
+          "label": "email and push confirmation",
+          "data": {
+            "sequenceArrowOperator": "-->>",
+            "sequenceMessageType": "dashedAsync",
+            "sequenceOrder": 10
+          },
+          "selected": false
+        },
+        {
+          "id": "OR-GW-12",
+          "source": "OR",
+          "target": "GW",
+          "label": "201 orderId",
+          "data": {
+            "sequenceArrowOperator": "-->>",
+            "sequenceMessageType": "dashedAsync",
+            "sequenceOrder": 11
+          },
+          "selected": false
+        },
+        {
+          "id": "GW-UI-13",
+          "source": "GW",
+          "target": "UI",
+          "label": "success(orderId,eta)",
+          "data": {
+            "sequenceArrowOperator": "-->>",
+            "sequenceMessageType": "dashedAsync",
+            "sequenceOrder": 12
+          },
+          "selected": false
+        },
+        {
+          "id": "UI-U-14",
+          "source": "UI",
+          "target": "U",
+          "label": "renderConfirmation()",
+          "data": {
+            "sequenceArrowOperator": "-->>",
+            "sequenceMessageType": "dashedAsync",
+            "sequenceOrder": 13
+          },
+          "selected": false
+        },
+        {
+          "id": "OR-PY-15",
+          "source": "OR",
+          "target": "PY",
+          "label": "capture(authId)",
+          "data": {
+            "sequenceArrowOperator": "->>",
+            "sequenceMessageType": "async",
+            "sequenceOrder": 14
+          },
+          "selected": false
+        },
+        {
+          "id": "PY-OR-16",
+          "source": "PY",
+          "target": "OR",
+          "label": "captureOk",
+          "data": {
+            "sequenceArrowOperator": "-->>",
+            "sequenceMessageType": "dashedAsync",
+            "sequenceOrder": 15
+          },
+          "selected": false
+        },
+        {
+          "id": "OR-IV-17",
+          "source": "OR",
+          "target": "IV",
+          "label": "finalizeReservation(reservationId)",
+          "data": {
+            "sequenceArrowOperator": "->>",
+            "sequenceMessageType": "async",
+            "sequenceOrder": 16
+          },
+          "selected": false
+        },
+        {
+          "id": "IV-OR-18",
+          "source": "IV",
+          "target": "OR",
+          "label": "stockCommitted",
+          "data": {
+            "sequenceArrowOperator": "-->>",
+            "sequenceMessageType": "dashedAsync",
+            "sequenceOrder": 17
+          },
+          "selected": false
+        }
+      ],
+      "autoSync": false,
+      "theme": "dark",
+      "code": "sequenceDiagram\n    actor U as User\n    participant UI as WebUI\n    participant GW as ApiGateway\n    participant OR as OrderService\n    participant IV as InventoryService\n    participant PY as PaymentService\n    participant SH as ShippingService\n    participant NT as NotificationService\n\n    U->>UI: clickCheckout()\n    UI->>GW: POST /checkout\n    GW->>OR: createOrder(cartId,userId)\n    OR->>IV: reserve(items)\n    IV-->>OR: reservationId\n    OR->>PY: authorize(amount,token)\n    PY-->>OR: authId\n    OR->>SH: createShipment(orderId,addressId)\n    SH-->>OR: shipmentId\n    OR->>NT: sendOrderConfirmed(orderId,userId)\n    NT-->>U: email and push confirmation\n    OR-->>GW: 201 orderId\n    GW-->>UI: success(orderId,eta)\n    UI-->>U: renderConfirmation()\n    OR->>PY: capture(authId)\n    PY-->>OR: captureOk\n    OR->>IV: finalizeReservation(reservationId)\n    IV-->>OR: stockCommitted"
+    },
+    {
+      "id": "diagram-class",
+      "title": "Class - Plugin Architecture",
+      "type": "class",
+      "direction": "LR",
+      "nodes": [
+        {
+          "id": "DiagramEngine",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 565
+          },
+          "data": {
+            "label": "DiagramEngine",
+            "classAttributes": "-registry: PluginRegistry\n-renderQueue: RenderQueue",
+            "classMethods": "+loadProject(path: string): Project\n+saveProject(project: Project): bool\n+render(project: Project): RenderResult\n+runValidation(project: Project): ValidationReport",
+            "classNote": "Coordinates parse, validate and render pipeline"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "PluginRegistry",
+          "type": "editableNode",
+          "position": {
+            "x": 860,
+            "y": 257
+          },
+          "data": {
+            "label": "PluginRegistry",
+            "classAttributes": "-plugins: Map~string,DiagramPlugin~",
+            "classMethods": "+register(plugin: DiagramPlugin): void\n+unregister(pluginId: string): void\n+resolve(type: string): DiagramPlugin\n+list(): DiagramPlugin[]"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "DiagramPlugin",
+          "type": "editableNode",
+          "position": {
+            "x": 1562,
+            "y": 271
+          },
+          "data": {
+            "label": "DiagramPlugin",
+            "classAnnotation": "interface"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "FlowchartPlugin",
+          "type": "editableNode",
+          "position": {
+            "x": 2162,
+            "y": 120
+          },
+          "data": {
+            "label": "FlowchartPlugin",
+            "classMethods": "+supports(type: string): bool\n+parse(code: string): Graph\n+serialize(graph: Graph): string"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "SequencePlugin",
+          "type": "editableNode",
+          "position": {
+            "x": 2162,
+            "y": 422
+          },
+          "data": {
+            "label": "SequencePlugin",
+            "classMethods": "+supports(type: string): bool\n+parse(code: string): Graph\n+serialize(graph: Graph): string"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Project",
+          "type": "editableNode",
+          "position": {
+            "x": 911,
+            "y": 587
+          },
+          "data": {
+            "label": "Project",
+            "classAttributes": "+title: string\n+owner: string\n+diagrams: Diagram[]\n+createdAt: datetime"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Diagram",
+          "type": "editableNode",
+          "position": {
+            "x": 1562,
+            "y": 587
+          },
+          "data": {
+            "label": "Diagram",
+            "classAttributes": "+id: string\n+type: string\n+code: string\n+revision: int"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "ValidationReport",
+          "type": "editableNode",
+          "position": {
+            "x": 911,
+            "y": 895
+          },
+          "data": {
+            "label": "ValidationReport",
+            "classAttributes": "+isValid: bool\n+errors: string[]\n+warnings: string[]"
+          },
+          "selected": false,
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "id": "DiagramEngine-PluginRegistry-1",
+          "source": "DiagramEngine",
+          "target": "PluginRegistry",
+          "label": "owns",
+          "data": {
+            "classRelationshipToken": "o--"
+          },
+          "selected": false
+        },
+        {
+          "id": "PluginRegistry-DiagramPlugin-2",
+          "source": "PluginRegistry",
+          "target": "DiagramPlugin",
+          "label": "stores",
+          "data": {
+            "classRelationshipToken": "o--"
+          },
+          "selected": false
+        },
+        {
+          "id": "DiagramPlugin-FlowchartPlugin-3",
+          "source": "DiagramPlugin",
+          "target": "FlowchartPlugin",
+          "data": {
+            "classRelationshipToken": "<|.."
+          },
+          "selected": false
+        },
+        {
+          "id": "DiagramPlugin-SequencePlugin-4",
+          "source": "DiagramPlugin",
+          "target": "SequencePlugin",
+          "data": {
+            "classRelationshipToken": "<|.."
+          },
+          "selected": false
+        },
+        {
+          "id": "Project-Diagram-5",
+          "source": "Project",
+          "target": "Diagram",
+          "label": "contains",
+          "data": {
+            "classRelationshipToken": "*--"
+          },
+          "selected": false
+        },
+        {
+          "id": "DiagramEngine-Project-6",
+          "source": "DiagramEngine",
+          "target": "Project",
+          "label": "loads",
+          "data": {
+            "classRelationshipToken": "-->"
+          },
+          "selected": false
+        },
+        {
+          "id": "DiagramEngine-ValidationReport-7",
+          "source": "DiagramEngine",
+          "target": "ValidationReport",
+          "label": "returns",
+          "data": {
+            "classRelationshipToken": "-->"
+          },
+          "selected": false
+        }
+      ],
+      "autoSync": false,
+      "theme": "dark",
+      "code": "classDiagram\n    direction LR\n\n    class DiagramEngine {\n      -registry: PluginRegistry\n      -renderQueue: RenderQueue\n      +loadProject(path: string): Project\n      +saveProject(project: Project): bool\n      +render(project: Project): RenderResult\n      +runValidation(project: Project): ValidationReport\n    }\n\n    class PluginRegistry {\n      -plugins: Map~string,DiagramPlugin~\n      +register(plugin: DiagramPlugin): void\n      +unregister(pluginId: string): void\n      +resolve(type: string): DiagramPlugin\n      +list(): DiagramPlugin[]\n    }\n\n    class DiagramPlugin <<interface>>\n\n    class FlowchartPlugin {\n      +supports(type: string): bool\n      +parse(code: string): Graph\n      +serialize(graph: Graph): string\n    }\n\n    class SequencePlugin {\n      +supports(type: string): bool\n      +parse(code: string): Graph\n      +serialize(graph: Graph): string\n    }\n\n    class Project {\n      +title: string\n      +owner: string\n      +diagrams: Diagram[]\n      +createdAt: datetime\n    }\n\n    class Diagram {\n      +id: string\n      +type: string\n      +code: string\n      +revision: int\n    }\n\n    class ValidationReport {\n      +isValid: bool\n      +errors: string[]\n      +warnings: string[]\n    }\n\n    DiagramEngine o-- PluginRegistry : owns\n    PluginRegistry o-- DiagramPlugin : stores\n    DiagramPlugin <|.. FlowchartPlugin\n    DiagramPlugin <|.. SequencePlugin\n    Project *-- Diagram : contains\n    DiagramEngine --> Project : loads\n    DiagramEngine --> ValidationReport : returns\n    note for DiagramEngine \"Coordinates parse, validate and render pipeline\""
+    },
+    {
+      "id": "diagram-state",
+      "title": "State - Incident Lifecycle",
+      "type": "state",
+      "direction": "TD",
+      "nodes": [
+        {
+          "id": "AlertReceived",
+          "type": "editableNode",
+          "position": {
+            "x": 385,
+            "y": 120
+          },
+          "data": {
+            "label": "Alert Received"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Triaging",
+          "type": "editableNode",
+          "position": {
+            "x": 355,
+            "y": 528
+          },
+          "data": {
+            "label": "On-call Triaging",
+            "stateDescription": "severity matrix and blast radius"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Mitigating",
+          "type": "editableNode",
+          "position": {
+            "x": 677,
+            "y": 936
+          },
+          "data": {
+            "label": "Mitigation In Progress"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Rollback",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 1344
+          },
+          "data": {
+            "label": "Rollback Deploy"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Throttle",
+          "type": "editableNode",
+          "position": {
+            "x": 480,
+            "y": 1344
+          },
+          "data": {
+            "label": "Throttle Traffic"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Failover",
+          "type": "editableNode",
+          "position": {
+            "x": 840,
+            "y": 1344
+          },
+          "data": {
+            "label": "Regional Failover"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Verification",
+          "type": "editableNode",
+          "position": {
+            "x": 627,
+            "y": 1752
+          },
+          "data": {
+            "label": "Verification",
+            "stateDescription": "check SLO, latency and saturation"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Postmortem",
+          "type": "editableNode",
+          "position": {
+            "x": 660,
+            "y": 2160
+          },
+          "data": {
+            "label": "Postmortem Draft"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "ActionItems",
+          "type": "editableNode",
+          "position": {
+            "x": 660,
+            "y": 2568
+          },
+          "data": {
+            "label": "Action Items Tracking"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Closed",
+          "type": "editableNode",
+          "position": {
+            "x": 385,
+            "y": 2976
+          },
+          "data": {
+            "label": "Closed"
+          },
+          "selected": false,
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "id": "AlertReceived-Triaging-1",
+          "source": "AlertReceived",
+          "target": "Triaging",
+          "label": "pager acknowledged",
+          "selected": false
+        },
+        {
+          "id": "Triaging-Mitigating-2",
+          "source": "Triaging",
+          "target": "Mitigating",
+          "label": "impact confirmed",
+          "selected": false
+        },
+        {
+          "id": "Triaging-Closed-3",
+          "source": "Triaging",
+          "target": "Closed",
+          "label": "false positive",
+          "selected": false
+        },
+        {
+          "id": "Mitigating-Rollback-4",
+          "source": "Mitigating",
+          "target": "Rollback",
+          "label": "bad release suspected",
+          "selected": false
+        },
+        {
+          "id": "Mitigating-Throttle-5",
+          "source": "Mitigating",
+          "target": "Throttle",
+          "label": "traffic spike",
+          "selected": false
+        },
+        {
+          "id": "Mitigating-Failover-6",
+          "source": "Mitigating",
+          "target": "Failover",
+          "label": "region unhealthy",
+          "selected": false
+        },
+        {
+          "id": "Rollback-Verification-7",
+          "source": "Rollback",
+          "target": "Verification",
+          "label": "deployment reverted",
+          "selected": false
+        },
+        {
+          "id": "Throttle-Verification-8",
+          "source": "Throttle",
+          "target": "Verification",
+          "label": "limits applied",
+          "selected": false
+        },
+        {
+          "id": "Failover-Verification-9",
+          "source": "Failover",
+          "target": "Verification",
+          "label": "failover completed",
+          "selected": false
+        },
+        {
+          "id": "Verification-Mitigating-10",
+          "source": "Verification",
+          "target": "Mitigating",
+          "label": "errors still elevated",
+          "selected": false
+        },
+        {
+          "id": "Verification-Postmortem-11",
+          "source": "Verification",
+          "target": "Postmortem",
+          "label": "service stable",
+          "selected": false
+        },
+        {
+          "id": "Postmortem-ActionItems-12",
+          "source": "Postmortem",
+          "target": "ActionItems",
+          "label": "root cause confirmed",
+          "selected": false
+        },
+        {
+          "id": "ActionItems-Closed-13",
+          "source": "ActionItems",
+          "target": "Closed",
+          "label": "owners and due dates assigned",
+          "selected": false
+        }
+      ],
+      "autoSync": false,
+      "theme": "dark",
+      "code": "stateDiagram-v2\n    state \"Alert Received\" as AlertReceived\n    state \"On-call Triaging\" as Triaging\n    state \"Mitigation In Progress\" as Mitigating\n    state \"Rollback Deploy\" as Rollback\n    state \"Throttle Traffic\" as Throttle\n    state \"Regional Failover\" as Failover\n    state \"Verification\" as Verification\n    state \"Postmortem Draft\" as Postmortem\n    state \"Action Items Tracking\" as ActionItems\n    state \"Closed\" as Closed\n\n    AlertReceived --> Triaging : pager acknowledged\n    Triaging --> Mitigating : impact confirmed\n    Triaging --> Closed : false positive\n\n    Mitigating --> Rollback : bad release suspected\n    Mitigating --> Throttle : traffic spike\n    Mitigating --> Failover : region unhealthy\n\n    Rollback --> Verification : deployment reverted\n    Throttle --> Verification : limits applied\n    Failover --> Verification : failover completed\n\n    Verification --> Mitigating : errors still elevated\n    Verification --> Postmortem : service stable\n    Postmortem --> ActionItems : root cause confirmed\n    ActionItems --> Closed : owners and due dates assigned\n\n    Triaging : severity matrix and blast radius\n    Verification : check SLO, latency and saturation"
+    },
+    {
+      "id": "diagram-er",
+      "title": "ER - Multi-Tenant Commerce",
+      "type": "er",
+      "direction": "LR",
+      "nodes": [
+        {
+          "id": "TENANT",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 405
+          },
+          "data": {
+            "label": "TENANT",
+            "erAttributes": "uuid id PK\nstring slug UK\nstring plan\ndatetime created_at"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "USER",
+          "type": "editableNode",
+          "position": {
+            "x": 640,
+            "y": 665
+          },
+          "data": {
+            "label": "USER",
+            "erAttributes": "uuid id PK\nuuid tenant_id FK\nstring email UK\nstring role\nboolean is_active\ndatetime last_login_at"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "STORE",
+          "type": "editableNode",
+          "position": {
+            "x": 640,
+            "y": 141
+          },
+          "data": {
+            "label": "STORE",
+            "erAttributes": "uuid id PK\nuuid tenant_id FK\nstring name\nstring timezone\nstring currency"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "PRODUCT",
+          "type": "editableNode",
+          "position": {
+            "x": 1166,
+            "y": 120
+          },
+          "data": {
+            "label": "PRODUCT",
+            "erAttributes": "uuid id PK\nuuid store_id FK\nstring sku UK\nstring title\ndecimal price\nboolean archived"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "INVENTORY_SNAPSHOT",
+          "type": "editableNode",
+          "position": {
+            "x": 1691,
+            "y": 143
+          },
+          "data": {
+            "label": "INVENTORY_SNAPSHOT"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "ORDER",
+          "type": "editableNode",
+          "position": {
+            "x": 1160,
+            "y": 644
+          },
+          "data": {
+            "label": "ORDER",
+            "erAttributes": "uuid id PK\nuuid user_id FK\nuuid store_id FK\nstring status\ndecimal total_amount\nstring idempotency_key UK\ndatetime created_at"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "ORDER_ITEM",
+          "type": "editableNode",
+          "position": {
+            "x": 1691,
+            "y": 399
+          },
+          "data": {
+            "label": "ORDER_ITEM"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "PAYMENT",
+          "type": "editableNode",
+          "position": {
+            "x": 1691,
+            "y": 655
+          },
+          "data": {
+            "label": "PAYMENT",
+            "erAttributes": "uuid id PK\nuuid order_id FK\nstring provider\nstring status\ndecimal amount\ndatetime authorized_at"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "SHIPMENT",
+          "type": "editableNode",
+          "position": {
+            "x": 1691,
+            "y": 977
+          },
+          "data": {
+            "label": "SHIPMENT"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "SHIPMENT_EVENT",
+          "type": "editableNode",
+          "position": {
+            "x": 2211,
+            "y": 977
+          },
+          "data": {
+            "label": "SHIPMENT_EVENT"
+          },
+          "selected": false,
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "id": "TENANT-USER-1",
+          "source": "TENANT",
+          "target": "USER",
+          "label": "has",
+          "data": {
+            "erSourceCardinality": "one",
+            "erTargetCardinality": "zeroOrMore",
+            "erRelationshipLineStyle": "identifying"
+          },
+          "selected": false
+        },
+        {
+          "id": "TENANT-STORE-2",
+          "source": "TENANT",
+          "target": "STORE",
+          "label": "owns",
+          "data": {
+            "erSourceCardinality": "one",
+            "erTargetCardinality": "zeroOrMore",
+            "erRelationshipLineStyle": "identifying"
+          },
+          "selected": false
+        },
+        {
+          "id": "STORE-PRODUCT-3",
+          "source": "STORE",
+          "target": "PRODUCT",
+          "label": "sells",
+          "data": {
+            "erSourceCardinality": "one",
+            "erTargetCardinality": "zeroOrMore",
+            "erRelationshipLineStyle": "identifying"
+          },
+          "selected": false
+        },
+        {
+          "id": "PRODUCT-INVENTORY_SNAPSHOT-4",
+          "source": "PRODUCT",
+          "target": "INVENTORY_SNAPSHOT",
+          "label": "tracked_by",
+          "data": {
+            "erSourceCardinality": "one",
+            "erTargetCardinality": "zeroOrMore",
+            "erRelationshipLineStyle": "identifying"
+          },
+          "selected": false
+        },
+        {
+          "id": "USER-ORDER-5",
+          "source": "USER",
+          "target": "ORDER",
+          "label": "places",
+          "data": {
+            "erSourceCardinality": "one",
+            "erTargetCardinality": "zeroOrMore",
+            "erRelationshipLineStyle": "identifying"
+          },
+          "selected": false
+        },
+        {
+          "id": "STORE-ORDER-6",
+          "source": "STORE",
+          "target": "ORDER",
+          "label": "receives",
+          "data": {
+            "erSourceCardinality": "one",
+            "erTargetCardinality": "zeroOrMore",
+            "erRelationshipLineStyle": "identifying"
+          },
+          "selected": false
+        },
+        {
+          "id": "ORDER-ORDER_ITEM-7",
+          "source": "ORDER",
+          "target": "ORDER_ITEM",
+          "label": "contains",
+          "data": {
+            "erSourceCardinality": "one",
+            "erTargetCardinality": "oneOrMore",
+            "erRelationshipLineStyle": "identifying"
+          },
+          "selected": false
+        },
+        {
+          "id": "PRODUCT-ORDER_ITEM-8",
+          "source": "PRODUCT",
+          "target": "ORDER_ITEM",
+          "label": "appears_in",
+          "data": {
+            "erSourceCardinality": "one",
+            "erTargetCardinality": "zeroOrMore",
+            "erRelationshipLineStyle": "identifying"
+          },
+          "selected": false
+        },
+        {
+          "id": "ORDER-PAYMENT-9",
+          "source": "ORDER",
+          "target": "PAYMENT",
+          "label": "paid_by",
+          "data": {
+            "erSourceCardinality": "one",
+            "erTargetCardinality": "zeroOrMore",
+            "erRelationshipLineStyle": "identifying"
+          },
+          "selected": false
+        },
+        {
+          "id": "ORDER-SHIPMENT-10",
+          "source": "ORDER",
+          "target": "SHIPMENT",
+          "label": "fulfilled_by",
+          "data": {
+            "erSourceCardinality": "one",
+            "erTargetCardinality": "zeroOrMore",
+            "erRelationshipLineStyle": "identifying"
+          },
+          "selected": false
+        },
+        {
+          "id": "SHIPMENT-SHIPMENT_EVENT-11",
+          "source": "SHIPMENT",
+          "target": "SHIPMENT_EVENT",
+          "label": "emits",
+          "data": {
+            "erSourceCardinality": "one",
+            "erTargetCardinality": "zeroOrMore",
+            "erRelationshipLineStyle": "identifying"
+          },
+          "selected": false
+        }
+      ],
+      "autoSync": false,
+      "theme": "dark",
+      "code": "erDiagram\n    TENANT ||--o{ USER : has\n    TENANT ||--o{ STORE : owns\n    STORE ||--o{ PRODUCT : sells\n    PRODUCT ||--o{ INVENTORY_SNAPSHOT : tracked_by\n\n    USER ||--o{ ORDER : places\n    STORE ||--o{ ORDER : receives\n    ORDER ||--|{ ORDER_ITEM : contains\n    PRODUCT ||--o{ ORDER_ITEM : appears_in\n\n    ORDER ||--o{ PAYMENT : paid_by\n    ORDER ||--o{ SHIPMENT : fulfilled_by\n    SHIPMENT ||--o{ SHIPMENT_EVENT : emits\n\n    TENANT {\n      uuid id PK\n      string slug UK\n      string plan\n      datetime created_at\n    }\n\n    USER {\n      uuid id PK\n      uuid tenant_id FK\n      string email UK\n      string role\n      boolean is_active\n      datetime last_login_at\n    }\n\n    STORE {\n      uuid id PK\n      uuid tenant_id FK\n      string name\n      string timezone\n      string currency\n    }\n\n    PRODUCT {\n      uuid id PK\n      uuid store_id FK\n      string sku UK\n      string title\n      decimal price\n      boolean archived\n    }\n\n    ORDER {\n      uuid id PK\n      uuid user_id FK\n      uuid store_id FK\n      string status\n      decimal total_amount\n      string idempotency_key UK\n      datetime created_at\n    }\n\n    PAYMENT {\n      uuid id PK\n      uuid order_id FK\n      string provider\n      string status\n      decimal amount\n      datetime authorized_at\n    }"
+    },
+    {
+      "id": "diagram-mindmap",
+      "title": "Mindmap - Platform Modernization Program",
+      "type": "mindmap",
+      "direction": "LR",
+      "nodes": [
+        {
+          "id": "Platform_Modernization",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 2168
+          },
+          "data": {
+            "label": "Platform Modernization"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Architecture",
+          "type": "editableNode",
+          "position": {
+            "x": 505,
+            "y": 504
+          },
+          "data": {
+            "label": "Architecture"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Domain_decomposition",
+          "type": "editableNode",
+          "position": {
+            "x": 864,
+            "y": 184
+          },
+          "data": {
+            "label": "Domain decomposition"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Bounded_contexts",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 120
+          },
+          "data": {
+            "label": "Bounded contexts"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Event_contracts",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 248
+          },
+          "data": {
+            "label": "Event contracts"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Runtime",
+          "type": "editableNode",
+          "position": {
+            "x": 872,
+            "y": 504
+          },
+          "data": {
+            "label": "Runtime"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Kubernetes_multi_cluster",
+          "type": "editableNode",
+          "position": {
+            "x": 1227,
+            "y": 376
+          },
+          "data": {
+            "label": "Kubernetes multi-cluster"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Service_mesh",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 504
+          },
+          "data": {
+            "label": "Service mesh"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Progressive_delivery",
+          "type": "editableNode",
+          "position": {
+            "x": 1241,
+            "y": 632
+          },
+          "data": {
+            "label": "Progressive delivery"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Data_strategy",
+          "type": "editableNode",
+          "position": {
+            "x": 872,
+            "y": 888
+          },
+          "data": {
+            "label": "Data strategy"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "CDC_pipelines",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 760
+          },
+          "data": {
+            "label": "CDC pipelines"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Lakehouse",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 888
+          },
+          "data": {
+            "label": "Lakehouse"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Data_quality_SLO",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 1016
+          },
+          "data": {
+            "label": "Data quality SLO"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Engineering_Excellence",
+          "type": "editableNode",
+          "position": {
+            "x": 490,
+            "y": 1656
+          },
+          "data": {
+            "label": "Engineering Excellence"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Delivery",
+          "type": "editableNode",
+          "position": {
+            "x": 872,
+            "y": 1272
+          },
+          "data": {
+            "label": "Delivery"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Trunk_based_development",
+          "type": "editableNode",
+          "position": {
+            "x": 1230,
+            "y": 1144
+          },
+          "data": {
+            "label": "Trunk-based development"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Feature_flags",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 1272
+          },
+          "data": {
+            "label": "Feature flags"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Automated_rollback",
+          "type": "editableNode",
+          "position": {
+            "x": 1248,
+            "y": 1400
+          },
+          "data": {
+            "label": "Automated rollback"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Quality",
+          "type": "editableNode",
+          "position": {
+            "x": 872,
+            "y": 1656
+          },
+          "data": {
+            "label": "Quality"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Contract_tests",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 1528
+          },
+          "data": {
+            "label": "Contract tests"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Chaos_experiments",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 1656
+          },
+          "data": {
+            "label": "Chaos experiments"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Resilience_scorecards",
+          "type": "editableNode",
+          "position": {
+            "x": 1237,
+            "y": 1784
+          },
+          "data": {
+            "label": "Resilience scorecards"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Developer_Experience",
+          "type": "editableNode",
+          "position": {
+            "x": 864,
+            "y": 2040
+          },
+          "data": {
+            "label": "Developer Experience"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Golden_paths",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 1912
+          },
+          "data": {
+            "label": "Golden paths"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Internal_portal",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 2040
+          },
+          "data": {
+            "label": "Internal portal"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Self_service_templates",
+          "type": "editableNode",
+          "position": {
+            "x": 1234,
+            "y": 2168
+          },
+          "data": {
+            "label": "Self-service templates"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Security___Compliance",
+          "type": "editableNode",
+          "position": {
+            "x": 494,
+            "y": 2680
+          },
+          "data": {
+            "label": "Security & Compliance"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Identity",
+          "type": "editableNode",
+          "position": {
+            "x": 872,
+            "y": 2360
+          },
+          "data": {
+            "label": "Identity"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "SSO___SCIM",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 2296
+          },
+          "data": {
+            "label": "SSO + SCIM"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Fine_grained_RBAC",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 2424
+          },
+          "data": {
+            "label": "Fine-grained RBAC"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Supply_chain",
+          "type": "editableNode",
+          "position": {
+            "x": 872,
+            "y": 2680
+          },
+          "data": {
+            "label": "Supply chain"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "SBOM",
+          "type": "editableNode",
+          "position": {
+            "x": 1249,
+            "y": 2552
+          },
+          "data": {
+            "label": "SBOM"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Provenance_attestations",
+          "type": "editableNode",
+          "position": {
+            "x": 1230,
+            "y": 2680
+          },
+          "data": {
+            "label": "Provenance attestations"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Dependency_policies",
+          "type": "editableNode",
+          "position": {
+            "x": 1244,
+            "y": 2808
+          },
+          "data": {
+            "label": "Dependency policies"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Governance",
+          "type": "editableNode",
+          "position": {
+            "x": 872,
+            "y": 3000
+          },
+          "data": {
+            "label": "Governance"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Audit_evidence_automation",
+          "type": "editableNode",
+          "position": {
+            "x": 1223,
+            "y": 2936
+          },
+          "data": {
+            "label": "Audit evidence automation"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Data_retention_rules",
+          "type": "editableNode",
+          "position": {
+            "x": 1241,
+            "y": 3064
+          },
+          "data": {
+            "label": "Data retention rules"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Business_Outcomes",
+          "type": "editableNode",
+          "position": {
+            "x": 505,
+            "y": 3256
+          },
+          "data": {
+            "label": "Business Outcomes"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Faster_time_to_market",
+          "type": "editableNode",
+          "position": {
+            "x": 860,
+            "y": 3128
+          },
+          "data": {
+            "label": "Faster time-to-market"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Reduced_incident_cost",
+          "type": "editableNode",
+          "position": {
+            "x": 860,
+            "y": 3256
+          },
+          "data": {
+            "label": "Reduced incident cost"
+          },
+          "selected": false,
+          "dragging": false
+        },
+        {
+          "id": "Better_gross_margin",
+          "type": "editableNode",
+          "position": {
+            "x": 867,
+            "y": 3384
+          },
+          "data": {
+            "label": "Better gross margin"
+          },
+          "selected": false,
+          "dragging": false
+        }
+      ],
+      "edges": [
+        {
+          "id": "Platform_Modernization-Architecture-1",
+          "source": "Platform_Modernization",
+          "target": "Architecture",
+          "selected": false
+        },
+        {
+          "id": "Architecture-Domain_decomposition-2",
+          "source": "Architecture",
+          "target": "Domain_decomposition",
+          "selected": false
+        },
+        {
+          "id": "Domain_decomposition-Bounded_contexts-3",
+          "source": "Domain_decomposition",
+          "target": "Bounded_contexts",
+          "selected": false
+        },
+        {
+          "id": "Domain_decomposition-Event_contracts-4",
+          "source": "Domain_decomposition",
+          "target": "Event_contracts",
+          "selected": false
+        },
+        {
+          "id": "Architecture-Runtime-5",
+          "source": "Architecture",
+          "target": "Runtime",
+          "selected": false
+        },
+        {
+          "id": "Runtime-Kubernetes_multi_cluster-6",
+          "source": "Runtime",
+          "target": "Kubernetes_multi_cluster",
+          "selected": false
+        },
+        {
+          "id": "Runtime-Service_mesh-7",
+          "source": "Runtime",
+          "target": "Service_mesh",
+          "selected": false
+        },
+        {
+          "id": "Runtime-Progressive_delivery-8",
+          "source": "Runtime",
+          "target": "Progressive_delivery",
+          "selected": false
+        },
+        {
+          "id": "Architecture-Data_strategy-9",
+          "source": "Architecture",
+          "target": "Data_strategy",
+          "selected": false
+        },
+        {
+          "id": "Data_strategy-CDC_pipelines-10",
+          "source": "Data_strategy",
+          "target": "CDC_pipelines",
+          "selected": false
+        },
+        {
+          "id": "Data_strategy-Lakehouse-11",
+          "source": "Data_strategy",
+          "target": "Lakehouse",
+          "selected": false
+        },
+        {
+          "id": "Data_strategy-Data_quality_SLO-12",
+          "source": "Data_strategy",
+          "target": "Data_quality_SLO",
+          "selected": false
+        },
+        {
+          "id": "Platform_Modernization-Engineering_Excellence-13",
+          "source": "Platform_Modernization",
+          "target": "Engineering_Excellence",
+          "selected": false
+        },
+        {
+          "id": "Engineering_Excellence-Delivery-14",
+          "source": "Engineering_Excellence",
+          "target": "Delivery",
+          "selected": false
+        },
+        {
+          "id": "Delivery-Trunk_based_development-15",
+          "source": "Delivery",
+          "target": "Trunk_based_development",
+          "selected": false
+        },
+        {
+          "id": "Delivery-Feature_flags-16",
+          "source": "Delivery",
+          "target": "Feature_flags",
+          "selected": false
+        },
+        {
+          "id": "Delivery-Automated_rollback-17",
+          "source": "Delivery",
+          "target": "Automated_rollback",
+          "selected": false
+        },
+        {
+          "id": "Engineering_Excellence-Quality-18",
+          "source": "Engineering_Excellence",
+          "target": "Quality",
+          "selected": false
+        },
+        {
+          "id": "Quality-Contract_tests-19",
+          "source": "Quality",
+          "target": "Contract_tests",
+          "selected": false
+        },
+        {
+          "id": "Quality-Chaos_experiments-20",
+          "source": "Quality",
+          "target": "Chaos_experiments",
+          "selected": false
+        },
+        {
+          "id": "Quality-Resilience_scorecards-21",
+          "source": "Quality",
+          "target": "Resilience_scorecards",
+          "selected": false
+        },
+        {
+          "id": "Engineering_Excellence-Developer_Experience-22",
+          "source": "Engineering_Excellence",
+          "target": "Developer_Experience",
+          "selected": false
+        },
+        {
+          "id": "Developer_Experience-Golden_paths-23",
+          "source": "Developer_Experience",
+          "target": "Golden_paths",
+          "selected": false
+        },
+        {
+          "id": "Developer_Experience-Internal_portal-24",
+          "source": "Developer_Experience",
+          "target": "Internal_portal",
+          "selected": false
+        },
+        {
+          "id": "Developer_Experience-Self_service_templates-25",
+          "source": "Developer_Experience",
+          "target": "Self_service_templates",
+          "selected": false
+        },
+        {
+          "id": "Platform_Modernization-Security___Compliance-26",
+          "source": "Platform_Modernization",
+          "target": "Security___Compliance",
+          "selected": false
+        },
+        {
+          "id": "Security___Compliance-Identity-27",
+          "source": "Security___Compliance",
+          "target": "Identity",
+          "selected": false
+        },
+        {
+          "id": "Identity-SSO___SCIM-28",
+          "source": "Identity",
+          "target": "SSO___SCIM",
+          "selected": false
+        },
+        {
+          "id": "Identity-Fine_grained_RBAC-29",
+          "source": "Identity",
+          "target": "Fine_grained_RBAC",
+          "selected": false
+        },
+        {
+          "id": "Security___Compliance-Supply_chain-30",
+          "source": "Security___Compliance",
+          "target": "Supply_chain",
+          "selected": false
+        },
+        {
+          "id": "Supply_chain-SBOM-31",
+          "source": "Supply_chain",
+          "target": "SBOM",
+          "selected": false
+        },
+        {
+          "id": "Supply_chain-Provenance_attestations-32",
+          "source": "Supply_chain",
+          "target": "Provenance_attestations",
+          "selected": false
+        },
+        {
+          "id": "Supply_chain-Dependency_policies-33",
+          "source": "Supply_chain",
+          "target": "Dependency_policies",
+          "selected": false
+        },
+        {
+          "id": "Security___Compliance-Governance-34",
+          "source": "Security___Compliance",
+          "target": "Governance",
+          "selected": false
+        },
+        {
+          "id": "Governance-Audit_evidence_automation-35",
+          "source": "Governance",
+          "target": "Audit_evidence_automation",
+          "selected": false
+        },
+        {
+          "id": "Governance-Data_retention_rules-36",
+          "source": "Governance",
+          "target": "Data_retention_rules",
+          "selected": false
+        },
+        {
+          "id": "Platform_Modernization-Business_Outcomes-37",
+          "source": "Platform_Modernization",
+          "target": "Business_Outcomes",
+          "selected": false
+        },
+        {
+          "id": "Business_Outcomes-Faster_time_to_market-38",
+          "source": "Business_Outcomes",
+          "target": "Faster_time_to_market",
+          "selected": false
+        },
+        {
+          "id": "Business_Outcomes-Reduced_incident_cost-39",
+          "source": "Business_Outcomes",
+          "target": "Reduced_incident_cost",
+          "selected": false
+        },
+        {
+          "id": "Business_Outcomes-Better_gross_margin-40",
+          "source": "Business_Outcomes",
+          "target": "Better_gross_margin",
+          "selected": false
+        }
+      ],
+      "autoSync": false,
+      "theme": "dark",
+      "code": "mindmap\n  root((Platform Modernization))\n    Architecture\n      Domain decomposition\n        Bounded contexts\n        Event contracts\n      Runtime\n        Kubernetes multi-cluster\n        Service mesh\n        Progressive delivery\n      Data strategy\n        CDC pipelines\n        Lakehouse\n        Data quality SLO\n    Engineering Excellence\n      Delivery\n        Trunk-based development\n        Feature flags\n        Automated rollback\n      Quality\n        Contract tests\n        Chaos experiments\n        Resilience scorecards\n      Developer Experience\n        Golden paths\n        Internal portal\n        Self-service templates\n    Security & Compliance\n      Identity\n        SSO + SCIM\n        Fine-grained RBAC\n      Supply chain\n        SBOM\n        Provenance attestations\n        Dependency policies\n      Governance\n        Audit evidence automation\n        Data retention rules\n    Business Outcomes\n      Faster time-to-market\n      Reduced incident cost\n      Better gross margin"
+    },
+    {
+      "id": "diagram-timeline",
+      "title": "Timeline - Enterprise Rollout Plan",
+      "type": "timeline",
+      "direction": "LR",
+      "nodes": [],
+      "edges": [],
+      "autoSync": false,
+      "theme": "dark",
+      "code": "timeline\n    title Enterprise Platform Rollout (12 Months)\n\n    section Foundation\n      Jan-Feb : Landing zone hardening : SSO + baseline observability\n      Mar     : Service catalog bootstrap : Team ownership model\n\n    section Migration Waves\n      Apr-May : Wave 1 (low-risk services) : Canary and automated rollback\n      Jun-Jul : Wave 2 (stateful workloads) : Dual-write and CDC validation\n      Aug-Sep : Wave 3 (customer-critical paths) : Error budget guardrails\n\n    section Governance\n      Oct     : Security posture review : Threat modeling refresh\n      Nov     : Compliance evidence automation : Audit dry run\n\n    section Business Readiness\n      Dec     : FinOps optimization : Unit economics checkpoint\n      Dec     : Executive go/no-go : 2027 scale plan"
+    }
+  ]
+}

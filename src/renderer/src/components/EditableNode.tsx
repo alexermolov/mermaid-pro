@@ -42,7 +42,18 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
 
   useEffect(() => {
     updateNodeInternals(id)
-  }, [data.diagramType, data.direction, data.shape, id, updateNodeInternals])
+  }, [
+    data.classAttributes,
+    data.classMethods,
+    data.diagramType,
+    data.direction,
+    data.erAttributes,
+    data.label,
+    data.shape,
+    data.stateDescription,
+    id,
+    updateNodeInternals
+  ])
 
   return (
     <div

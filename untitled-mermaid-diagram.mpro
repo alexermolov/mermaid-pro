@@ -1,0 +1,169 @@
+{
+  "format": "mermaid-pro",
+  "version": 2,
+  "title": "Untitled Mermaid Diagram",
+  "selectedDiagramId": "diagram-1",
+  "diagrams": [
+    {
+      "id": "diagram-1",
+      "title": "Untitled Mermaid Diagram",
+      "type": "flowchart",
+      "direction": "TD",
+      "nodes": [
+        {
+          "id": "start",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 140
+          },
+          "data": {
+            "label": "Start"
+          },
+          "selected": false,
+          "dragging": false,
+          "measured": {
+            "width": 213,
+            "height": 84
+          }
+        },
+        {
+          "id": "process",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 280
+          },
+          "data": {
+            "label": "Process"
+          },
+          "selected": false,
+          "dragging": false,
+          "measured": {
+            "width": 213,
+            "height": 84
+          }
+        },
+        {
+          "id": "finish",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 420
+          },
+          "data": {
+            "label": "Finish"
+          },
+          "selected": false,
+          "dragging": false,
+          "measured": {
+            "width": 213,
+            "height": 84
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "start-process",
+          "source": "start",
+          "target": "process",
+          "animated": true,
+          "selected": false,
+          "data": {}
+        },
+        {
+          "id": "process-finish",
+          "source": "process",
+          "target": "finish",
+          "animated": true,
+          "selected": false,
+          "data": {}
+        }
+      ],
+      "code": "flowchart TD\n  start[\"Start\"]\n  process[\"Process\"]\n  finish[\"Finish\"]\n  start --> process\n  process --> finish",
+      "autoSync": true,
+      "theme": "dark"
+    },
+    {
+      "id": "diagram-mouxok2r-e5b8b6",
+      "title": "Untitled Mermaid Diagram 2",
+      "type": "flowchart",
+      "direction": "TD",
+      "nodes": [
+        {
+          "id": "start",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 140
+          },
+          "data": {
+            "label": "Start"
+          },
+          "selected": false,
+          "dragging": false,
+          "measured": {
+            "width": 213,
+            "height": 84
+          }
+        },
+        {
+          "id": "process",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 280
+          },
+          "data": {
+            "label": "Process"
+          },
+          "selected": false,
+          "dragging": false,
+          "measured": {
+            "width": 213,
+            "height": 84
+          }
+        },
+        {
+          "id": "finish",
+          "type": "editableNode",
+          "position": {
+            "x": 120,
+            "y": 420
+          },
+          "data": {
+            "label": "Finish"
+          },
+          "selected": false,
+          "dragging": false,
+          "measured": {
+            "width": 213,
+            "height": 84
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "start-process",
+          "source": "start",
+          "target": "process",
+          "animated": true,
+          "selected": false,
+          "data": {}
+        },
+        {
+          "id": "process-finish",
+          "source": "process",
+          "target": "finish",
+          "animated": true,
+          "selected": false,
+          "data": {}
+        }
+      ],
+      "code": "flowchart TD\n  start[\"Start\"]\n  process[\"Process\"]\n  finish[\"Finish\"]\n  start --> process\n  process --> finish",
+      "autoSync": true,
+      "theme": "dark"
+    }
+  ],
+  "theme": "dark"
+}
