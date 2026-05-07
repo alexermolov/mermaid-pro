@@ -105,6 +105,12 @@ export type VisualNodeData = {
   stateCompositeOwnerId?: string
   shape?: FlowchartNodeShape
   style?: FlowchartNodeStyle
+  flowchartSubgraphId?: string
+  flowchartSubgraphTitle?: string
+  flowchartSubgraphDirection?: DiagramDirection
+  flowchartSubgraphPathIds?: string[]
+  flowchartSubgraphPathTitles?: Array<string | undefined>
+  flowchartSubgraphPathDirections?: Array<DiagramDirection | undefined>
   flowchartClassNames?: string[]
   flowchartClassStyles?: FlowchartClassStyleMap
   sequenceParticipantKind?: SequenceParticipantKind
@@ -131,6 +137,9 @@ export type EditableVisualNodeData = Pick<
   | 'stateIsComposite'
   | 'stateNote'
   | 'stateNotePosition'
+  | 'flowchartSubgraphId'
+  | 'flowchartSubgraphTitle'
+  | 'flowchartSubgraphDirection'
 >
 
 export type VisualEdgeData = {

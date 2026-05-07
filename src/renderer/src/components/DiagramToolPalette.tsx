@@ -37,6 +37,8 @@ type DiagramToolPaletteProps = {
   sequenceMessageSourceId: string
   sequenceMessageTargetId: string
   onAddNode: () => void
+  onAddFlowchartSubgraph?: () => void
+  onAddNestedFlowchartSubgraph?: () => void
   /** State diagram: add Mermaid `[*]` start or end pseudo-state on the canvas. */
   onAddStatePseudo?: (kind: 'start' | 'end') => void
   /** State diagram: add a composite `state Name { ... }` container. */
@@ -51,6 +53,9 @@ type DiagramToolPaletteProps = {
   onSelectedNodeShapeChange: (shape: FlowchartNodeShape) => void
   onSelectedSequenceParticipantPresentationChange: (presentation: SequenceParticipantPresentation) => void
   onSelectedNodeStyleChange: (style: Partial<FlowchartNodeStyle>) => void
+  onSelectedFlowchartSubgraphChange: (
+    subgraph: Partial<{ flowchartSubgraphId: string; flowchartSubgraphTitle: string; flowchartSubgraphDirection: string }>
+  ) => void
   onSelectedClassNodeDataChange: (data: Partial<{ classNamespace: string; classAnnotation: string; classNote: string }>) => void
   onSelectedEdgeLabelChange: (label: string) => void
   onSelectedEdgeStyleChange: (lineStyle: FlowchartEdgeStyle) => void
@@ -95,6 +100,8 @@ export function DiagramToolPalette({
   sequenceMessageSourceId,
   sequenceMessageTargetId,
   onAddNode,
+  onAddFlowchartSubgraph,
+  onAddNestedFlowchartSubgraph,
   onAddStatePseudo,
   onAddStateComposite,
   onAddStateFork,
@@ -105,6 +112,7 @@ export function DiagramToolPalette({
   onSelectedNodeShapeChange,
   onSelectedSequenceParticipantPresentationChange,
   onSelectedNodeStyleChange,
+  onSelectedFlowchartSubgraphChange,
   onSelectedClassNodeDataChange,
   onSelectedEdgeLabelChange,
   onSelectedEdgeStyleChange,
@@ -171,6 +179,29 @@ export function DiagramToolPalette({
           <Plus size={16} />
           {getAddNodeLabel(diagramType)}
         </button>
+        {diagramType === 'flowchart' && onAddFlowchartSubgraph && (
+          <button
+            onClick={onAddFlowchartSubgraph}
+            title="Add a new flowchart subgraph block with a starter node"
+          >
+            <Plus size={16} />
+            Add block
+          </button>
+        )}
+        {diagramType === 'flowchart' && onAddNestedFlowchartSubgraph && (
+          <button
+            onClick={onAddNestedFlowchartSubgraph}
+            disabled={!selectedNode?.data.flowchartSubgraphId}
+            title={
+              selectedNode?.data.flowchartSubgraphId
+                ? 'Add a nested block inside the selected block'
+                : 'Select a node inside a block to add a nested block'
+            }
+          >
+            <Plus size={16} />
+            Add nested block
+          </button>
+        )}
         {diagramType === 'sequence' && (
           <button
             onClick={onAddSequenceMessage}
@@ -314,6 +345,33 @@ export function DiagramToolPalette({
               onChange={(value) => onSelectedNodeStyleChange({ borderWidth: value })}
             />
           </div>
+          <PaletteTextInput
+            label="Subgraph id"
+            value={selectedNode.data.flowchartSubgraphId ?? ''}
+            title="Flowchart subgraph id for selected node"
+            placeholder="subgraph1"
+            onChange={(value) => onSelectedFlowchartSubgraphChange({ flowchartSubgraphId: value })}
+          />
+          <PaletteTextInput
+            label="Subgraph title"
+            value={selectedNode.data.flowchartSubgraphTitle ?? ''}
+            title="Optional subgraph title"
+            placeholder="Processing group"
+            onChange={(value) => onSelectedFlowchartSubgraphChange({ flowchartSubgraphTitle: value })}
+          />
+          <PaletteSelect
+            label="Subgraph direction"
+            value={selectedNode.data.flowchartSubgraphDirection ?? ''}
+            title="Inner direction for this subgraph"
+            options={[
+              { value: '', label: 'Inherit diagram direction' },
+              { value: 'TD', label: 'Top to bottom (TD)' },
+              { value: 'LR', label: 'Left to right (LR)' },
+              { value: 'BT', label: 'Bottom to top (BT)' },
+              { value: 'RL', label: 'Right to left (RL)' }
+            ]}
+            onChange={(value) => onSelectedFlowchartSubgraphChange({ flowchartSubgraphDirection: value })}
+          />
         </div>
       )}
 

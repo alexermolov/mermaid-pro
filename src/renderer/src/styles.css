@@ -1232,6 +1232,35 @@ label {
   box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.18);
 }
 
+.editable-node--flowchart-subgraph::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 78%, transparent);
+  border-radius: 20px;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.editable-node__subgraph-badge {
+  position: absolute;
+  top: -12px;
+  right: -6px;
+  z-index: 3;
+  max-width: 150px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 62%, #ffffff 12%);
+  border-radius: 999px;
+  color: #eff6ff;
+  background: color-mix(in srgb, var(--accent) 62%, #1e293b 38%);
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
 .editable-node--sequence {
   overflow: visible;
 }

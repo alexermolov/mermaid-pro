@@ -39,6 +39,8 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
   const handlePositions = getNodeHandlePositions(data.diagramType, data.direction)
   const presentation = resolveNodePresentation(data)
   const nodeStyle = getNodeStyle(data.style, Boolean(presentation.renderShape), presentation.layout)
+  const isFlowchartSubgraphNode = data.diagramType === 'flowchart' && Boolean(data.flowchartSubgraphId)
+  const subgraphBadgeText = data.flowchartSubgraphTitle || data.flowchartSubgraphId
 
   useEffect(() => {
     updateNodeInternals(id)
@@ -60,9 +62,16 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
 
   return (
     <div
-      className={`editable-node ${presentation.classNames.join(' ')} ${selected ? 'editable-node--selected' : ''}`}
+      className={`editable-node ${presentation.classNames.join(' ')} ${selected ? 'editable-node--selected' : ''} ${
+        isFlowchartSubgraphNode ? 'editable-node--flowchart-subgraph' : ''
+      }`}
       style={nodeStyle}
     >
+      {isFlowchartSubgraphNode ? (
+        <div className="editable-node__subgraph-badge" title={`Subgraph: ${subgraphBadgeText}`}>
+          {`Block: ${subgraphBadgeText}`}
+        </div>
+      ) : null}
       {presentation.renderShape ? (
         <FlowchartNodeShapeLayer renderShape={presentation.renderShape} style={data.style} selected={selected} />
       ) : null}

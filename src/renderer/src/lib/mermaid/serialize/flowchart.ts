@@ -82,10 +82,9 @@ const flowchartLinkFormatters: Record<FlowchartEdgeStyle, (label: string) => str
 
 export function toFlowchart(nodes: VisualNode[], edges: VisualEdge[], direction: DiagramDirection): string {
   const { classDefinitionLines, classAssignmentLines, nodeStyleLines } = formatFlowchartClassLines(nodes)
+  const subgraphTree = collectFlowchartSubgraphTree(nodes)
 
-  const nodeLines = nodes
-    .map((node) => formatFlowchartNode(sanitizeId(node.id), escapeLabel(node.data.label || node.id), node.data.shape))
-    .join('\n')
+  const nodeLines = formatFlowchartNodeLines(nodes, subgraphTree)
 
   const edgeLines = edges
     .map((edge) => {
@@ -110,6 +109,24 @@ export function toFlowchart(nodes: VisualNode[], edges: VisualEdge[], direction:
   ]
     .filter(Boolean)
     .join('\n')
+}
+
+function formatFlowchartNodeLines(nodes: VisualNode[], subgraphTree: FlowchartSubgraphTree): string {
+  const lines: string[] = []
+  const assignedNodeIds = new Set<string>()
+
+  for (const rootSubgraph of subgraphTree.rootSubgraphs) {
+    renderFlowchartSubgraph(lines, rootSubgraph, assignedNodeIds, 1)
+  }
+
+  for (const node of nodes) {
+    if (assignedNodeIds.has(node.id)) {
+      continue
+    }
+    lines.push(formatFlowchartNode(sanitizeId(node.id), escapeLabel(node.data.label || node.id), node.data.shape))
+  }
+
+  return lines.join('\n')
 }
 
 function formatFlowchartNode(id: string, label: string, shape: FlowchartNodeShape = 'rectangle'): string {
@@ -237,4 +254,120 @@ function formatFlowchartEdgeStyle(index: number, style: FlowchartEdgeVisualStyle
   ].filter(Boolean)
 
   return declarations.length > 0 ? `  linkStyle ${index} ${declarations.join(',')}` : ''
+}
+
+type FlowchartSubgraphDefinition = {
+  id: string
+  title?: string
+  direction?: DiagramDirection
+  ownNodes: VisualNode[]
+  childSubgraphs: FlowchartSubgraphDefinition[]
+}
+
+type FlowchartSubgraphTree = {
+  rootSubgraphs: FlowchartSubgraphDefinition[]
+}
+
+function collectFlowchartSubgraphTree(nodes: VisualNode[]): FlowchartSubgraphTree {
+  const subgraphMap = new Map<string, FlowchartSubgraphDefinition>()
+  const rootSubgraphIds: string[] = []
+
+  for (const node of nodes) {
+    const pathIds = node.data.flowchartSubgraphPathIds?.filter(Boolean) ?? []
+    const normalizedPathIds = (
+      pathIds.length > 0
+        ? pathIds
+        : node.data.flowchartSubgraphId?.trim()
+          ? [node.data.flowchartSubgraphId.trim()]
+          : []
+    )
+      .filter(Boolean)
+    if (normalizedPathIds.length === 0) {
+      continue
+    }
+
+    normalizedPathIds.forEach((subgraphId, index) => {
+      const existingSubgraph = subgraphMap.get(subgraphId)
+      const pathTitle = node.data.flowchartSubgraphPathTitles?.[index]
+      const pathDirection = node.data.flowchartSubgraphPathDirections?.[index]
+
+      if (existingSubgraph) {
+        if (!existingSubgraph.title && pathTitle?.trim()) {
+          existingSubgraph.title = pathTitle.trim()
+        }
+        if (!existingSubgraph.direction && pathDirection) {
+          existingSubgraph.direction = pathDirection
+        }
+        return
+      }
+
+      subgraphMap.set(subgraphId, {
+        id: subgraphId,
+        title: pathTitle?.trim() || undefined,
+        direction: pathDirection,
+        ownNodes: [],
+        childSubgraphs: []
+      })
+    })
+
+    normalizedPathIds.forEach((subgraphId, index) => {
+      if (index === 0) {
+        if (!rootSubgraphIds.includes(subgraphId)) {
+          rootSubgraphIds.push(subgraphId)
+        }
+        return
+      }
+      const parentId = normalizedPathIds[index - 1]
+      const parent = subgraphMap.get(parentId)
+      const child = subgraphMap.get(subgraphId)
+      if (parent && child && !parent.childSubgraphs.includes(child)) {
+        parent.childSubgraphs.push(child)
+      }
+    })
+
+    const leafSubgraphId = normalizedPathIds[normalizedPathIds.length - 1]
+    const leafSubgraph = subgraphMap.get(leafSubgraphId)
+    if (leafSubgraph && !leafSubgraph.ownNodes.some((candidate) => candidate.id === node.id)) {
+      leafSubgraph.ownNodes.push(node)
+    }
+  }
+
+  return {
+    rootSubgraphs: rootSubgraphIds
+      .map((subgraphId) => subgraphMap.get(subgraphId))
+      .filter((subgraph): subgraph is FlowchartSubgraphDefinition => Boolean(subgraph))
+  }
+}
+
+function formatFlowchartSubgraphHeader(subgraph: FlowchartSubgraphDefinition): string {
+  const subgraphId = sanitizeId(subgraph.id)
+  if (!subgraph.title || subgraph.title === subgraph.id) {
+    return `  subgraph ${subgraphId}`
+  }
+
+  return `  subgraph ${subgraphId}["${escapeLabel(subgraph.title)}"]`
+}
+
+function renderFlowchartSubgraph(
+  lines: string[],
+  subgraph: FlowchartSubgraphDefinition,
+  assignedNodeIds: Set<string>,
+  depth: number
+): void {
+  const indent = '  '.repeat(depth)
+  lines.push(`${indent}${formatFlowchartSubgraphHeader(subgraph).trim()}`)
+  if (subgraph.direction) {
+    lines.push(`${indent}  direction ${subgraph.direction}`)
+  }
+
+  for (const childSubgraph of subgraph.childSubgraphs) {
+    renderFlowchartSubgraph(lines, childSubgraph, assignedNodeIds, depth + 1)
+  }
+
+  for (const node of subgraph.ownNodes) {
+    lines.push(`${indent}  ${formatFlowchartNode(sanitizeId(node.id), escapeLabel(node.data.label || node.id), node.data.shape).trim()}`)
+    assignedNodeIds.add(node.id)
+  }
+
+  lines.push(`${indent}end`)
 }

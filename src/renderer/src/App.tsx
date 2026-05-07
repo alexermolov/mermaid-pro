@@ -1191,6 +1191,97 @@ export default function App(): JSX.Element {
     setAutoSync(true)
   }
 
+  function addFlowchartSubgraph(): void {
+    if (diagramType !== 'flowchart') {
+      return
+    }
+
+    const blockIndex = nodes.filter((node) => Boolean(node.data.flowchartSubgraphId)).length + 1
+    const subgraphId = `block_${blockIndex}`
+    const subgraphTitle = `Block ${blockIndex}`
+    const id = nextNodeId(nodes)
+
+    const newNode: VisualNode = {
+      id,
+      type: 'editableNode',
+      position: { x: 140 + nodes.length * 40, y: 240 + nodes.length * 24 },
+      data: {
+        ...createNodeData(diagramType, nodes.length + 1),
+        flowchartSubgraphId: subgraphId,
+        flowchartSubgraphTitle: subgraphTitle,
+        flowchartSubgraphDirection: 'TD',
+        flowchartSubgraphPathIds: [subgraphId],
+        flowchartSubgraphPathTitles: [subgraphTitle],
+        flowchartSubgraphPathDirections: ['TD']
+      }
+    }
+
+    setNodes((currentNodes) => [...currentNodes, newNode])
+    setSelectedNodeIds([id])
+    setSelectedEdgeIds([])
+    setSelectedEdgeId(null)
+    setAutoSync(true)
+    setStatus(`Added flowchart block ${subgraphTitle}`)
+  }
+
+  function addNestedFlowchartSubgraph(): void {
+    if (diagramType !== 'flowchart' || !selectedNode) {
+      return
+    }
+
+    const parentPathIds =
+      selectedNode.data.flowchartSubgraphPathIds?.filter(Boolean) ??
+      (selectedNode.data.flowchartSubgraphId ? [selectedNode.data.flowchartSubgraphId] : [])
+    const parentPathTitles =
+      selectedNode.data.flowchartSubgraphPathTitles?.slice(0, parentPathIds.length) ??
+      parentPathIds.map((_, index) => (index === parentPathIds.length - 1 ? selectedNode.data.flowchartSubgraphTitle : undefined))
+    const parentPathDirections =
+      selectedNode.data.flowchartSubgraphPathDirections?.slice(0, parentPathIds.length) ??
+      parentPathIds.map((_, index) =>
+        index === parentPathIds.length - 1 ? selectedNode.data.flowchartSubgraphDirection : undefined
+      )
+
+    if (parentPathIds.length === 0) {
+      setStatus('Select a node inside a block to add nested block')
+      return
+    }
+
+    const nestedIndex = nodes.filter((node) => Boolean(node.data.flowchartSubgraphId)).length + 1
+    const nestedSubgraphId = `block_${nestedIndex}`
+    const nestedSubgraphTitle = `Nested block ${nestedIndex}`
+    const nestedDirection: DiagramDirection = 'TD'
+    const id = nextNodeId(nodes)
+
+    const nextPathIds = [...parentPathIds, nestedSubgraphId]
+    const nextPathTitles = [...parentPathTitles, nestedSubgraphTitle]
+    const nextPathDirections = [...parentPathDirections, nestedDirection]
+
+    const newNode: VisualNode = {
+      id,
+      type: 'editableNode',
+      position: {
+        x: selectedNode.position.x + 36,
+        y: selectedNode.position.y + 48
+      },
+      data: {
+        ...createNodeData(diagramType, nodes.length + 1),
+        flowchartSubgraphId: nestedSubgraphId,
+        flowchartSubgraphTitle: nestedSubgraphTitle,
+        flowchartSubgraphDirection: nestedDirection,
+        flowchartSubgraphPathIds: nextPathIds,
+        flowchartSubgraphPathTitles: nextPathTitles,
+        flowchartSubgraphPathDirections: nextPathDirections
+      }
+    }
+
+    setNodes((currentNodes) => [...currentNodes, newNode])
+    setSelectedNodeIds([id])
+    setSelectedEdgeIds([])
+    setSelectedEdgeId(null)
+    setAutoSync(true)
+    setStatus(`Added nested block ${nestedSubgraphTitle}`)
+  }
+
   function updateSelectedEdgeLabel(label: string): void {
     if (!selectedEdgeId) {
       return
@@ -1213,6 +1304,50 @@ export default function App(): JSX.Element {
     }
 
     updateNodeStyle(selectedNode.id, style)
+  }
+
+  function updateSelectedFlowchartSubgraph(
+    subgraph: Partial<{
+      flowchartSubgraphId: string
+      flowchartSubgraphTitle: string
+      flowchartSubgraphDirection: string
+    }>
+  ): void {
+    if (!selectedNode || diagramType !== 'flowchart') {
+      return
+    }
+
+    const normalizeText = (value: string | undefined): string | undefined => {
+      if (value === undefined) {
+        return undefined
+      }
+      const trimmed = value.trim()
+      return trimmed.length > 0 ? trimmed : undefined
+    }
+
+    const normalizeDirection = (value: string | undefined): DiagramDirection | undefined => {
+      if (!value) {
+        return undefined
+      }
+      return value === 'TD' || value === 'LR' || value === 'BT' || value === 'RL' ? value : undefined
+    }
+
+    updateNodeById(selectedNode.id, (node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        ...(subgraph.flowchartSubgraphId !== undefined
+          ? { flowchartSubgraphId: normalizeText(subgraph.flowchartSubgraphId) }
+          : {}),
+        ...(subgraph.flowchartSubgraphTitle !== undefined
+          ? { flowchartSubgraphTitle: normalizeText(subgraph.flowchartSubgraphTitle) }
+          : {}),
+        ...(subgraph.flowchartSubgraphDirection !== undefined
+          ? { flowchartSubgraphDirection: normalizeDirection(subgraph.flowchartSubgraphDirection) }
+          : {})
+      }
+    }))
+    setAutoSync(true)
   }
 
   function updateSelectedSequenceParticipantPresentation(presentation: SequenceParticipantPresentation): void {
@@ -1714,6 +1849,8 @@ export default function App(): JSX.Element {
               sequenceMessageSourceId={sequenceMessageDraft.sourceId}
               sequenceMessageTargetId={sequenceMessageDraft.targetId}
               onAddNode={addNode}
+              onAddFlowchartSubgraph={addFlowchartSubgraph}
+              onAddNestedFlowchartSubgraph={addNestedFlowchartSubgraph}
               onAddStatePseudo={addStatePseudo}
               onAddStateComposite={addStateComposite}
               onAddStateFork={addStateFork}
@@ -1729,6 +1866,7 @@ export default function App(): JSX.Element {
               onSelectedNodeShapeChange={updateSelectedNodeShape}
               onSelectedSequenceParticipantPresentationChange={updateSelectedSequenceParticipantPresentation}
               onSelectedNodeStyleChange={updateSelectedNodeStyle}
+              onSelectedFlowchartSubgraphChange={updateSelectedFlowchartSubgraph}
               onSelectedClassNodeDataChange={updateSelectedClassNodeData}
               onSelectedEdgeLabelChange={updateSelectedEdgeLabel}
               onSelectedEdgeStyleChange={updateSelectedEdgeStyle}

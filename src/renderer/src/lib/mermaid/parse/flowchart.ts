@@ -20,6 +20,14 @@ type ParsedFlowchartNodeDescriptor = {
   classNames?: string[]
 }
 
+type ParsedFlowchartSubgraph = {
+  id: string
+  title?: string
+  direction?: DiagramDirection
+  nodeIds: string[]
+  childSubgraphIds: string[]
+  parentSubgraphId?: string
+}
 
 export function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
   const headerMatch = lines[0]?.match(/^(?:flowchart|graph)\s+(TB|TD|LR|BT|RL)$/)
@@ -30,6 +38,8 @@ export function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
   const edgeIndexById = new Map<number, string>()
   const classStyles = new Map<string, FlowchartNodeStyle>()
   const nodeClassAssignments = new Map<string, string[]>()
+  const subgraphStack: string[] = []
+  const subgraphs = new Map<string, ParsedFlowchartSubgraph>()
   let linkIndex = 0
 
   for (const rawLine of lines.slice(1)) {
@@ -49,9 +59,61 @@ export function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
       continue
     }
 
+    if (line.startsWith('subgraph ')) {
+      const parsedSubgraph = parseFlowchartSubgraphDeclaration(line)
+      if (parsedSubgraph) {
+        const parentSubgraphId = subgraphStack[subgraphStack.length - 1]
+        subgraphStack.push(parsedSubgraph.id)
+        const existing = subgraphs.get(parsedSubgraph.id)
+        subgraphs.set(parsedSubgraph.id, {
+          ...parsedSubgraph,
+          nodeIds: existing?.nodeIds ?? [],
+          childSubgraphIds: existing?.childSubgraphIds ?? [],
+          ...(parentSubgraphId ? { parentSubgraphId } : {})
+        })
+        if (parentSubgraphId) {
+          const parent = subgraphs.get(parentSubgraphId)
+          if (parent) {
+            if (!parent.childSubgraphIds.includes(parsedSubgraph.id)) {
+              parent.childSubgraphIds.push(parsedSubgraph.id)
+            }
+          } else {
+            subgraphs.set(parentSubgraphId, {
+              id: parentSubgraphId,
+              nodeIds: [],
+              childSubgraphIds: [parsedSubgraph.id]
+            })
+          }
+        }
+      }
+      continue
+    }
+
+    if (line === 'end') {
+      subgraphStack.pop()
+      continue
+    }
+
+    if (line.startsWith('direction ')) {
+      const subgraphId = subgraphStack[subgraphStack.length - 1]
+      const parsedDirection = parseFlowchartDirectionDirective(line)
+      if (subgraphId && parsedDirection) {
+        const currentSubgraph = subgraphs.get(subgraphId)
+        if (currentSubgraph) {
+          currentSubgraph.direction = parsedDirection
+        } else {
+          subgraphs.set(subgraphId, {
+            id: subgraphId,
+            direction: parsedDirection,
+            nodeIds: [],
+            childSubgraphIds: []
+          })
+        }
+      }
+      continue
+    }
+
     if (
-      line === 'end' ||
-      line.startsWith('subgraph ') ||
       line.startsWith('click ')
     ) {
       continue
@@ -67,12 +129,23 @@ export function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
       continue
     }
 
-    if (tryParseFlowchartEdge(line, nodes, edges, edgeIndexById, nodeClassAssignments, linkIndex)) {
+    if (
+      tryParseFlowchartEdge(
+        line,
+        nodes,
+        edges,
+        edgeIndexById,
+        nodeClassAssignments,
+        linkIndex,
+        subgraphs,
+        subgraphStack
+      )
+    ) {
       linkIndex += 1
       continue
     }
 
-    tryParseFlowchartNode(line, nodes, nodeClassAssignments)
+    tryParseFlowchartNode(line, nodes, nodeClassAssignments, subgraphStack, subgraphs)
   }
 
   for (const node of nodes.values()) {
@@ -114,7 +187,9 @@ export function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
 function tryParseFlowchartNode(
   line: string,
   nodes: Map<string, VisualNode>,
-  nodeClassAssignments: Map<string, string[]>
+  nodeClassAssignments: Map<string, string[]>,
+  subgraphStack: string[],
+  subgraphs: Map<string, ParsedFlowchartSubgraph>
 ): boolean {
   const descriptor = parseFlowchartNodeDescriptor(line)
   if (!descriptor) {
@@ -122,8 +197,23 @@ function tryParseFlowchartNode(
   }
 
   recordFlowchartNodeClasses(nodeClassAssignments, descriptor.id, descriptor.classNames)
+  const activeSubgraph = getActiveFlowchartSubgraph(subgraphStack, subgraphs)
+  if (activeSubgraph && !activeSubgraph.nodeIds.includes(descriptor.id)) {
+    activeSubgraph.nodeIds.push(descriptor.id)
+  }
+  const subgraphPathData = getFlowchartSubgraphPathData(subgraphStack, subgraphs)
   ensureNode(nodes, descriptor.id, descriptor.label, {
-    ...(descriptor.shape ? { shape: descriptor.shape } : {})
+    ...(descriptor.shape ? { shape: descriptor.shape } : {}),
+    ...(subgraphPathData
+      ? {
+          flowchartSubgraphId: subgraphPathData.ids[subgraphPathData.ids.length - 1],
+          flowchartSubgraphTitle: subgraphPathData.titles[subgraphPathData.titles.length - 1],
+          flowchartSubgraphDirection: subgraphPathData.directions[subgraphPathData.directions.length - 1],
+          flowchartSubgraphPathIds: subgraphPathData.ids,
+          flowchartSubgraphPathTitles: subgraphPathData.titles,
+          flowchartSubgraphPathDirections: subgraphPathData.directions
+        }
+      : {})
   })
   return true
 }
@@ -134,7 +224,9 @@ function tryParseFlowchartEdge(
   edges: VisualEdge[],
   edgeIndexById: Map<number, string>,
   nodeClassAssignments: Map<string, string[]>,
-  linkIndex: number
+  linkIndex: number,
+  subgraphs: Map<string, ParsedFlowchartSubgraph>,
+  subgraphStack: string[]
 ): boolean {
   const parsedEdges = parseFlowchartEdgeExpressions(line)
   if (!parsedEdges || parsedEdges.length === 0) {
@@ -142,8 +234,26 @@ function tryParseFlowchartEdge(
   }
 
   parsedEdges.forEach((parsedEdge, offset) => {
-    const sourceNode = ensureNodeFromFlowchartDescriptor(nodes, parsedEdge.source, nodeClassAssignments)
-    const targetNode = ensureNodeFromFlowchartDescriptor(nodes, parsedEdge.target, nodeClassAssignments)
+    const activeSubgraph = getActiveFlowchartSubgraph(subgraphStack, subgraphs)
+    const subgraphPathData = getFlowchartSubgraphPathData(subgraphStack, subgraphs)
+    if (activeSubgraph) {
+      recordFlowchartSubgraphNodeId(activeSubgraph, parsedEdge.source.id)
+      recordFlowchartSubgraphNodeId(activeSubgraph, parsedEdge.target.id)
+    }
+    const sourceDescriptor = resolveFlowchartSubgraphEndpoint(parsedEdge.source, subgraphs) ?? parsedEdge.source
+    const targetDescriptor = resolveFlowchartSubgraphEndpoint(parsedEdge.target, subgraphs) ?? parsedEdge.target
+    const sourceNode = ensureNodeFromFlowchartDescriptor(
+      nodes,
+      sourceDescriptor,
+      nodeClassAssignments,
+      sourceDescriptor.id === parsedEdge.source.id ? subgraphPathData : undefined
+    )
+    const targetNode = ensureNodeFromFlowchartDescriptor(
+      nodes,
+      targetDescriptor,
+      nodeClassAssignments,
+      targetDescriptor.id === parsedEdge.target.id ? subgraphPathData : undefined
+    )
     const edgeId = `${sourceNode.id}-${targetNode.id}-${edges.length + 1}`
 
     edges.push({
@@ -320,6 +430,86 @@ function splitFlowchartDescriptorClasses(descriptor: string): { descriptor: stri
   }
 }
 
+function parseFlowchartSubgraphDeclaration(line: string): { id: string; title?: string } | undefined {
+  const payload = line.replace(/^subgraph\s+/, '').trim()
+  if (!payload) {
+    return undefined
+  }
+
+  const descriptor = parseFlowchartNodeDescriptor(payload)
+  if (descriptor) {
+    return {
+      id: descriptor.id,
+      ...(descriptor.label !== descriptor.id ? { title: descriptor.label } : {})
+    }
+  }
+
+  const fallbackId = payload.split(/\s+/, 1)[0]
+  return fallbackId ? { id: fallbackId, title: payload } : undefined
+}
+
+function parseFlowchartDirectionDirective(line: string): DiagramDirection | undefined {
+  const match = line.match(/^direction\s+(TB|TD|LR|BT|RL)$/)
+  if (!match) {
+    return undefined
+  }
+
+  return (match[1] === 'TB' ? 'TD' : match[1]) as DiagramDirection
+}
+
+function getActiveFlowchartSubgraph(
+  subgraphStack: string[],
+  subgraphs: Map<string, ParsedFlowchartSubgraph>
+): ParsedFlowchartSubgraph | undefined {
+  const subgraphId = subgraphStack[subgraphStack.length - 1]
+  return subgraphId ? subgraphs.get(subgraphId) : undefined
+}
+
+function resolveFlowchartSubgraphEndpoint(
+  descriptor: ParsedFlowchartNodeDescriptor,
+  subgraphs: Map<string, ParsedFlowchartSubgraph>
+): ParsedFlowchartNodeDescriptor | undefined {
+  const subgraph = subgraphs.get(descriptor.id)
+  const anchorNodeId = getFlowchartSubgraphAnchorNodeId(subgraph?.id, subgraphs)
+  if (!anchorNodeId) {
+    return undefined
+  }
+
+  return {
+    id: anchorNodeId,
+    label: anchorNodeId
+  }
+}
+
+function getFlowchartSubgraphAnchorNodeId(
+  subgraphId: string | undefined,
+  subgraphs: Map<string, ParsedFlowchartSubgraph>,
+  visited = new Set<string>()
+): string | undefined {
+  if (!subgraphId || visited.has(subgraphId)) {
+    return undefined
+  }
+
+  visited.add(subgraphId)
+  const subgraph = subgraphs.get(subgraphId)
+  if (!subgraph) {
+    return undefined
+  }
+
+  if (subgraph.nodeIds.length > 0) {
+    return subgraph.nodeIds[0]
+  }
+
+  for (const childSubgraphId of subgraph.childSubgraphIds) {
+    const nestedAnchorNodeId = getFlowchartSubgraphAnchorNodeId(childSubgraphId, subgraphs, visited)
+    if (nestedAnchorNodeId) {
+      return nestedAnchorNodeId
+    }
+  }
+
+  return undefined
+}
+
 function parseFlowchartEdgeExpression(
   line: string
 ):
@@ -480,12 +670,43 @@ function createFlowchartEdgeDescriptor(
 function ensureNodeFromFlowchartDescriptor(
   nodes: Map<string, VisualNode>,
   descriptor: ParsedFlowchartNodeDescriptor,
-  nodeClassAssignments: Map<string, string[]>
+  nodeClassAssignments: Map<string, string[]>,
+  subgraphPathData?: { ids: string[]; titles: Array<string | undefined>; directions: Array<DiagramDirection | undefined> }
 ): VisualNode {
   recordFlowchartNodeClasses(nodeClassAssignments, descriptor.id, descriptor.classNames)
   return ensureNode(nodes, descriptor.id, descriptor.label, {
-    ...(descriptor.shape ? { shape: descriptor.shape } : {})
+    ...(descriptor.shape ? { shape: descriptor.shape } : {}),
+    ...(subgraphPathData
+      ? {
+          flowchartSubgraphId: subgraphPathData.ids[subgraphPathData.ids.length - 1],
+          flowchartSubgraphTitle: subgraphPathData.titles[subgraphPathData.titles.length - 1],
+          flowchartSubgraphDirection: subgraphPathData.directions[subgraphPathData.directions.length - 1],
+          flowchartSubgraphPathIds: subgraphPathData.ids,
+          flowchartSubgraphPathTitles: subgraphPathData.titles,
+          flowchartSubgraphPathDirections: subgraphPathData.directions
+        }
+      : {})
   })
+}
+
+function recordFlowchartSubgraphNodeId(subgraph: ParsedFlowchartSubgraph, nodeId: string): void {
+  if (!subgraph.nodeIds.includes(nodeId)) {
+    subgraph.nodeIds.push(nodeId)
+  }
+}
+
+function getFlowchartSubgraphPathData(
+  subgraphStack: string[],
+  subgraphs: Map<string, ParsedFlowchartSubgraph>
+): { ids: string[]; titles: Array<string | undefined>; directions: Array<DiagramDirection | undefined> } | undefined {
+  if (subgraphStack.length === 0) {
+    return undefined
+  }
+
+  const ids = [...subgraphStack]
+  const titles = ids.map((id) => subgraphs.get(id)?.title)
+  const directions = ids.map((id) => subgraphs.get(id)?.direction)
+  return { ids, titles, directions }
 }
 
 function recordFlowchartNodeClasses(
