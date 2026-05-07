@@ -93,6 +93,8 @@ export type VisualNodeData = {
   stateDescription?: string
   /** Start/end pseudo-state for state diagrams (`[*]` in Mermaid). */
   statePseudo?: 'start' | 'end'
+  /** True for `state Id { ... }` composite containers. */
+  stateIsComposite?: boolean
   shape?: FlowchartNodeShape
   style?: FlowchartNodeStyle
   flowchartClassNames?: string[]

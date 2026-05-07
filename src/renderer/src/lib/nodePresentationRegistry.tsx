@@ -80,21 +80,28 @@ const nodePresentationRegistry: Record<DiagramType, NodePresentationResolver> = 
           renderShape: data.statePseudo === 'start' ? renderStateStartShape : renderStateEndShape,
           labelPlaceholder: '[*]'
         }
-      : {
-          classNames: ['editable-node--state'],
-          layout: { width: 220, minWidth: 220, minHeight: 108 },
-          renderShape: renderStateShape,
-          renderFields: (id, inner) => (
-            <textarea
-              className="nodrag nopan"
-              value={inner.stateDescription ?? ''}
-              onChange={(event) => inner.onDataChange?.(id, { stateDescription: event.target.value })}
-              placeholder="entry action"
-              rows={3}
-            />
-          ),
-          labelPlaceholder: 'State name'
-        },
+      : data.stateIsComposite
+        ? {
+            classNames: ['editable-node--state', 'editable-node--state-composite'],
+            layout: { width: 280, minWidth: 260, minHeight: 180 },
+            renderShape: renderStateCompositeShape,
+            labelPlaceholder: 'Composite state name'
+          }
+        : {
+            classNames: ['editable-node--state'],
+            layout: { width: 220, minWidth: 220, minHeight: 108 },
+            renderShape: renderStateShape,
+            renderFields: (id, inner) => (
+              <textarea
+                className="nodrag nopan"
+                value={inner.stateDescription ?? ''}
+                onChange={(event) => inner.onDataChange?.(id, { stateDescription: event.target.value })}
+                placeholder="entry action"
+                rows={3}
+              />
+            ),
+            labelPlaceholder: 'State name'
+          },
   er: (data) => ({
     classNames: ['editable-node--er'],
     layout: getErLayout(data),
@@ -156,6 +163,24 @@ function renderStateShape(appearance: FlowchartShapeAppearance): JSX.Element {
       fill={appearance.fill}
       stroke={appearance.stroke}
       strokeWidth={appearance.strokeWidth}
+    />
+  )
+}
+
+function renderStateCompositeShape(appearance: FlowchartShapeAppearance): JSX.Element {
+  return (
+    <rect
+      x="2"
+      y="2"
+      width="96"
+      height="96"
+      rx="10"
+      ry="10"
+      fill="none"
+      stroke={appearance.stroke}
+      strokeWidth={Math.max(1.2, appearance.strokeWidth * 0.85)}
+      strokeDasharray="6 5"
+      opacity="0.92"
     />
   )
 }

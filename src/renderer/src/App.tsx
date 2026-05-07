@@ -703,7 +703,7 @@ export default function App(): JSX.Element {
       return
     }
 
-    const nodeIdsToDelete = new Set(selectedNodeIds)
+    const nodeIdsToDelete = expandNodeIdsWithDescendants(nodes, new Set(selectedNodeIds))
     const edgeIdsToDelete = new Set(selectedEdgeIds)
 
     setNodes((currentNodes) => currentNodes.filter((node) => !nodeIdsToDelete.has(node.id)))
@@ -718,7 +718,7 @@ export default function App(): JSX.Element {
     setSelectedEdgeId(null)
     setAutoSync(true)
     setStatus('Selected items deleted')
-  }, [selectedEdgeIds, selectedNodeIds, setEdges, setNodes])
+  }, [nodes, selectedEdgeIds, selectedNodeIds, setEdges, setNodes])
 
   const duplicateSelectedNodes = useCallback(() => {
     if (selectedNodeIds.length === 0) {
@@ -729,7 +729,9 @@ export default function App(): JSX.Element {
     const copySuffix = Date.now().toString(36)
     const nodeIdMap = new Map<string, string>()
     const duplicatedNodes = nodes
-      .filter((node) => selectedNodeIdSet.has(node.id) && !node.data.statePseudo)
+      .filter(
+        (node) => selectedNodeIdSet.has(node.id) && !node.data.statePseudo && !node.data.stateIsComposite
+      )
       .map((node, index): VisualNode => {
         const id = `${node.id}_copy_${copySuffix}_${index + 1}`
         nodeIdMap.set(node.id, id)
@@ -750,7 +752,7 @@ export default function App(): JSX.Element {
       })
 
     if (duplicatedNodes.length === 0) {
-      setStatus('Nothing to duplicate (initial/final [*] states cannot be duplicated)')
+      setStatus('Nothing to duplicate (composite, initial, and final [*] states cannot be duplicated here)')
       return
     }
 
@@ -1475,6 +1477,23 @@ export default function App(): JSX.Element {
       </section>
     </main>
   )
+}
+
+function expandNodeIdsWithDescendants(nodes: VisualNode[], seed: Set<string>): Set<string> {
+  const result = new Set(seed)
+  let added = true
+
+  while (added) {
+    added = false
+    for (const node of nodes) {
+      if (node.parentId && result.has(node.parentId) && !result.has(node.id)) {
+        result.add(node.id)
+        added = true
+      }
+    }
+  }
+
+  return result
 }
 
 function layoutDirectionForDiagramType(

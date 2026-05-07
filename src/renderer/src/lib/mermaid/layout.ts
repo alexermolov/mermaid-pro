@@ -1,5 +1,6 @@
 import dagre from 'dagre'
 import type { DiagramDirection, DiagramType } from '../../../../shared/diagram'
+import { STATE_SCOPE_SEP } from './stateDiagramIds'
 import type { VisualEdge, VisualNode } from './types'
 
 const autoLayoutOrigin = { x: 120, y: 120 }
@@ -216,6 +217,131 @@ export function autoLayoutNodes(
   })
 }
 
+function scopeSegmentCount(id: string): number {
+  if (!id.includes(STATE_SCOPE_SEP)) {
+    return 0
+  }
+
+  return id.split(STATE_SCOPE_SEP).length - 1
+}
+
+/**
+ * Hierarchical layout for state diagrams with composite `state X { … }` groups (React Flow `parentId`).
+ */
+export function layoutStateCompositeNodes(nodes: VisualNode[], edges: VisualEdge[], direction: DiagramDirection): VisualNode[] {
+  let acc = nodes.map((node) => ({ ...node }))
+  const childrenOf = (parentId: string) => acc.filter((n) => n.parentId === parentId)
+
+  const composites = acc
+    .filter((n) => n.data.stateIsComposite)
+    .sort((a, b) => scopeSegmentCount(b.id) - scopeSegmentCount(a.id))
+
+  for (const comp of composites) {
+    const ch = childrenOf(comp.id)
+    if (ch.length === 0) {
+      const minW = 280
+      const minH = 180
+      acc = acc.map((n) => (n.id === comp.id ? { ...n, style: { ...n.style, width: minW, height: minH } } : n))
+      continue
+    }
+
+    const childIds = new Set(ch.map((c) => c.id))
+    const innerEdges = edges.filter((e) => childIds.has(e.source) && childIds.has(e.target))
+    const laid = autoLayoutNodes(ch, innerEdges, direction, 'state')
+    const snapshot = new Map(acc.map((n) => [n.id, n]))
+    const sizes = laid.map((n) => getAutoLayoutNodeSize(snapshot.get(n.id) ?? n, 'state'))
+
+    const minX = Math.min(...laid.map((n) => n.position.x))
+    const minY = Math.min(...laid.map((n) => n.position.y))
+    const pad = 44
+
+    const rel = laid.map((n) => ({
+      ...n,
+      position: {
+        x: n.position.x - minX + pad,
+        y: n.position.y - minY + pad
+      }
+    }))
+
+    let maxX = 0
+    let maxY = 0
+    for (let i = 0; i < rel.length; i += 1) {
+      const n = rel[i]
+      const sz = sizes[i] ?? { width: 220, height: 108 }
+      maxX = Math.max(maxX, n.position.x + sz.width)
+      maxY = Math.max(maxY, n.position.y + sz.height)
+    }
+
+    const boxW = Math.max(280, maxX + pad)
+    const boxH = Math.max(180, maxY + pad)
+
+    acc = acc.map((node) => {
+      const hit = rel.find((r) => r.id === node.id)
+      if (hit) {
+        return { ...node, ...hit }
+      }
+      if (node.id === comp.id) {
+        return { ...node, style: { ...node.style, width: boxW, height: boxH } }
+      }
+      return node
+    })
+  }
+
+  const idToNode = new Map(acc.map((n) => [n.id, n]))
+
+  function rootAncestor(nodeId: string): string {
+    let current = idToNode.get(nodeId)
+    while (current?.parentId) {
+      current = idToNode.get(current.parentId)
+    }
+    return current?.id ?? nodeId
+  }
+
+  const roots = acc.filter((n) => !n.parentId)
+  const compressKeys = new Set<string>()
+  const compressedEdges: VisualEdge[] = []
+
+  for (const e of edges) {
+    const rs = rootAncestor(e.source)
+    const rt = rootAncestor(e.target)
+    const comp = idToNode.get(rs)
+
+    if (rs === rt && comp?.data.stateIsComposite) {
+      const prefix = `${rs}${STATE_SCOPE_SEP}`
+      const srcIn = e.source === rs || e.source.startsWith(prefix)
+      const tgtIn = e.target === rs || e.target.startsWith(prefix)
+      if (srcIn && tgtIn) {
+        continue
+      }
+    }
+
+    const key = `${rs}|${rt}`
+    if (compressKeys.has(key)) {
+      continue
+    }
+    compressKeys.add(key)
+    compressedEdges.push({
+      ...e,
+      id: `r-${rs}-${rt}-${compressedEdges.length}`,
+      source: rs,
+      target: rt
+    })
+  }
+
+  const laidRoots = autoLayoutNodes(roots, compressedEdges, direction, 'state')
+  const posById = new Map(laidRoots.map((n) => [n.id, n.position]))
+
+  acc = acc.map((node) => {
+    const pos = posById.get(node.id)
+    if (pos && !node.parentId) {
+      return { ...node, position: { ...pos } }
+    }
+    return node
+  })
+
+  return acc
+}
+
 export function layoutSequenceNodes(nodes: VisualNode[]): VisualNode[] {
   const origin = { x: 120, y: 80 }
   const gap = 240
@@ -257,6 +383,16 @@ function getAutoLayoutNodeSize(node: VisualNode, diagramType?: DiagramType): { w
     width = Math.max(220, width)
     height = Math.max(116, height)
   } else if (diagramType === 'state') {
+    if (node.data.stateIsComposite) {
+      const rawW = node.style?.width
+      const rawH = node.style?.height
+      const styleWidth = typeof rawW === 'number' ? rawW : typeof rawW === 'string' ? parseFloat(rawW) : Number.NaN
+      const styleHeight = typeof rawH === 'number' ? rawH : typeof rawH === 'string' ? parseFloat(rawH) : Number.NaN
+      if (Number.isFinite(styleWidth) && Number.isFinite(styleHeight)) {
+        return { width: Math.max(240, styleWidth), height: Math.max(160, styleHeight) }
+      }
+    }
+
     if (node.data.statePseudo) {
       return { width: 112, height: 72 }
     }
