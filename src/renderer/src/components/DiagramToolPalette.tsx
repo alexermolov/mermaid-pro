@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { Copy, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { DiagramType } from '../../../shared/diagram'
 import {
+  classMultiplicityOptions,
+  classRelationshipTypes,
   flowchartEdgeStyles,
   flowchartNodeShapes,
   getAddNodeLabel,
@@ -41,8 +43,12 @@ type DiagramToolPaletteProps = {
   onSelectedNodeShapeChange: (shape: FlowchartNodeShape) => void
   onSelectedSequenceParticipantPresentationChange: (presentation: SequenceParticipantPresentation) => void
   onSelectedNodeStyleChange: (style: Partial<FlowchartNodeStyle>) => void
+  onSelectedClassNodeDataChange: (data: Partial<{ classNamespace: string; classAnnotation: string; classNote: string }>) => void
   onSelectedEdgeLabelChange: (label: string) => void
   onSelectedEdgeStyleChange: (lineStyle: FlowchartEdgeStyle) => void
+  onSelectedClassEdgeDataChange: (
+    data: Partial<{ classRelationshipToken: string; classSourceMultiplicity: string; classTargetMultiplicity: string }>
+  ) => void
   onSelectedSequenceMessageTypeChange: (messageType: SequenceMessageType) => void
   onSelectedEdgeVisualStyleChange: (visualStyle: Partial<FlowchartEdgeVisualStyle>) => void
   onSelectedEdgeErRelationshipChange: (
@@ -76,8 +82,10 @@ export function DiagramToolPalette({
   onSelectedNodeShapeChange,
   onSelectedSequenceParticipantPresentationChange,
   onSelectedNodeStyleChange,
+  onSelectedClassNodeDataChange,
   onSelectedEdgeLabelChange,
   onSelectedEdgeStyleChange,
+  onSelectedClassEdgeDataChange,
   onSelectedSequenceMessageTypeChange,
   onSelectedEdgeVisualStyleChange,
   onSelectedEdgeErRelationshipChange,
@@ -89,10 +97,12 @@ export function DiagramToolPalette({
   const hasSingleEdgeSelection = selectedEdgeCount === 1 && selectedNodeCount === 0 && Boolean(selectedEdge)
   const canEditFlowchartNode = diagramType === 'flowchart' && hasSingleNodeSelection
   const canEditSequenceNode = diagramType === 'sequence' && hasSingleNodeSelection
+  const canEditClassNode = diagramType === 'class' && hasSingleNodeSelection
   const canEditEdgeLabel = hasSingleEdgeSelection
   const canEditFlowchartEdge = diagramType === 'flowchart' && hasSingleEdgeSelection
   const canEditSequenceEdge = diagramType === 'sequence' && hasSingleEdgeSelection
   const canEditErEdge = diagramType === 'er' && hasSingleEdgeSelection
+  const canEditClassEdge = diagramType === 'class' && hasSingleEdgeSelection
   const canDuplicateNodes = selectedNodeCount > 0
   const canAddSequenceMessage = diagramType === 'sequence' && Boolean(sequenceMessageSourceId) && Boolean(sequenceMessageTargetId)
   const nodeStyle = selectedNode?.data.style
@@ -240,6 +250,56 @@ export function DiagramToolPalette({
         </div>
       )}
 
+      {canEditClassNode && selectedNode && (
+        <div className="palette-section">
+          <PaletteTextInput
+            label="Namespace"
+            value={selectedNode.data.classNamespace ?? ''}
+            title="Namespace for selected class"
+            placeholder="Domain.Services"
+            onChange={(value) => onSelectedClassNodeDataChange({ classNamespace: value })}
+          />
+          <PaletteTextInput
+            label="Annotation"
+            value={selectedNode.data.classAnnotation ?? ''}
+            title="Class annotation marker"
+            placeholder="Interface"
+            onChange={(value) => onSelectedClassNodeDataChange({ classAnnotation: value })}
+          />
+          <div className="palette-field">
+            <span className="palette-field-label">Annotation presets</span>
+            <div className="mode-button-group mode-button-group--compact" role="group" aria-label="Class annotation presets">
+              {classAnnotationPresets.map((preset) => (
+                <button
+                  key={preset.value}
+                  type="button"
+                  className={`mode-button${(selectedNode.data.classAnnotation ?? '') === preset.value ? ' mode-button--active' : ''}`}
+                  onClick={() => onSelectedClassNodeDataChange({ classAnnotation: preset.value })}
+                >
+                  {preset.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                className={`mode-button${!selectedNode.data.classAnnotation ? ' mode-button--active' : ''}`}
+                onClick={() => onSelectedClassNodeDataChange({ classAnnotation: '' })}
+                title="Clear class annotation"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+          <PaletteTextareaInput
+            label="Note"
+            value={selectedNode.data.classNote ?? ''}
+            title="Class note rendered as note for"
+            placeholder="Short class note"
+            rows={3}
+            onChange={(value) => onSelectedClassNodeDataChange({ classNote: value })}
+          />
+        </div>
+      )}
+
       {canEditEdgeLabel && selectedEdge && (
         <div className="palette-section">
           <PaletteTextInput
@@ -321,7 +381,34 @@ export function DiagramToolPalette({
               />
             </>
           )}
-          {!canEditFlowchartEdge && !canEditErEdge && (
+          {canEditClassEdge && (
+            <>
+              <PaletteSelect
+                label="Relationship"
+                value={selectedEdge.data?.classRelationshipToken ?? '-->'}
+                title="Class relationship type"
+                options={classRelationshipTypes}
+                onChange={(value) => onSelectedClassEdgeDataChange({ classRelationshipToken: value })}
+              />
+              <div className="palette-grid palette-grid--edge">
+                <PaletteSelect
+                  label="From multiplicity"
+                  value={selectedEdge.data?.classSourceMultiplicity ?? ''}
+                  title="Source side multiplicity"
+                  options={classMultiplicityOptions}
+                  onChange={(value) => onSelectedClassEdgeDataChange({ classSourceMultiplicity: value })}
+                />
+                <PaletteSelect
+                  label="To multiplicity"
+                  value={selectedEdge.data?.classTargetMultiplicity ?? ''}
+                  title="Target side multiplicity"
+                  options={classMultiplicityOptions}
+                  onChange={(value) => onSelectedClassEdgeDataChange({ classTargetMultiplicity: value })}
+                />
+              </div>
+            </>
+          )}
+          {!canEditFlowchartEdge && !canEditErEdge && !canEditClassEdge && (
             <p className="palette-hint">
               This diagram type uses the edge label as its main relationship control.
             </p>
@@ -348,6 +435,13 @@ const erCardinalityOptions: SelectOption[] = [
 const erRelationshipLineStyleOptions: SelectOption[] = [
   { value: 'identifying', label: 'Identifying' },
   { value: 'nonIdentifying', label: 'Non-identifying' }
+]
+
+const classAnnotationPresets: SelectOption[] = [
+  { value: 'Interface', label: 'Interface' },
+  { value: 'Abstract', label: 'Abstract' },
+  { value: 'Service', label: 'Service' },
+  { value: 'Enumeration', label: 'Enumeration' }
 ]
 
 function PaletteField({ label, children }: { label: string; children: ReactNode }): JSX.Element {
@@ -576,6 +670,34 @@ function PaletteTextInput({
   return (
     <PaletteField label={label}>
       <input value={value} title={title} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} />
+    </PaletteField>
+  )
+}
+
+function PaletteTextareaInput({
+  label,
+  value,
+  title,
+  placeholder,
+  rows,
+  onChange
+}: {
+  label: string
+  value: string
+  title: string
+  placeholder?: string
+  rows: number
+  onChange: (value: string) => void
+}): JSX.Element {
+  return (
+    <PaletteField label={label}>
+      <textarea
+        value={value}
+        rows={rows}
+        title={title}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+      />
     </PaletteField>
   )
 }

@@ -46,6 +46,33 @@ export const sequenceParticipantPresentations: Array<{ value: SequenceParticipan
   { value: 'queue', label: 'Queue' }
 ]
 
+export const classRelationshipTypes: Array<{ value: string; label: string }> = [
+  { value: '-->', label: 'Association (-->)' },
+  { value: '<--', label: 'Association reversed (<--)' },
+  { value: '--', label: 'Solid link (--)' },
+  { value: '..', label: 'Dashed link (..)' },
+  { value: '<|--', label: 'Inheritance (<|--)' },
+  { value: '--|>', label: 'Inheritance reversed (--|>)' },
+  { value: '*--', label: 'Composition (*--)' },
+  { value: '--*', label: 'Composition reversed (--*)' },
+  { value: 'o--', label: 'Aggregation (o--)' },
+  { value: '--o', label: 'Aggregation reversed (--o)' },
+  { value: '..>', label: 'Dependency (..>)' },
+  { value: '<..', label: 'Dependency reversed (<..)' },
+  { value: '..|>', label: 'Realization (..|>)' },
+  { value: '<|..', label: 'Realization reversed (<|..)' },
+  { value: '()--', label: 'Lollipop (()--)' },
+  { value: '--()', label: 'Lollipop reversed (--())' }
+]
+
+export const classMultiplicityOptions: Array<{ value: string; label: string }> = [
+  { value: '', label: 'None' },
+  { value: '1', label: '1' },
+  { value: '0..1', label: '0..1' },
+  { value: '1..*', label: '1..*' },
+  { value: '*', label: '*' }
+]
+
 export function toFileBaseName(title: string): string {
   const normalizedTitle = title
     .trim()

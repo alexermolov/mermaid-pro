@@ -52,7 +52,7 @@ export const diagramTypeRegistry = {
     label: 'Class diagram',
     addNodeLabel: 'Add class',
     nodeLabelPlaceholder: 'Class name',
-    supportsDirection: false,
+    supportsDirection: true,
     editorMode: 'visual',
     createNodeData: (index) => ({
       label: `Class${index}`,

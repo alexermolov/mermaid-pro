@@ -275,6 +275,62 @@ export default function App(): JSX.Element {
     [updateEdgeById]
   )
 
+  const updateClassNodeData = useCallback(
+    (
+      id: string,
+      data: Partial<{
+        classNamespace: string
+        classAnnotation: string
+        classNote: string
+      }>
+    ) => {
+      updateNodeById(id, (node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          ...(data.classNamespace !== undefined
+            ? { classNamespace: data.classNamespace.trim() || undefined }
+            : {}),
+          ...(data.classAnnotation !== undefined
+            ? { classAnnotation: data.classAnnotation.trim() || undefined }
+            : {}),
+          ...(data.classNote !== undefined ? { classNote: data.classNote.trim() || undefined } : {})
+        }
+      }))
+      setAutoSync(true)
+    },
+    [updateNodeById]
+  )
+
+  const updateClassEdgeData = useCallback(
+    (
+      id: string,
+      data: Partial<{
+        classRelationshipToken: string
+        classSourceMultiplicity: string
+        classTargetMultiplicity: string
+      }>
+    ) => {
+      updateEdgeById(id, (edge) => ({
+        ...edge,
+        data: {
+          ...(edge.data ?? {}),
+          ...(data.classRelationshipToken !== undefined
+            ? { classRelationshipToken: data.classRelationshipToken || '-->' }
+            : {}),
+          ...(data.classSourceMultiplicity !== undefined
+            ? { classSourceMultiplicity: data.classSourceMultiplicity.trim() || undefined }
+            : {}),
+          ...(data.classTargetMultiplicity !== undefined
+            ? { classTargetMultiplicity: data.classTargetMultiplicity.trim() || undefined }
+            : {})
+        }
+      }))
+      setAutoSync(true)
+    },
+    [updateEdgeById]
+  )
+
   const updateSequenceOrder = useCallback(
     (id: string, deltaY: number) => {
       if (diagramType !== 'sequence') return
@@ -912,6 +968,34 @@ export default function App(): JSX.Element {
     updateEdgeErRelationship(selectedEdgeId, relationship)
   }
 
+  function updateSelectedClassNodeData(
+    data: Partial<{
+      classNamespace: string
+      classAnnotation: string
+      classNote: string
+    }>
+  ): void {
+    if (!selectedNode) {
+      return
+    }
+
+    updateClassNodeData(selectedNode.id, data)
+  }
+
+  function updateSelectedClassEdgeData(
+    data: Partial<{
+      classRelationshipToken: string
+      classSourceMultiplicity: string
+      classTargetMultiplicity: string
+    }>
+  ): void {
+    if (!selectedEdgeId) {
+      return
+    }
+
+    updateClassEdgeData(selectedEdgeId, data)
+  }
+
   function updateDiagramType(nextDiagramType: DiagramType): void {
     const nextDiagramTypeDefinition = getDiagramTypeDefinition(nextDiagramType)
 
@@ -1305,8 +1389,10 @@ export default function App(): JSX.Element {
               onSelectedNodeShapeChange={updateSelectedNodeShape}
               onSelectedSequenceParticipantPresentationChange={updateSelectedSequenceParticipantPresentation}
               onSelectedNodeStyleChange={updateSelectedNodeStyle}
+              onSelectedClassNodeDataChange={updateSelectedClassNodeData}
               onSelectedEdgeLabelChange={updateSelectedEdgeLabel}
               onSelectedEdgeStyleChange={updateSelectedEdgeStyle}
+              onSelectedClassEdgeDataChange={updateSelectedClassEdgeData}
               onSelectedSequenceMessageTypeChange={updateSelectedSequenceMessageType}
               onSelectedEdgeVisualStyleChange={updateSelectedEdgeVisualStyle}
               onSelectedEdgeErRelationshipChange={updateSelectedEdgeErRelationship}

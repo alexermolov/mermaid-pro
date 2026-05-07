@@ -18,7 +18,7 @@ export function toMermaid(
     case 'sequence':
       return toSequenceDiagram(nodes, edges)
     case 'class':
-      return toClassDiagram(nodes, edges)
+      return toClassDiagram(nodes, edges, direction)
     case 'state':
       return toStateDiagram(nodes, edges)
     case 'er':

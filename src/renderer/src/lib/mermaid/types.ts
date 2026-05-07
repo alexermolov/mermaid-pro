@@ -86,6 +86,9 @@ export type VisualNodeData = {
   label: string
   classAttributes?: string
   classMethods?: string
+  classAnnotation?: string
+  classNamespace?: string
+  classNote?: string
   erAttributes?: string
   stateDescription?: string
   shape?: FlowchartNodeShape
@@ -105,7 +108,7 @@ export type VisualNode = Node<VisualNodeData>
 
 export type EditableVisualNodeData = Pick<
   VisualNodeData,
-  'label' | 'classAttributes' | 'classMethods' | 'erAttributes' | 'stateDescription'
+  'label' | 'classAttributes' | 'classMethods' | 'classAnnotation' | 'classNamespace' | 'classNote' | 'erAttributes' | 'stateDescription'
 >
 
 export type VisualEdgeData = {
@@ -118,6 +121,9 @@ export type VisualEdgeData = {
   erSourceCardinality?: ErCardinality
   erTargetCardinality?: ErCardinality
   erRelationshipLineStyle?: ErRelationshipLineStyle
+  classRelationshipToken?: string
+  classSourceMultiplicity?: string
+  classTargetMultiplicity?: string
 }
 
 export type VisualEdge = Edge<VisualEdgeData>

@@ -40,10 +40,16 @@ const nodePresentationRegistry: Record<DiagramType, NodePresentationResolver> = 
   },
   class: () => ({
     classNames: ['editable-node--class'],
-    layout: { width: 220, minWidth: 220, minHeight: 132 },
+    layout: { width: 240, minWidth: 240, minHeight: 160 },
     renderShape: renderClassShape,
     renderFields: (id, data) => (
       <>
+        <input
+          className="nodrag nopan"
+          value={data.classAnnotation ?? ''}
+          onChange={(event) => data.onDataChange?.(id, { classAnnotation: event.target.value || undefined })}
+          placeholder="Annotation (e.g. Interface)"
+        />
         <textarea
           className="nodrag nopan"
           value={data.classAttributes ?? ''}
