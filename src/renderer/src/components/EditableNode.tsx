@@ -51,6 +51,7 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
     data.label,
     data.shape,
     data.stateDescription,
+    data.statePseudo,
     id,
     updateNodeInternals
   ])
@@ -73,7 +74,15 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
         <input
           className="nodrag nopan"
           value={data.label}
-          onChange={(event) => data.onLabelChange?.(id, event.target.value)}
+          readOnly={Boolean(data.statePseudo)}
+          aria-readonly={data.statePseudo ? true : undefined}
+          onChange={(event) => {
+            if (data.statePseudo) {
+              return
+            }
+
+            data.onLabelChange?.(id, event.target.value)
+          }}
           placeholder={presentation.labelPlaceholder}
         />
         {presentation.renderFields?.(id, data) ?? null}

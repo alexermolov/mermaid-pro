@@ -257,6 +257,10 @@ function getAutoLayoutNodeSize(node: VisualNode, diagramType?: DiagramType): { w
     width = Math.max(220, width)
     height = Math.max(116, height)
   } else if (diagramType === 'state') {
+    if (node.data.statePseudo) {
+      return { width: 112, height: 72 }
+    }
+
     width = Math.max(220, width)
     height = Math.max(108, height)
   }

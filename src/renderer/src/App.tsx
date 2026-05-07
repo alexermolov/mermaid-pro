@@ -60,7 +60,9 @@ import {
   type SequenceMessageType,
   type SequenceParticipantPresentation,
   type VisualEdge,
-  type VisualNode
+  type VisualNode,
+  STATE_STAR_END_ID,
+  STATE_STAR_START_ID
 } from './lib/mermaid'
 import { createDefaultTimelineCode } from './lib/timeline'
 
@@ -727,7 +729,7 @@ export default function App(): JSX.Element {
     const copySuffix = Date.now().toString(36)
     const nodeIdMap = new Map<string, string>()
     const duplicatedNodes = nodes
-      .filter((node) => selectedNodeIdSet.has(node.id))
+      .filter((node) => selectedNodeIdSet.has(node.id) && !node.data.statePseudo)
       .map((node, index): VisualNode => {
         const id = `${node.id}_copy_${copySuffix}_${index + 1}`
         nodeIdMap.set(node.id, id)
@@ -748,6 +750,7 @@ export default function App(): JSX.Element {
       })
 
     if (duplicatedNodes.length === 0) {
+      setStatus('Nothing to duplicate (initial/final [*] states cannot be duplicated)')
       return
     }
 
@@ -874,6 +877,38 @@ export default function App(): JSX.Element {
       window.removeEventListener('pointerup', stopResizing)
     }
   }, [isResizingRightPanel, isSidebarCollapsed])
+
+  function addStatePseudo(kind: 'start' | 'end'): void {
+    if (diagramType !== 'state') {
+      return
+    }
+
+    const id = kind === 'start' ? STATE_STAR_START_ID : STATE_STAR_END_ID
+
+    if (nodes.some((node) => node.id === id)) {
+      setSelectedNodeIds([id])
+      setStatus(kind === 'start' ? 'Initial ([*]) is already on the canvas' : 'Final ([*]) is already on the canvas')
+      return
+    }
+
+    const offset = nodes.length * 22
+    const newNode: VisualNode = {
+      id,
+      type: 'editableNode',
+      position: { x: kind === 'start' ? 96 : 340, y: 140 + offset },
+      data: {
+        label: '[*]',
+        statePseudo: kind === 'start' ? 'start' : 'end'
+      }
+    }
+
+    setNodes((currentNodes) => [...currentNodes, newNode])
+    setSelectedNodeIds([id])
+    setSelectedEdgeIds([])
+    setSelectedEdgeId(null)
+    setAutoSync(true)
+    setStatus(kind === 'start' ? 'Added initial state ([*])' : 'Added final state ([*])')
+  }
 
   function addNode(): void {
     if (diagramTypeDefinition.editorMode === 'form') {
@@ -1378,6 +1413,7 @@ export default function App(): JSX.Element {
               sequenceMessageSourceId={sequenceMessageDraft.sourceId}
               sequenceMessageTargetId={sequenceMessageDraft.targetId}
               onAddNode={addNode}
+              onAddStatePseudo={addStatePseudo}
               onAddSequenceMessage={addSelectedSequenceMessage}
               onSequenceMessageDraftChange={(draft) =>
                 setSequenceMessageDraft((currentDraft) => ({
@@ -1451,7 +1487,7 @@ function layoutDirectionForDiagramType(
     case 'mindmap':
       return 'LR'
     case 'state':
-      return 'TD'
+      return currentDirection
     default:
       return currentDirection
   }

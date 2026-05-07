@@ -72,21 +72,29 @@ const nodePresentationRegistry: Record<DiagramType, NodePresentationResolver> = 
     ),
     labelPlaceholder: 'Class name'
   }),
-  state: () => ({
-    classNames: ['editable-node--state'],
-    layout: { width: 220, minWidth: 220, minHeight: 108 },
-    renderShape: renderStateShape,
-    renderFields: (id, data) => (
-      <textarea
-        className="nodrag nopan"
-        value={data.stateDescription ?? ''}
-        onChange={(event) => data.onDataChange?.(id, { stateDescription: event.target.value })}
-        placeholder="entry action"
-        rows={3}
-      />
-    ),
-    labelPlaceholder: 'State name'
-  }),
+  state: (data) =>
+    data.statePseudo
+      ? {
+          classNames: ['editable-node--state', 'editable-node--state-pseudo'],
+          layout: { width: 120, minWidth: 112, minHeight: 72 },
+          renderShape: data.statePseudo === 'start' ? renderStateStartShape : renderStateEndShape,
+          labelPlaceholder: '[*]'
+        }
+      : {
+          classNames: ['editable-node--state'],
+          layout: { width: 220, minWidth: 220, minHeight: 108 },
+          renderShape: renderStateShape,
+          renderFields: (id, inner) => (
+            <textarea
+              className="nodrag nopan"
+              value={inner.stateDescription ?? ''}
+              onChange={(event) => inner.onDataChange?.(id, { stateDescription: event.target.value })}
+              placeholder="entry action"
+              rows={3}
+            />
+          ),
+          labelPlaceholder: 'State name'
+        },
   er: (data) => ({
     classNames: ['editable-node--er'],
     layout: getErLayout(data),
@@ -149,6 +157,19 @@ function renderStateShape(appearance: FlowchartShapeAppearance): JSX.Element {
       stroke={appearance.stroke}
       strokeWidth={appearance.strokeWidth}
     />
+  )
+}
+
+function renderStateStartShape(appearance: FlowchartShapeAppearance): JSX.Element {
+  return <circle cx="50" cy="50" r="28" fill={appearance.fill} stroke={appearance.stroke} strokeWidth={appearance.strokeWidth} />
+}
+
+function renderStateEndShape(appearance: FlowchartShapeAppearance): JSX.Element {
+  return (
+    <>
+      <circle cx="50" cy="50" r="26" fill="none" stroke={appearance.stroke} strokeWidth={appearance.strokeWidth} />
+      <circle cx="50" cy="50" r="18" fill={appearance.fill} stroke={appearance.stroke} strokeWidth={appearance.strokeWidth * 0.85} />
+    </>
   )
 }
 

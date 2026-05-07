@@ -2,6 +2,7 @@ import Editor from '@monaco-editor/react'
 import { Search } from 'lucide-react'
 import { useState } from 'react'
 import type { DiagramEditorMode } from '../lib/diagramTypeRegistry'
+import { MERMAID_EDITOR_LANGUAGE, registerMermaidMonacoLanguage } from '../lib/mermaid/mermaidMonaco'
 import { LightboxModal } from './LightboxModal'
 
 type CodeEditorPanelProps = {
@@ -50,8 +51,9 @@ export function CodeEditorPanel({
         </div>
         <Editor
           height="100%"
-          defaultLanguage="markdown"
+          defaultLanguage={MERMAID_EDITOR_LANGUAGE}
           theme={isDarkTheme ? 'vs-dark' : 'vs'}
+          beforeMount={registerMermaidMonacoLanguage}
           value={code}
           options={{
             minimap: { enabled: false },
@@ -71,8 +73,9 @@ export function CodeEditorPanel({
       >
         <Editor
           height="100%"
-          defaultLanguage="markdown"
+          defaultLanguage={MERMAID_EDITOR_LANGUAGE}
           theme={isDarkTheme ? 'vs-dark' : 'vs'}
+          beforeMount={registerMermaidMonacoLanguage}
           value={code}
           options={{
             minimap: { enabled: true },

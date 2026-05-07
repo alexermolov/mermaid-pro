@@ -37,6 +37,8 @@ type DiagramToolPaletteProps = {
   sequenceMessageSourceId: string
   sequenceMessageTargetId: string
   onAddNode: () => void
+  /** State diagram: add Mermaid `[*]` start or end pseudo-state on the canvas. */
+  onAddStatePseudo?: (kind: 'start' | 'end') => void
   onAddSequenceMessage: () => void
   onSequenceMessageDraftChange: (draft: Partial<{ sourceId: string; targetId: string }>) => void
   onDuplicateSelected: () => void
@@ -76,6 +78,7 @@ export function DiagramToolPalette({
   sequenceMessageSourceId,
   sequenceMessageTargetId,
   onAddNode,
+  onAddStatePseudo,
   onAddSequenceMessage,
   onSequenceMessageDraftChange,
   onDuplicateSelected,
@@ -150,6 +153,26 @@ export function DiagramToolPalette({
             <Plus size={16} />
             Add message
           </button>
+        )}
+        {diagramType === 'state' && onAddStatePseudo && (
+          <>
+            <button
+              type="button"
+              onClick={() => onAddStatePseudo('start')}
+              title="Add initial pseudo-state ([*]) — outgoing transitions only"
+            >
+              <Plus size={16} />
+              Initial ([*])
+            </button>
+            <button
+              type="button"
+              onClick={() => onAddStatePseudo('end')}
+              title="Add final pseudo-state ([*]) — incoming transitions only"
+            >
+              <Plus size={16} />
+              Final ([*])
+            </button>
+          </>
         )}
         <button onClick={onDuplicateSelected} disabled={!canDuplicateNodes} title="Duplicate selected nodes">
           <Copy size={16} />

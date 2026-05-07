@@ -20,7 +20,7 @@ export function toMermaid(
     case 'class':
       return toClassDiagram(nodes, edges, direction)
     case 'state':
-      return toStateDiagram(nodes, edges)
+      return toStateDiagram(nodes, edges, direction)
     case 'er':
       return toErDiagram(nodes, edges)
     case 'mindmap':

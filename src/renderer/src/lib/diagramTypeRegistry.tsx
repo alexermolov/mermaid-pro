@@ -70,7 +70,7 @@ export const diagramTypeRegistry = {
     label: 'State diagram',
     addNodeLabel: 'Add state',
     nodeLabelPlaceholder: 'State name',
-    supportsDirection: false,
+    supportsDirection: true,
     editorMode: 'visual',
     createNodeData: (index) => ({
       label: `State ${index}`,

@@ -91,6 +91,8 @@ export type VisualNodeData = {
   classNote?: string
   erAttributes?: string
   stateDescription?: string
+  /** Start/end pseudo-state for state diagrams (`[*]` in Mermaid). */
+  statePseudo?: 'start' | 'end'
   shape?: FlowchartNodeShape
   style?: FlowchartNodeStyle
   flowchartClassNames?: string[]
@@ -124,6 +126,8 @@ export type VisualEdgeData = {
   classRelationshipToken?: string
   classSourceMultiplicity?: string
   classTargetMultiplicity?: string
+  /** `A -- B` concurrent transition in state diagrams. */
+  stateConcurrency?: boolean
 }
 
 export type VisualEdge = Edge<VisualEdgeData>

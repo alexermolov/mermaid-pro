@@ -7,3 +7,4 @@ export { autoLayoutNodes, getSequenceLifelineHeight, layoutSequenceNodes } from 
 export { nextNodeId } from './graph-model'
 export { graphToMermaidText, toMermaid } from './serialize'
 export { mermaidTextToGraph, normalizeMermaidInput, parseMermaid } from './parse'
+export { STATE_STAR_END_ID, STATE_STAR_START_ID } from './stateDiagramIds'
