@@ -1,35 +1,10 @@
 import type { DiagramDirection } from '../../../../../shared/diagram'
 import { sanitizeId } from '../ids'
 import { STATE_SCOPE_SEP, STATE_STAR_END_ID, STATE_STAR_START_ID } from '../stateDiagramIds'
+import { deepestContainingComposite, isNodeInsideComposite, stateCompositeHasRenderableBody } from '../stateDiagramComposite'
 import { escapeQuotedText, escapeStateText } from '../text-utils'
 import type { VisualEdge, VisualNode } from '../types'
 import { formatIndentedLines } from './common'
-
-function scopeSegmentCount(id: string): number {
-  if (!id.includes(STATE_SCOPE_SEP)) {
-    return 0
-  }
-
-  return id.split(STATE_SCOPE_SEP).length - 1
-}
-
-function subtreeContains(compositeId: string, nodeId: string): boolean {
-  return nodeId === compositeId || nodeId.startsWith(`${compositeId}${STATE_SCOPE_SEP}`)
-}
-
-function deepestContainingComposite(edge: VisualEdge, nodes: VisualNode[]): string | null {
-  const composites = nodes
-    .filter((n) => n.data.stateIsComposite)
-    .sort((a, b) => scopeSegmentCount(b.id) - scopeSegmentCount(a.id))
-
-  for (const composite of composites) {
-    if (subtreeContains(composite.id, edge.source) && subtreeContains(composite.id, edge.target)) {
-      return composite.id
-    }
-  }
-
-  return null
-}
 
 function mermaidLocalId(nodeId: string): string {
   if (!nodeId.includes(STATE_SCOPE_SEP)) {
@@ -52,6 +27,53 @@ function toMermaidEndpoint(id: string, nodeById: Map<string, VisualNode>): strin
   return sanitizeId(mermaidLocalId(id))
 }
 
+function isDirectChildOfComposite(nodeById: Map<string, VisualNode>, compositeId: string, node: VisualNode): boolean {
+  if (node.parentId === compositeId) {
+    return true
+  }
+  const ownerId = node.data.stateCompositeOwnerId
+  if (!ownerId || ownerId !== compositeId) {
+    return false
+  }
+  const ownerNode = nodeById.get(ownerId)
+  return Boolean(ownerNode?.data.stateIsComposite)
+}
+
+function emitStateDeclaration(node: VisualNode, indent: string): string {
+  const localId = sanitizeId(mermaidLocalId(node.id))
+  const label = node.data.label || mermaidLocalId(node.id)
+  const stereotype = node.data.stateStereotype?.trim()
+
+  if (stereotype) {
+    const normalized = stereotype.replace(/^<<\s*/, '').replace(/\s*>>$/, '')
+    return `${indent}state ${localId} <<${normalized}>>`
+  }
+
+  return `${indent}state "${escapeQuotedText(label)}" as ${localId}`
+}
+
+function emitStateNote(lines: string[], node: VisualNode, indent: string): void {
+  const note = node.data.stateNote?.trim()
+  if (!note) {
+    return
+  }
+
+  const side = node.data.stateNotePosition === 'left' ? 'left' : 'right'
+  const localId = sanitizeId(mermaidLocalId(node.id))
+  const noteLines = formatIndentedLines(note)
+
+  if (noteLines.length <= 1) {
+    lines.push(`${indent}note ${side} of ${localId} : ${escapeStateText(noteLines[0] ?? note)}`)
+    return
+  }
+
+  lines.push(`${indent}note ${side} of ${localId}`)
+  for (const line of noteLines) {
+    lines.push(`${indent}  ${escapeStateText(line)}`)
+  }
+  lines.push(`${indent}end note`)
+}
+
 function emitCompositeBlock(
   composite: VisualNode,
   nodes: VisualNode[],
@@ -61,8 +83,13 @@ function emitCompositeBlock(
   emittedEdgeIds: Set<string>,
   nodeById: Map<string, VisualNode>
 ): void {
-  const children = nodes.filter((n) => n.parentId === composite.id).sort((a, b) => a.id.localeCompare(b.id))
+  const children = nodes.filter((n) => isDirectChildOfComposite(nodeById, composite.id, n)).sort((a, b) => a.id.localeCompare(b.id))
   const localComposite = mermaidLocalId(composite.id)
+
+  if (!stateCompositeHasRenderableBody(composite, nodes, edges)) {
+    lines.push(`${indent}state "${escapeQuotedText(composite.data.label || localComposite)}" as ${sanitizeId(localComposite)}`)
+    return
+  }
 
   lines.push(`${indent}state "${escapeQuotedText(composite.data.label || localComposite)}" as ${sanitizeId(localComposite)} {`)
 
@@ -72,10 +99,11 @@ function emitCompositeBlock(
       emitCompositeBlock(child, nodes, edges, lines, deeper, emittedEdgeIds, nodeById)
     } else if (!child.data.statePseudo) {
       const lid = mermaidLocalId(child.id)
-      lines.push(`${deeper}state "${escapeQuotedText(child.data.label || lid)}" as ${sanitizeId(lid)}`)
+      lines.push(emitStateDeclaration(child, deeper))
       for (const descriptionLine of formatIndentedLines(child.data.stateDescription)) {
         lines.push(`${deeper}${sanitizeId(lid)} : ${escapeStateText(descriptionLine)}`)
       }
+      emitStateNote(lines, child, deeper)
     }
   }
 
@@ -111,7 +139,18 @@ export function toStateDiagram(nodes: VisualNode[], edges: VisualEdge[], directi
   const pseudoIds = new Set([STATE_STAR_START_ID, STATE_STAR_END_ID])
   const emittedEdgeIds = new Set<string>()
 
-  const roots = nodes.filter((n) => !n.parentId).sort((a, b) => a.id.localeCompare(b.id))
+  const roots = nodes
+    .filter((n) => {
+      if (n.parentId) {
+        return false
+      }
+      const ownerId = n.data.stateCompositeOwnerId
+      if (!ownerId) {
+        return true
+      }
+      return !isNodeInsideComposite(nodeById, ownerId, n.id)
+    })
+    .sort((a, b) => a.id.localeCompare(b.id))
 
   for (const root of roots) {
     if (pseudoIds.has(root.id)) {
@@ -124,10 +163,11 @@ export function toStateDiagram(nodes: VisualNode[], edges: VisualEdge[], directi
     }
 
     const stateId = sanitizeId(mermaidLocalId(root.id))
-    lines.push(`  state "${escapeQuotedText(root.data.label || root.id)}" as ${stateId}`)
+    lines.push(emitStateDeclaration(root, '  '))
     for (const descriptionLine of formatIndentedLines(root.data.stateDescription)) {
       lines.push(`  ${stateId} : ${escapeStateText(descriptionLine)}`)
     }
+    emitStateNote(lines, root, '  ')
   }
 
   for (const edge of edges) {

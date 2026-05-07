@@ -61,6 +61,8 @@ import {
   type SequenceParticipantPresentation,
   type VisualEdge,
   type VisualNode,
+  STATE_INNER_STAR_END_SUFFIX,
+  STATE_INNER_STAR_START_SUFFIX,
   STATE_STAR_END_ID,
   STATE_STAR_START_ID
 } from './lib/mermaid'
@@ -326,6 +328,58 @@ export default function App(): JSX.Element {
           ...(data.classTargetMultiplicity !== undefined
             ? { classTargetMultiplicity: data.classTargetMultiplicity.trim() || undefined }
             : {})
+        }
+      }))
+      setAutoSync(true)
+    },
+    [updateEdgeById]
+  )
+
+  const updateStateNodeCompositeFlag = useCallback(
+    (id: string, stateIsComposite: boolean) => {
+      setNodes((currentNodes) => {
+        const target = currentNodes.find((n) => n.id === id)
+        if (!target) {
+          return currentNodes
+        }
+
+        let nextNodes = currentNodes
+        if (!stateIsComposite && target.data.stateIsComposite) {
+          const grandParent = target.parentId
+          nextNodes = nextNodes.map((n) =>
+            n.parentId === id
+              ? { ...n, parentId: grandParent, data: { ...n.data, stateCompositeOwnerId: undefined } }
+              : n.data.stateCompositeOwnerId === id
+                ? { ...n, data: { ...n.data, stateCompositeOwnerId: undefined } }
+                : n
+          )
+        }
+
+        return nextNodes.map((n) =>
+          n.id === id
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  stateIsComposite: stateIsComposite ? true : undefined,
+                  ...(stateIsComposite ? { stateDescription: undefined } : {})
+                }
+              }
+            : n
+        )
+      })
+      setAutoSync(true)
+    },
+    [setNodes]
+  )
+
+  const updateEdgeStateConcurrency = useCallback(
+    (id: string, concurrent: boolean) => {
+      updateEdgeById(id, (edge) => ({
+        ...edge,
+        data: {
+          ...(edge.data ?? {}),
+          stateConcurrency: concurrent ? true : undefined
         }
       }))
       setAutoSync(true)
@@ -615,6 +669,36 @@ export default function App(): JSX.Element {
         return
       }
 
+      if (
+        diagramType === 'state' &&
+        connection.source?.endsWith(STATE_INNER_STAR_START_SUFFIX) &&
+        connection.target
+      ) {
+        const compositeId = connection.source.slice(0, -STATE_INNER_STAR_START_SUFFIX.length)
+        setNodes((currentNodes) => {
+          const composite = currentNodes.find((n) => n.id === compositeId && n.data.stateIsComposite)
+          const targetNode = currentNodes.find((n) => n.id === connection.target)
+          if (
+            !composite ||
+            !targetNode ||
+            targetNode.data.statePseudo ||
+            targetNode.data.stateIsComposite ||
+            (targetNode.parentId && targetNode.parentId !== compositeId)
+          ) {
+            return currentNodes
+          }
+
+          return currentNodes.map((n) =>
+            n.id === connection.target
+              ? {
+                  ...n,
+                  data: { ...n.data, stateCompositeOwnerId: compositeId }
+                }
+              : n
+          )
+        })
+      }
+
       setEdges((currentEdges) =>
         diagramType === 'sequence' ? [...currentEdges, nextEdge] : addEdge(nextEdge, currentEdges)
       )
@@ -622,7 +706,7 @@ export default function App(): JSX.Element {
       setSelectedEdgeId(nextEdge.id)
       setAutoSync(true)
     },
-    [createConnectionEdge, diagramType, setEdges]
+    [createConnectionEdge, diagramType, setEdges, setNodes]
   )
 
   const onReconnect = useCallback(
@@ -885,6 +969,47 @@ export default function App(): JSX.Element {
       return
     }
 
+    const compositeParent =
+      selectedNodeIds.length === 1 && selectedNode?.data.stateIsComposite ? selectedNode : null
+
+    if (compositeParent) {
+      const innerId = `${compositeParent.id}${kind === 'start' ? STATE_INNER_STAR_START_SUFFIX : STATE_INNER_STAR_END_SUFFIX}`
+
+      if (nodes.some((node) => node.id === innerId)) {
+        setSelectedNodeIds([innerId])
+        setStatus(
+          kind === 'start'
+            ? 'This composite already has an initial ([*]) inside'
+            : 'This composite already has a final ([*]) inside'
+        )
+        return
+      }
+
+      const newNode: VisualNode = {
+        id: innerId,
+        type: 'editableNode',
+        parentId: compositeParent.id,
+        extent: undefined,
+        position: { x: 44, y: kind === 'start' ? 52 : 120 },
+        data: {
+          label: '[*]',
+          statePseudo: kind === 'start' ? 'start' : 'end'
+        }
+      }
+
+      setNodes((currentNodes) => [...currentNodes, newNode])
+      setSelectedNodeIds([innerId])
+      setSelectedEdgeIds([])
+      setSelectedEdgeId(null)
+      setAutoSync(true)
+      setStatus(
+        kind === 'start'
+          ? 'Added initial ([*]) inside composite'
+          : 'Added final ([*]) inside composite'
+      )
+      return
+    }
+
     const id = kind === 'start' ? STATE_STAR_START_ID : STATE_STAR_END_ID
 
     if (nodes.some((node) => node.id === id)) {
@@ -912,20 +1037,151 @@ export default function App(): JSX.Element {
     setStatus(kind === 'start' ? 'Added initial state ([*])' : 'Added final state ([*])')
   }
 
+  function addStateComposite(): void {
+    if (diagramType !== 'state') {
+      return
+    }
+
+    const id = nextNodeId(nodes)
+    const compositeIndex = nodes.filter((n) => n.data.stateIsComposite).length + 1
+    const innerInitialId = `${id}${STATE_INNER_STAR_START_SUFFIX}`
+
+    setNodes((currentNodes) => [
+      ...currentNodes,
+      {
+        id,
+        type: 'editableNode',
+        position: { x: 140 + currentNodes.length * 36, y: 200 + currentNodes.length * 26 },
+        data: {
+          label: `Composite ${compositeIndex}`,
+          stateIsComposite: true
+        }
+      },
+      {
+        id: innerInitialId,
+        type: 'editableNode',
+        parentId: id,
+        extent: undefined,
+        position: { x: 44, y: 52 },
+        data: {
+          label: '[*]',
+          statePseudo: 'start'
+        }
+      }
+    ])
+    setSelectedNodeIds([id])
+    setSelectedEdgeIds([])
+    setSelectedEdgeId(null)
+    setAutoSync(true)
+    setStatus('Added composite state with inner initial ([*])')
+  }
+
+  function addStateFork(): void {
+    if (diagramType !== 'state') {
+      return
+    }
+
+    const compositeParent =
+      selectedNodeIds.length === 1 && selectedNode?.data.stateIsComposite ? selectedNode : null
+
+    const id = nextNodeId(nodes)
+    const forkIndex = nodes.filter((node) => node.data.stateStereotype === 'fork').length + 1
+    const forkNode: VisualNode = {
+      id,
+      type: 'editableNode',
+      ...(compositeParent
+        ? {
+            parentId: compositeParent.id,
+            extent: undefined,
+            position: { x: 120, y: 120 }
+          }
+        : {
+            position: { x: 160 + nodes.length * 28, y: 220 + nodes.length * 18 }
+          }),
+      data: {
+        label: `Fork ${forkIndex}`,
+        stateStereotype: 'fork'
+      }
+    }
+
+    setNodes((currentNodes) => [...currentNodes, forkNode])
+    setSelectedNodeIds([id])
+    setSelectedEdgeIds([])
+    setSelectedEdgeId(null)
+    setAutoSync(true)
+    setStatus(compositeParent ? 'Added fork inside composite' : 'Added fork state')
+  }
+
+  function addStateJoin(): void {
+    if (diagramType !== 'state') {
+      return
+    }
+
+    const compositeParent =
+      selectedNodeIds.length === 1 && selectedNode?.data.stateIsComposite ? selectedNode : null
+
+    const id = nextNodeId(nodes)
+    const joinIndex = nodes.filter((node) => node.data.stateStereotype === 'join').length + 1
+    const joinNode: VisualNode = {
+      id,
+      type: 'editableNode',
+      ...(compositeParent
+        ? {
+            parentId: compositeParent.id,
+            extent: undefined,
+            position: { x: 120, y: 160 }
+          }
+        : {
+            position: { x: 180 + nodes.length * 28, y: 240 + nodes.length * 18 }
+          }),
+      data: {
+        label: `Join ${joinIndex}`,
+        stateStereotype: 'join'
+      }
+    }
+
+    setNodes((currentNodes) => [...currentNodes, joinNode])
+    setSelectedNodeIds([id])
+    setSelectedEdgeIds([])
+    setSelectedEdgeId(null)
+    setAutoSync(true)
+    setStatus(compositeParent ? 'Added join inside composite' : 'Added join state')
+  }
+
   function addNode(): void {
     if (diagramTypeDefinition.editorMode === 'form') {
       setStatus(`${diagramTypeDefinition.label} is edited in the timeline form`)
       return
     }
 
+    const compositeParent =
+      diagramType === 'state' &&
+      selectedNodeIds.length === 1 &&
+      selectedNode?.data.stateIsComposite &&
+      selectedNode
+        ? selectedNode
+        : null
+
     const id = nextNodeId(nodes)
     setNodes((currentNodes) => {
+      const composite =
+        compositeParent &&
+        currentNodes.find((n) => n.id === compositeParent.id && n.data.stateIsComposite)
+
       const nextNodes = [
         ...currentNodes,
         {
           id,
           type: 'editableNode',
-          position: { x: 120 + currentNodes.length * 40, y: 220 + currentNodes.length * 24 },
+          ...(composite
+            ? {
+                parentId: composite.id,
+                extent: undefined,
+                position: { x: 120, y: 140 }
+              }
+            : {
+                position: { x: 120 + currentNodes.length * 40, y: 220 + currentNodes.length * 24 }
+              }),
           data: createNodeData(diagramType, currentNodes.length + 1)
         }
       ]
@@ -1031,6 +1287,49 @@ export default function App(): JSX.Element {
     }
 
     updateClassEdgeData(selectedEdgeId, data)
+  }
+
+  function updateSelectedStateNodeData(
+    data: Partial<{
+      stateIsComposite: boolean
+      stateDescription: string
+      stateNote: string
+      stateNotePosition: 'left' | 'right'
+    }>
+  ): void {
+    if (!selectedNode || diagramType !== 'state') {
+      return
+    }
+
+    if (data.stateIsComposite !== undefined) {
+      updateStateNodeCompositeFlag(selectedNode.id, data.stateIsComposite)
+    }
+
+    if (data.stateDescription !== undefined) {
+      updateNodeData(selectedNode.id, {
+        stateDescription: data.stateDescription.trim() || undefined
+      })
+    }
+
+    if (data.stateNote !== undefined) {
+      updateNodeData(selectedNode.id, {
+        stateNote: data.stateNote.trim() || undefined
+      })
+    }
+
+    if (data.stateNotePosition !== undefined) {
+      updateNodeData(selectedNode.id, {
+        stateNotePosition: data.stateNotePosition
+      })
+    }
+  }
+
+  function updateSelectedEdgeStateConcurrency(concurrent: boolean): void {
+    if (!selectedEdgeId) {
+      return
+    }
+
+    updateEdgeStateConcurrency(selectedEdgeId, concurrent)
   }
 
   function updateDiagramType(nextDiagramType: DiagramType): void {
@@ -1416,6 +1715,9 @@ export default function App(): JSX.Element {
               sequenceMessageTargetId={sequenceMessageDraft.targetId}
               onAddNode={addNode}
               onAddStatePseudo={addStatePseudo}
+              onAddStateComposite={addStateComposite}
+              onAddStateFork={addStateFork}
+              onAddStateJoin={addStateJoin}
               onAddSequenceMessage={addSelectedSequenceMessage}
               onSequenceMessageDraftChange={(draft) =>
                 setSequenceMessageDraft((currentDraft) => ({
@@ -1434,6 +1736,8 @@ export default function App(): JSX.Element {
               onSelectedSequenceMessageTypeChange={updateSelectedSequenceMessageType}
               onSelectedEdgeVisualStyleChange={updateSelectedEdgeVisualStyle}
               onSelectedEdgeErRelationshipChange={updateSelectedEdgeErRelationship}
+              onSelectedStateNodeDataChange={updateSelectedStateNodeData}
+              onSelectedEdgeStateConcurrencyChange={updateSelectedEdgeStateConcurrency}
               onDeleteSelected={deleteSelectedElements}
             />
           </FlowCanvas>

@@ -51,6 +51,8 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
     data.label,
     data.shape,
     data.stateDescription,
+    data.stateNote,
+    data.stateNotePosition,
     data.statePseudo,
     id,
     updateNodeInternals
@@ -87,6 +89,14 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
         />
         {presentation.renderFields?.(id, data) ?? null}
       </div>
+      {data.diagramType === 'state' && !data.statePseudo && data.stateNote?.trim() ? (
+        <div
+          className={`editable-node__state-note editable-node__state-note--${data.stateNotePosition === 'left' ? 'left' : 'right'}`}
+          title="State note from Mermaid"
+        >
+          {data.stateNote}
+        </div>
+      ) : null}
       {data.diagramType === 'sequence' && data.sequenceLifelineHeight ? (
         <div className="editable-node__sequence-lifeline" style={{ height: `${data.sequenceLifelineHeight}px` }} />
       ) : null}

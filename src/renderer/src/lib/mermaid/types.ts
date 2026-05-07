@@ -91,10 +91,18 @@ export type VisualNodeData = {
   classNote?: string
   erAttributes?: string
   stateDescription?: string
+  /** State note emitted as `note left|right of Id ... end note`. */
+  stateNote?: string
+  /** Placement side for state note. */
+  stateNotePosition?: 'left' | 'right'
   /** Start/end pseudo-state for state diagrams (`[*]` in Mermaid). */
   statePseudo?: 'start' | 'end'
   /** True for `state Id { ... }` composite containers. */
   stateIsComposite?: boolean
+  /** Mermaid state stereotype, for example `fork` in `state S <<fork>>`. */
+  stateStereotype?: string
+  /** Logical composite owner for Mermaid emission without visual parenting constraints. */
+  stateCompositeOwnerId?: string
   shape?: FlowchartNodeShape
   style?: FlowchartNodeStyle
   flowchartClassNames?: string[]
@@ -112,7 +120,17 @@ export type VisualNode = Node<VisualNodeData>
 
 export type EditableVisualNodeData = Pick<
   VisualNodeData,
-  'label' | 'classAttributes' | 'classMethods' | 'classAnnotation' | 'classNamespace' | 'classNote' | 'erAttributes' | 'stateDescription'
+  | 'label'
+  | 'classAttributes'
+  | 'classMethods'
+  | 'classAnnotation'
+  | 'classNamespace'
+  | 'classNote'
+  | 'erAttributes'
+  | 'stateDescription'
+  | 'stateIsComposite'
+  | 'stateNote'
+  | 'stateNotePosition'
 >
 
 export type VisualEdgeData = {

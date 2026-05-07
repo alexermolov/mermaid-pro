@@ -23,7 +23,7 @@ export function ensureNode(
     }
     if (opts?.parentId !== undefined) {
       existingNode.parentId = opts.parentId
-      existingNode.extent = opts.parentId ? 'parent' : undefined
+      existingNode.extent = undefined
     }
     return existingNode
   }
@@ -44,7 +44,7 @@ export function createParsedNode(
     id,
     type: 'editableNode',
     parentId,
-    extent: parentId ? 'parent' : undefined,
+    extent: undefined,
     position: { x: 0, y: 0 },
     data: {
       label,

@@ -9,6 +9,7 @@ import {
   STATE_STAR_START_ID
 } from '../stateDiagramIds'
 import { sanitizeId } from '../ids'
+import { stateCompositeHasRenderableBody } from '../stateDiagramComposite'
 import { normalizeEscapedText } from '../text-utils'
 import type { ParsedMermaidDiagram, VisualEdge, VisualNode } from '../types'
 
@@ -74,11 +75,18 @@ function ensureStateEndpoint(
   ensureNode(nodes, graphId, shortLabelFromGraphId(graphId), {}, { parentId })
 }
 
-function appendNoteToState(nodes: Map<string, VisualNode>, stateId: string, noteText: string, stack: CompositeFrame[]): void {
+function appendStateNoteToNode(
+  nodes: Map<string, VisualNode>,
+  stateId: string,
+  side: 'left' | 'right',
+  noteText: string,
+  stack: CompositeFrame[]
+): void {
   const qualified = stack.length ? qualifyLocal(stack, stateId) : stateId
   const node = ensureNode(nodes, qualified, shortLabelFromGraphId(qualified), {}, { parentId: stack.length ? stack[stack.length - 1].graphId : undefined })
-  const next = [node.data.stateDescription, noteText.trim()].filter(Boolean).join('\n')
-  node.data.stateDescription = next || undefined
+  const next = [node.data.stateNote, noteText.trim()].filter(Boolean).join('\n')
+  node.data.stateNote = next || undefined
+  node.data.stateNotePosition = side
 }
 
 function slugIdFromDescription(label: string): string {
@@ -111,6 +119,10 @@ function parseCompositeOpen(line: string): { localId: string; label: string } | 
   return null
 }
 
+function normalizeStateStereotype(raw: string): string {
+  return raw.trim().replace(/^<<\s*/, '').replace(/\s*>>$/, '')
+}
+
 function needsCompositeLayout(nodes: Iterable<VisualNode>): boolean {
   for (const node of nodes) {
     if (node.parentId || node.data.stateIsComposite) {
@@ -121,14 +133,30 @@ function needsCompositeLayout(nodes: Iterable<VisualNode>): boolean {
   return false
 }
 
+function stripEmptyCompositeFlags(nodes: Map<string, VisualNode>, edges: VisualEdge[]): void {
+  const list = Array.from(nodes.values())
+  for (const node of list) {
+    if (!node.data.stateIsComposite) {
+      continue
+    }
+
+    if (!stateCompositeHasRenderableBody(node, list, edges)) {
+      const stored = nodes.get(node.id)
+      if (stored) {
+        stored.data.stateIsComposite = undefined
+      }
+    }
+  }
+}
+
 export function parseState(lines: string[]): ParsedMermaidDiagram {
   const nodes = new Map<string, VisualNode>()
   const edges: VisualEdge[] = []
   let direction: DiagramDirection = 'TD'
   const stack: CompositeFrame[] = []
 
-  for (const rawLine of lines.slice(1)) {
-    const line = rawLine.trim()
+  for (let i = 1; i < lines.length; i += 1) {
+    const line = lines[i].trim()
     if (!line) {
       continue
     }
@@ -159,10 +187,27 @@ export function parseState(lines: string[]): ParsedMermaidDiagram {
       continue
     }
 
-    const noteMatch = line.match(/^note\s+(left|right)\s+of\s+(\S+)\s+:\s+(.+)$/)
-    if (noteMatch) {
-      const [, , stateId, text] = noteMatch
-      appendNoteToState(nodes, stateId, text, stack)
+    const noteInlineMatch = line.match(/^note\s+(left|right)\s+of\s+(\S+)\s+:\s+(.+)$/)
+    if (noteInlineMatch) {
+      const [, side, stateId, text] = noteInlineMatch
+      appendStateNoteToNode(nodes, stateId, side as 'left' | 'right', text, stack)
+      continue
+    }
+
+    const noteBlockStartMatch = line.match(/^note\s+(left|right)\s+of\s+(\S+)\s*$/)
+    if (noteBlockStartMatch) {
+      const [, side, stateId] = noteBlockStartMatch
+      const noteLines: string[] = []
+      let cursor = i + 1
+      while (cursor < lines.length && !/^end\s+note\s*$/i.test(lines[cursor].trim())) {
+        noteLines.push(lines[cursor].trim())
+        cursor += 1
+      }
+      i = cursor
+      const noteText = noteLines.join('\n').trim()
+      if (noteText) {
+        appendStateNoteToNode(nodes, stateId, side as 'left' | 'right', noteText, stack)
+      }
       continue
     }
 
@@ -201,8 +246,8 @@ export function parseState(lines: string[]): ParsedMermaidDiagram {
       ensureNode(
         nodes,
         qid,
-        `${id} ${stereo}`,
-        {},
+        id,
+        { stateStereotype: normalizeStateStereotype(stereo) },
         { parentId: stack.length ? stack[stack.length - 1].graphId : undefined }
       )
       continue
@@ -271,6 +316,8 @@ export function parseState(lines: string[]): ParsedMermaidDiagram {
       node.data.stateDescription = [node.data.stateDescription, description.trim()].filter(Boolean).join('\n') || undefined
     }
   }
+
+  stripEmptyCompositeFlags(nodes, edges)
 
   const nodeList = Array.from(nodes.values())
   const laidOut = needsCompositeLayout(nodeList)

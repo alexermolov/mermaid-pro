@@ -39,6 +39,12 @@ type DiagramToolPaletteProps = {
   onAddNode: () => void
   /** State diagram: add Mermaid `[*]` start or end pseudo-state on the canvas. */
   onAddStatePseudo?: (kind: 'start' | 'end') => void
+  /** State diagram: add a composite `state Name { ... }` container. */
+  onAddStateComposite?: () => void
+  /** State diagram: add a `state X <<fork>>` node. */
+  onAddStateFork?: () => void
+  /** State diagram: add a `state X <<join>>` node. */
+  onAddStateJoin?: () => void
   onAddSequenceMessage: () => void
   onSequenceMessageDraftChange: (draft: Partial<{ sourceId: string; targetId: string }>) => void
   onDuplicateSelected: () => void
@@ -60,6 +66,17 @@ type DiagramToolPaletteProps = {
       erRelationshipLineStyle: ErRelationshipLineStyle
     }>
   ) => void
+  /** State diagram: state fields (composite flag, entry/description, side note). */
+  onSelectedStateNodeDataChange?: (
+    data: Partial<{
+      stateIsComposite: boolean
+      stateDescription: string
+      stateNote: string
+      stateNotePosition: 'left' | 'right'
+    }>
+  ) => void
+  /** State diagram: concurrent transition (`--`) vs sequential (`-->`). */
+  onSelectedEdgeStateConcurrencyChange?: (concurrent: boolean) => void
   onDeleteSelected: () => void
 }
 
@@ -79,6 +96,9 @@ export function DiagramToolPalette({
   sequenceMessageTargetId,
   onAddNode,
   onAddStatePseudo,
+  onAddStateComposite,
+  onAddStateFork,
+  onAddStateJoin,
   onAddSequenceMessage,
   onSequenceMessageDraftChange,
   onDuplicateSelected,
@@ -92,6 +112,8 @@ export function DiagramToolPalette({
   onSelectedSequenceMessageTypeChange,
   onSelectedEdgeVisualStyleChange,
   onSelectedEdgeErRelationshipChange,
+  onSelectedStateNodeDataChange,
+  onSelectedEdgeStateConcurrencyChange,
   onDeleteSelected
 }: DiagramToolPaletteProps): JSX.Element {
   const diagramTypeDefinition = getDiagramTypeDefinition(diagramType)
@@ -101,16 +123,21 @@ export function DiagramToolPalette({
   const canEditFlowchartNode = diagramType === 'flowchart' && hasSingleNodeSelection
   const canEditSequenceNode = diagramType === 'sequence' && hasSingleNodeSelection
   const canEditClassNode = diagramType === 'class' && hasSingleNodeSelection
+  const canEditStateNode =
+    diagramType === 'state' &&
+    hasSingleNodeSelection &&
+    Boolean(selectedNode && !selectedNode.data.statePseudo)
   const canEditEdgeLabel = hasSingleEdgeSelection
   const canEditFlowchartEdge = diagramType === 'flowchart' && hasSingleEdgeSelection
   const canEditSequenceEdge = diagramType === 'sequence' && hasSingleEdgeSelection
   const canEditErEdge = diagramType === 'er' && hasSingleEdgeSelection
   const canEditClassEdge = diagramType === 'class' && hasSingleEdgeSelection
+  const canEditStateEdge = diagramType === 'state' && hasSingleEdgeSelection
   const canDuplicateNodes = selectedNodeCount > 0
   const canAddSequenceMessage = diagramType === 'sequence' && Boolean(sequenceMessageSourceId) && Boolean(sequenceMessageTargetId)
   const nodeStyle = selectedNode?.data.style
   const edgeVisualStyle = selectedEdge?.data?.visualStyle
-  const selectionLabel = getSelectionLabel(selectedNodeCount, selectedEdgeCount)
+  const selectionLabel = getSelectionLabel(selectedNodeCount, selectedEdgeCount, diagramType)
 
   if (diagramTypeDefinition.editorMode === 'form') {
     return (
@@ -159,7 +186,11 @@ export function DiagramToolPalette({
             <button
               type="button"
               onClick={() => onAddStatePseudo('start')}
-              title="Add initial pseudo-state ([*]) — outgoing transitions only"
+              title={
+                selectedNode?.data.stateIsComposite
+                  ? 'Add initial ([*]) inside the selected composite (nested)'
+                  : 'Add diagram-level initial ([*]). Select a composite first to place [*] inside it.'
+              }
             >
               <Plus size={16} />
               Initial ([*])
@@ -167,12 +198,46 @@ export function DiagramToolPalette({
             <button
               type="button"
               onClick={() => onAddStatePseudo('end')}
-              title="Add final pseudo-state ([*]) — incoming transitions only"
+              title={
+                selectedNode?.data.stateIsComposite
+                  ? 'Add final ([*]) inside the selected composite (nested)'
+                  : 'Add diagram-level final ([*]). Select a composite first to place [*] inside it.'
+              }
             >
               <Plus size={16} />
               Final ([*])
             </button>
           </>
+        )}
+        {diagramType === 'state' && onAddStateComposite && (
+          <button
+            type="button"
+            onClick={onAddStateComposite}
+            title="Add composite state — container for nested states and transitions"
+          >
+            <Plus size={16} />
+            Composite state
+          </button>
+        )}
+        {diagramType === 'state' && onAddStateFork && (
+          <button
+            type="button"
+            onClick={onAddStateFork}
+            title="Add fork pseudostate (`state X <<fork>>`). Select a composite first to place it inside."
+          >
+            <Plus size={16} />
+            Fork
+          </button>
+        )}
+        {diagramType === 'state' && onAddStateJoin && (
+          <button
+            type="button"
+            onClick={onAddStateJoin}
+            title="Add join pseudostate (`state X <<join>>`). Select a composite first to place it inside."
+          >
+            <Plus size={16} />
+            Join
+          </button>
         )}
         <button onClick={onDuplicateSelected} disabled={!canDuplicateNodes} title="Duplicate selected nodes">
           <Copy size={16} />
@@ -270,6 +335,68 @@ export function DiagramToolPalette({
               getSequencePresentationDefinition(value as SequenceParticipantPresentation).renderShape(appearance)
             }
           />
+        </div>
+      )}
+
+      {canEditStateNode && selectedNode && onSelectedStateNodeDataChange && (
+        <div className="palette-section">
+          <div className="palette-field">
+            <span className="palette-field-label">State kind</span>
+            <div className="mode-button-group mode-button-group--compact" role="group" aria-label="Simple or composite state">
+              <button
+                type="button"
+                className={`mode-button${!selectedNode.data.stateIsComposite ? ' mode-button--active' : ''}`}
+                onClick={() => onSelectedStateNodeDataChange({ stateIsComposite: false })}
+              >
+                Simple
+              </button>
+              <button
+                type="button"
+                className={`mode-button${selectedNode.data.stateIsComposite ? ' mode-button--active' : ''}`}
+                onClick={() => onSelectedStateNodeDataChange({ stateIsComposite: true })}
+              >
+                Composite
+              </button>
+            </div>
+          </div>
+          {!selectedNode.data.stateIsComposite && (
+            <>
+              <PaletteTextareaInput
+                label="State notes"
+                value={selectedNode.data.stateDescription ?? ''}
+                title="Lines emitted as id : description in Mermaid (entry/exit actions)"
+                placeholder="entry / exit actions"
+                rows={4}
+                onChange={(value) => onSelectedStateNodeDataChange({ stateDescription: value })}
+              />
+              <div className="palette-grid palette-grid--edge">
+                <PaletteSelect
+                  label="Note side"
+                  value={selectedNode.data.stateNotePosition ?? 'right'}
+                  title="Side used for `note left|right of ...`"
+                  options={[
+                    { value: 'right', label: 'Right' },
+                    { value: 'left', label: 'Left' }
+                  ]}
+                  onChange={(value) => onSelectedStateNodeDataChange({ stateNotePosition: value as 'left' | 'right' })}
+                />
+              </div>
+              <PaletteTextareaInput
+                label="Attached note"
+                value={selectedNode.data.stateNote ?? ''}
+                title="Mermaid `note left|right of state ...` text"
+                placeholder="Important information"
+                rows={3}
+                onChange={(value) => onSelectedStateNodeDataChange({ stateNote: value })}
+              />
+            </>
+          )}
+          {selectedNode.data.stateIsComposite && (
+            <p className="palette-hint">
+              Place nested states inside this region on the canvas. Transitions drawn within the frame stay in the composite block in
+              code.
+            </p>
+          )}
         </div>
       )}
 
@@ -431,7 +558,20 @@ export function DiagramToolPalette({
               </div>
             </>
           )}
-          {!canEditFlowchartEdge && !canEditErEdge && !canEditClassEdge && (
+          {canEditStateEdge && onSelectedEdgeStateConcurrencyChange && (
+            <PaletteField label="Transition kind">
+              <label className="palette-inline-check">
+                <input
+                  type="checkbox"
+                  checked={selectedEdge.data?.stateConcurrency === true}
+                  title="Concurrent fork/join style (--); unchecked uses sequential arrow (-->)"
+                  onChange={(event) => onSelectedEdgeStateConcurrencyChange(event.target.checked)}
+                />
+                <span>Concurrent (--)</span>
+              </label>
+            </PaletteField>
+          )}
+          {!canEditFlowchartEdge && !canEditErEdge && !canEditClassEdge && !canEditStateEdge && (
             <p className="palette-hint">
               This diagram type uses the edge label as its main relationship control.
             </p>
@@ -439,7 +579,11 @@ export function DiagramToolPalette({
         </div>
       )}
 
-      {!canEditFlowchartNode && !canEditEdgeLabel && (
+      {!canEditFlowchartNode &&
+        !canEditSequenceNode &&
+        !canEditClassNode &&
+        !canEditStateNode &&
+        !canEditEdgeLabel && (
         <p className="palette-hint">
           Select one node or edge to reveal focused editing controls. Multi-select supports duplicate and delete.
         </p>
@@ -774,13 +918,30 @@ function PaletteNumberInput({
 
 function getSelectionLabel(
   selectedNodeCount: number,
-  selectedEdgeCount: number
+  selectedEdgeCount: number,
+  diagramType: DiagramType
 ): { title: string; subtitle: string } {
   if (selectedNodeCount === 1 && selectedEdgeCount === 0) {
+    if (diagramType === 'state') {
+      return { title: 'Node tools', subtitle: 'State properties' }
+    }
+
+    if (diagramType === 'sequence') {
+      return { title: 'Node tools', subtitle: 'Participant type' }
+    }
+
+    if (diagramType === 'class') {
+      return { title: 'Node tools', subtitle: 'Class metadata' }
+    }
+
     return { title: 'Node tools', subtitle: 'Shape and style' }
   }
 
   if (selectedEdgeCount === 1 && selectedNodeCount === 0) {
+    if (diagramType === 'state') {
+      return { title: 'Edge tools', subtitle: 'Label and transition' }
+    }
+
     return { title: 'Edge tools', subtitle: 'Label and line' }
   }
 
