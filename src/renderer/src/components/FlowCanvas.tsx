@@ -67,6 +67,8 @@ export function FlowCanvas({
         deleteKeyCode={['Backspace', 'Delete']}
         edgesReconnectable={false}
         reconnectRadius={20}
+        minZoom={0.03}
+        maxZoom={15}
         fitView
       >
         <FlowViewportSync fitViewToken={fitViewToken} />

@@ -122,9 +122,13 @@ app.whenReady().then(() => {
       title: 'Open diagram',
       properties: ['openFile'],
       filters: [
-        { name: 'Supported diagrams', extensions: ['mpro', 'mmd', 'mermaid', 'txt', 'drawio', 'xml'] },
+        {
+          name: 'Supported diagrams',
+          extensions: ['mpro', 'mmd', 'mermaid', 'txt', 'drawio', 'xml', 'puml', 'plantuml', 'pu', 'iuml', 'wsd']
+        },
         { name: 'Mermaid Pro projects', extensions: ['mpro'] },
         { name: 'Mermaid files', extensions: ['mmd', 'mermaid', 'txt'] },
+        { name: 'PlantUML files', extensions: ['puml', 'plantuml', 'pu', 'iuml', 'wsd'] },
         { name: 'draw.io files', extensions: ['drawio', 'xml'] },
         { name: 'All files', extensions: ['*'] }
       ]

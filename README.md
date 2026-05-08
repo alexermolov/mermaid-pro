@@ -13,6 +13,7 @@ The project is in early development and currently focuses on flowchart-style vis
 - Project save/load using the `.mpro` format.
 - Mermaid file import/export using `.mmd`, `.mermaid`, and `.txt`.
 - draw.io import support for `.drawio` and `.xml` files.
+- PlantUML import for `.puml`, `.plantuml`, `.pu`, `.iuml`, and `.wsd` files (sequence, class, state, activity, and mindmap diagrams are converted to Mermaid on open).
 - SVG and PNG export from the rendered preview.
 - Undo and redo for diagram editing.
 
@@ -96,6 +97,7 @@ src/shared/      Shared TypeScript types
 - `.mpro`: Mermaid Pro project files with visual layout and app state.
 - `.mmd`, `.mermaid`, `.txt`: Mermaid source files.
 - `.drawio`, `.xml`: draw.io diagrams imported into the visual editor when possible.
+- `.puml`, `.plantuml`, `.pu`, `.iuml`, `.wsd`: PlantUML diagrams converted to Mermaid on open.
 - `.svg`, `.png`: export formats for rendered diagrams.
 
 ## Roadmap

@@ -18,6 +18,7 @@ import { DiagramSidebar } from './components/DiagramSidebar'
 import { DiagramToolPalette } from './components/DiagramToolPalette'
 import type { EditableEdgeData } from './components/EditableEdge'
 import { FlowCanvas } from './components/FlowCanvas'
+import { LightboxModal } from './components/LightboxModal'
 import { PreviewPanel } from './components/PreviewPanel'
 import { TimelineEditorPanel } from './components/TimelineEditorPanel'
 import {
@@ -42,6 +43,7 @@ import {
   type DiagramSnapshot
 } from './lib/projectSnapshots'
 import { importDrawioDiagram, isDrawioDiagram } from './lib/drawioImport'
+import { isPlantUmlContent, plantUmlToMermaid } from './lib/plantUmlImport'
 import {
   autoLayoutNodes,
   defaultDiagram,
@@ -101,6 +103,8 @@ export default function App(): JSX.Element {
   const [rightPanelWidth, setRightPanelWidth] = useState(rightPanelDefaultWidth)
   const [isResizingRightPanel, setIsResizingRightPanel] = useState(false)
   const [fitViewToken, setFitViewToken] = useState(0)
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false)
+  const [pastedSource, setPastedSource] = useState('')
   const [undoStack, setUndoStack] = useState<DiagramSnapshot[]>([])
   const [redoStack, setRedoStack] = useState<DiagramSnapshot[]>([])
   const workspaceRef = useRef<HTMLElement>(null)
@@ -1625,6 +1629,97 @@ export default function App(): JSX.Element {
     setStatus('New project created')
   }
 
+  function importExternalSource(content: string, diagramTitle: string, sourceLabel: string): void {
+    const drawioImport = isDrawioDiagram(content) ? importDrawioDiagram(content) : undefined
+
+    setTitle(diagramTitle)
+
+    if (drawioImport) {
+      const importedSnapshot = createDiagramSnapshotFromGraph(
+        {
+          diagramType: 'flowchart',
+          direction: 'LR',
+          nodes: drawioImport.nodes,
+          edges: drawioImport.edges
+        },
+        {
+          id: createDiagramId(),
+          title: diagramTitle,
+          autoSync: true,
+          appTheme
+        }
+      )
+
+      resetHistory()
+      setDiagrams([importedSnapshot])
+      applySnapshot(importedSnapshot)
+      setSelectedNodeIds([])
+      setSelectedEdgeIds([])
+      setSelectedEdgeId(null)
+      requestFitView()
+      setStatus(`Imported draw.io diagram from ${sourceLabel}`)
+      return
+    }
+
+    const plantUmlMermaidCode = isPlantUmlContent(content) ? plantUmlToMermaid(content) : undefined
+    if (plantUmlMermaidCode) {
+      const importedPlantUmlSnapshot = (() => {
+        try {
+          return createDiagramSnapshotFromMermaidCode(plantUmlMermaidCode, {
+            id: createDiagramId(),
+            title: diagramTitle,
+            autoSync: true,
+            appTheme
+          })
+        } catch {
+          return undefined
+        }
+      })()
+
+      if (importedPlantUmlSnapshot) {
+        resetHistory()
+        setDiagrams([importedPlantUmlSnapshot])
+        applySnapshot(importedPlantUmlSnapshot)
+        requestFitView()
+        setStatus(`Imported PlantUML diagram from ${sourceLabel}`)
+        return
+      }
+    }
+
+    const importedMermaidSnapshot = (() => {
+      try {
+        return createDiagramSnapshotFromMermaidCode(content, {
+          id: createDiagramId(),
+          title: diagramTitle,
+          autoSync: false,
+          appTheme
+        })
+      } catch {
+        return undefined
+      }
+    })()
+
+    if (importedMermaidSnapshot) {
+      resetHistory()
+      setDiagrams([importedMermaidSnapshot])
+      applySnapshot(importedMermaidSnapshot)
+      requestFitView()
+      setStatus(`Imported Mermaid diagram from ${sourceLabel}`)
+      return
+    }
+
+    resetHistory()
+    const importedSnapshot = {
+      ...createDefaultDiagramSnapshot(createDiagramId(), appTheme),
+      title: diagramTitle,
+      code: content,
+      autoSync: false
+    }
+    setDiagrams([importedSnapshot])
+    applySnapshot(importedSnapshot)
+    setStatus(`Imported source from ${sourceLabel}`)
+  }
+
   async function openDiagram(): Promise<void> {
     const result = await window.mermaidPro.openDiagram()
 
@@ -1653,68 +1748,23 @@ export default function App(): JSX.Element {
       return
     }
 
-    const drawioImport = isDrawioDiagram(result.content) ? importDrawioDiagram(result.content) : undefined
+    importExternalSource(result.content, fileName, result.filePath ?? fileName)
+  }
 
-    setTitle(fileName)
+  function openPasteDialog(): void {
+    setPastedSource('')
+    setIsPasteModalOpen(true)
+  }
 
-    if (drawioImport) {
-      const importedSnapshot = createDiagramSnapshotFromGraph(
-        {
-          diagramType: 'flowchart',
-          direction: 'LR',
-          nodes: drawioImport.nodes,
-          edges: drawioImport.edges
-        },
-        {
-          id: createDiagramId(),
-          title: fileName,
-          autoSync: true,
-          appTheme
-        }
-      )
-
-      resetHistory()
-      setDiagrams([importedSnapshot])
-      applySnapshot(importedSnapshot)
-      setSelectedNodeIds([])
-      setSelectedEdgeIds([])
-      setSelectedEdgeId(null)
-      setStatus(`Imported draw.io diagram from ${result.filePath}`)
+  function importPastedSource(): void {
+    const trimmed = pastedSource.trim()
+    if (!trimmed) {
+      setStatus('Paste Mermaid, PlantUML or draw.io source first')
       return
     }
 
-    const importedMermaidSnapshot = (() => {
-      try {
-        return createDiagramSnapshotFromMermaidCode(result.content, {
-          id: createDiagramId(),
-          title: fileName,
-          autoSync: false,
-          appTheme
-        })
-      } catch {
-        return undefined
-      }
-    })()
-
-    if (importedMermaidSnapshot) {
-      resetHistory()
-      setDiagrams([importedMermaidSnapshot])
-      applySnapshot(importedMermaidSnapshot)
-      requestFitView()
-      setStatus(`Opened ${result.filePath}`)
-      return
-    }
-
-    resetHistory()
-    const importedSnapshot = {
-      ...createDefaultDiagramSnapshot(createDiagramId(), appTheme),
-      title: fileName,
-      code: result.content,
-      autoSync: false
-    }
-    setDiagrams([importedSnapshot])
-    applySnapshot(importedSnapshot)
-    setStatus(`Opened ${result.filePath}`)
+    importExternalSource(trimmed, 'Pasted Diagram', 'clipboard')
+    setIsPasteModalOpen(false)
   }
 
   async function saveDiagram(): Promise<void> {
@@ -1789,6 +1839,7 @@ export default function App(): JSX.Element {
         canRedo={redoStack.length > 0}
         onNewDiagram={createNewDiagram}
         onOpenDiagram={openDiagram}
+        onPasteDiagram={openPasteDialog}
         onSaveDiagram={saveDiagram}
         onSaveMermaid={saveMermaid}
         onAutoLayout={autoLayoutDiagram}
@@ -1917,6 +1968,33 @@ export default function App(): JSX.Element {
           />
         </section>
       </section>
+      <LightboxModal
+        title="Paste source to import"
+        open={isPasteModalOpen}
+        onClose={() => setIsPasteModalOpen(false)}
+        bodyClassName="lightbox-modal__body--paste-import"
+      >
+        <div className="paste-import">
+          <p className="paste-import__hint">
+            Paste Mermaid, PlantUML or draw.io source. Format will be detected automatically.
+          </p>
+          <textarea
+            className="paste-import__textarea"
+            value={pastedSource}
+            placeholder="Paste source code here..."
+            onChange={(event) => setPastedSource(event.target.value)}
+            spellCheck={false}
+          />
+          <div className="paste-import__actions">
+            <button type="button" className="compact-action" onClick={() => setIsPasteModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="button" className="compact-action primary-action" onClick={importPastedSource}>
+              Import
+            </button>
+          </div>
+        </div>
+      </LightboxModal>
     </main>
   )
 }

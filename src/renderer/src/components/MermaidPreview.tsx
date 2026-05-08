@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useState, type RefObject } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type RefObject,
+  type WheelEvent
+} from 'react'
 import mermaid from 'mermaid'
 
 type MermaidPreviewProps = {
@@ -48,7 +56,71 @@ export function MermaidPreview({
   const [svg, setSvg] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isRendering, setIsRendering] = useState(false)
+  const [zoom, setZoom] = useState(1)
+  const [isPanning, setIsPanning] = useState(false)
   const renderId = useMemo(() => `mermaid-${Date.now().toString(36)}`, [code])
+  const zoomStep = 0.1
+  const minZoom = 0.2
+  const maxZoom = 3
+  const panStateRef = useRef({
+    isActive: false,
+    startX: 0,
+    startY: 0,
+    scrollLeft: 0,
+    scrollTop: 0
+  })
+
+  const setSafeZoom = (value: number): void => {
+    setZoom(Math.min(maxZoom, Math.max(minZoom, value)))
+  }
+
+  const handleWheelZoom = (event: WheelEvent<HTMLDivElement>): void => {
+    if (!svg) {
+      return
+    }
+    event.preventDefault()
+    const direction = event.deltaY < 0 ? 1 : -1
+    setSafeZoom(zoom + direction * zoomStep)
+  }
+
+  const handlePanStart = (event: MouseEvent<HTMLDivElement>): void => {
+    if (!svg || event.button !== 0) {
+      return
+    }
+    const target = event.target as HTMLElement
+    if (target.closest('.preview-zoom-controls')) {
+      return
+    }
+    const container = event.currentTarget
+    panStateRef.current = {
+      isActive: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      scrollLeft: container.scrollLeft,
+      scrollTop: container.scrollTop
+    }
+    setIsPanning(true)
+  }
+
+  const handlePanMove = (event: MouseEvent<HTMLDivElement>): void => {
+    if (!panStateRef.current.isActive) {
+      return
+    }
+    event.preventDefault()
+    const container = event.currentTarget
+    const deltaX = event.clientX - panStateRef.current.startX
+    const deltaY = event.clientY - panStateRef.current.startY
+    container.scrollLeft = panStateRef.current.scrollLeft - deltaX
+    container.scrollTop = panStateRef.current.scrollTop - deltaY
+  }
+
+  const handlePanEnd = (): void => {
+    if (!panStateRef.current.isActive) {
+      return
+    }
+    panStateRef.current.isActive = false
+    setIsPanning(false)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -103,8 +175,19 @@ export function MermaidPreview({
     }
   }, [code, onRenderStateChange, onSvgChange, renderId, suppressParentNotify, theme])
 
+  useEffect(() => {
+    setZoom(1)
+  }, [code, theme])
+
   return (
-    <div className="preview-panel" ref={containerRef}>
+    <div
+      className={`preview-panel ${svg ? 'preview-panel--pannable' : ''} ${isPanning ? 'preview-panel--panning' : ''}`}
+      ref={containerRef}
+      onMouseDown={handlePanStart}
+      onMouseMove={handlePanMove}
+      onMouseUp={handlePanEnd}
+      onMouseLeave={handlePanEnd}
+    >
       {error ? (
         <div className="preview-error">
           <strong>Mermaid render error</strong>
@@ -113,7 +196,40 @@ export function MermaidPreview({
       ) : isRendering ? (
         <div className="preview-loading">Rendering diagram...</div>
       ) : (
-        <div className="preview-canvas" dangerouslySetInnerHTML={{ __html: svg }} />
+        <div className="preview-canvas-wrap">
+          <div className="preview-zoom-controls" role="group" aria-label="Preview zoom controls">
+            <button
+              type="button"
+              className="panel-heading__icon-action"
+              onClick={() => setSafeZoom(zoom - zoomStep)}
+              aria-label="Zoom out"
+            >
+              -
+            </button>
+            <button
+              type="button"
+              className="panel-heading__icon-action"
+              onClick={() => setZoom(1)}
+              aria-label="Reset zoom"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              className="panel-heading__icon-action"
+              onClick={() => setSafeZoom(zoom + zoomStep)}
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+          </div>
+          <div
+            className="preview-canvas"
+            onWheel={handleWheelZoom}
+            dangerouslySetInnerHTML={{ __html: svg }}
+            style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
+          />
+        </div>
       )}
     </div>
   )
