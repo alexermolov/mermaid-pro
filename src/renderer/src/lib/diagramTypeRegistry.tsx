@@ -15,7 +15,7 @@ type DiagramTypeDefinition = {
   renderIcon: () => JSX.Element
 }
 
-export const diagramTypeRegistry = {
+export const diagramTypeRegistry: Record<DiagramType, DiagramTypeDefinition> = {
   flowchart: {
     label: 'Flowchart',
     addNodeLabel: 'Add node',
@@ -24,7 +24,7 @@ export const diagramTypeRegistry = {
     editorMode: 'visual',
     createNodeData: (index) => ({ label: `Node ${index}` }),
     renderIcon: () => (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor">
         <rect x="3" y="4" width="8" height="6" rx="2" />
         <rect x="13" y="14" width="8" height="6" rx="2" />
         <path d="M 11 7 H 15 V 14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
@@ -39,7 +39,7 @@ export const diagramTypeRegistry = {
     editorMode: 'visual',
     createNodeData: (index) => ({ label: `Participant ${index}` }),
     renderIcon: () => (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor">
         <rect x="3" y="3" width="6" height="4" rx="1.5" />
         <rect x="15" y="3" width="6" height="4" rx="1.5" />
         <path d="M 6 7 V 21 M 18 7 V 21" fill="none" stroke="currentColor" strokeWidth="1.7" strokeDasharray="2.5 2.5" strokeLinecap="round" />
@@ -60,7 +60,7 @@ export const diagramTypeRegistry = {
       classMethods: '+method()'
     }),
     renderIcon: () => (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor">
         <rect x="4" y="3" width="16" height="18" rx="2" />
         <path d="M 4 8 H 20 M 4 13 H 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
       </svg>
@@ -77,7 +77,7 @@ export const diagramTypeRegistry = {
       stateDescription: 'entry action'
     }),
     renderIcon: () => (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor">
         <rect x="3.5" y="5" width="17" height="12" rx="6" />
         <path d="M 8 17 V 20 M 16 17 V 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
       </svg>
@@ -94,7 +94,7 @@ export const diagramTypeRegistry = {
       erAttributes: 'string name'
     }),
     renderIcon: () => (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor">
         <rect x="3" y="4" width="8" height="6" rx="1.5" />
         <rect x="13" y="14" width="8" height="6" rx="1.5" />
         <path d="M 11 7 L 15 17" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
@@ -110,7 +110,7 @@ export const diagramTypeRegistry = {
     editorMode: 'visual',
     createNodeData: (index) => ({ label: `Topic ${index}` }),
     renderIcon: () => (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor">
         <circle cx="12" cy="12" r="3.5" />
         <path d="M 12 8 V 4 M 8 12 H 4 M 16 12 H 20 M 9.2 14.8 L 6 18 M 14.8 14.8 L 18 18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
       </svg>
@@ -134,7 +134,7 @@ export const diagramTypeRegistry = {
     ].join('\n'),
     createNodeData: (index) => ({ label: `Milestone ${index}` }),
     renderIcon: () => (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor">
         <path d="M 4 12 H 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
         <circle cx="7" cy="12" r="1.7" />
         <circle cx="12" cy="12" r="1.7" />
@@ -143,7 +143,7 @@ export const diagramTypeRegistry = {
       </svg>
     )
   }
-} satisfies Record<DiagramType, DiagramTypeDefinition>
+}
 
 export const diagramTypes = Object.entries(diagramTypeRegistry).map(([value, definition]) => ({
   value: value as DiagramType,

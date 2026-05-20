@@ -148,7 +148,7 @@ function getFlowchartShapeAppearance(
   selected: boolean
 ): FlowchartShapeAppearance & { shadowColor: string } {
   return {
-    fill: style?.fillColor ?? 'var(--editable-node-bg)',
+    fill: style?.fillColor ?? 'var(--editable-node-svg-fill)',
     stroke: selected ? '#7c3aed' : style?.strokeColor ?? 'var(--editable-node-border)',
     strokeWidth: Math.max(style?.borderWidth ?? 1.5, selected ? 2 : 1.5),
     shadowColor: selected ? 'rgba(124, 58, 237, 0.2)' : 'var(--editable-node-shadow)'

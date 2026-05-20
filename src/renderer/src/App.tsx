@@ -1892,6 +1892,7 @@ export default function App(): JSX.Element {
           >
             <DiagramToolPalette
               diagramType={diagramType}
+              appTheme={appTheme}
               selectedNode={selectedNode}
               selectedEdge={selectedEdge}
               selectedNodeCount={selectedNodeIds.length}

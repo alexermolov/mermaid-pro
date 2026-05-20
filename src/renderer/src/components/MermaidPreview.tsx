@@ -27,6 +27,11 @@ const mermaidThemeVariables = {
     lineColor: '#1e40af',
     secondaryColor: '#f8fafc',
     tertiaryColor: '#eff6ff',
+    background: '#ffffff',
+    mainBkg: '#ffffff',
+    secondBkg: '#f8fafc',
+    tertiaryBkg: '#eff6ff',
+    textColor: '#0f172a',
     fontFamily: 'Inter, Segoe UI, sans-serif'
   },
   dark: {

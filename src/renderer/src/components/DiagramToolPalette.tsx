@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Copy, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
-import type { DiagramType } from '../../../shared/diagram'
+import type { AppTheme, DiagramType } from '../../../shared/diagram'
 import {
   classMultiplicityOptions,
   classRelationshipTypes,
@@ -29,6 +29,7 @@ import type {
 
 type DiagramToolPaletteProps = {
   diagramType: DiagramType
+  appTheme: AppTheme
   selectedNode: VisualNode | null
   selectedEdge: VisualEdge | null
   selectedNodeCount: number
@@ -92,6 +93,7 @@ type SelectOption = {
 
 export function DiagramToolPalette({
   diagramType,
+  appTheme,
   selectedNode,
   selectedEdge,
   selectedNodeCount,
@@ -145,6 +147,7 @@ export function DiagramToolPalette({
   const canAddSequenceMessage = diagramType === 'sequence' && Boolean(sequenceMessageSourceId) && Boolean(sequenceMessageTargetId)
   const nodeStyle = selectedNode?.data.style
   const edgeVisualStyle = selectedEdge?.data?.visualStyle
+  const defaultColors = paletteDefaultColors[appTheme]
   const selectionLabel = getSelectionLabel(selectedNodeCount, selectedEdgeCount, diagramType)
 
   if (diagramTypeDefinition.editorMode === 'form') {
@@ -311,8 +314,8 @@ export function DiagramToolPalette({
             value={selectedNode.data.shape ?? 'rectangle'}
             options={flowchartNodeShapes}
             appearance={{
-              fill: nodeStyle?.fillColor ?? '#1e293b',
-              stroke: nodeStyle?.strokeColor ?? '#60a5fa',
+              fill: nodeStyle?.fillColor ?? defaultColors.nodeFill,
+              stroke: nodeStyle?.strokeColor ?? defaultColors.nodeStroke,
               strokeWidth: Math.min(4, Math.max(1.5, nodeStyle?.borderWidth ?? 1.8))
             }}
             onChange={(value) => onSelectedNodeShapeChange(value as FlowchartNodeShape)}
@@ -320,19 +323,19 @@ export function DiagramToolPalette({
           <div className="palette-grid">
             <PaletteColorInput
               label="Fill"
-              value={nodeStyle?.fillColor ?? '#1e293b'}
+              value={nodeStyle?.fillColor ?? defaultColors.nodeFill}
               title="Node fill color"
               onChange={(value) => onSelectedNodeStyleChange({ fillColor: value })}
             />
             <PaletteColorInput
               label="Border"
-              value={nodeStyle?.strokeColor ?? '#60a5fa'}
+              value={nodeStyle?.strokeColor ?? defaultColors.nodeStroke}
               title="Node border color"
               onChange={(value) => onSelectedNodeStyleChange({ strokeColor: value })}
             />
             <PaletteColorInput
               label="Text"
-              value={nodeStyle?.textColor ?? '#f8fafc'}
+              value={nodeStyle?.textColor ?? defaultColors.nodeText}
               title="Node text color"
               onChange={(value) => onSelectedNodeStyleChange({ textColor: value })}
             />
@@ -382,8 +385,8 @@ export function DiagramToolPalette({
             value={selectedNode.data.sequenceParticipantType ?? selectedNode.data.sequenceParticipantKind ?? 'participant'}
             options={sequenceParticipantPresentations}
             appearance={{
-              fill: nodeStyle?.fillColor ?? 'var(--editable-node-bg)',
-              stroke: nodeStyle?.strokeColor ?? 'var(--editable-node-border)',
+              fill: nodeStyle?.fillColor ?? defaultColors.nodeFill,
+              stroke: nodeStyle?.strokeColor ?? defaultColors.nodeStroke,
               strokeWidth: Math.min(4, Math.max(1.5, nodeStyle?.borderWidth ?? 1.8))
             }}
             onChange={(value) =>
@@ -533,7 +536,7 @@ export function DiagramToolPalette({
                 value={selectedEdge.data?.lineStyle ?? 'arrow'}
                 options={flowchartEdgeStyles}
                 appearance={{
-                  stroke: edgeVisualStyle?.strokeColor ?? '#60a5fa',
+                  stroke: edgeVisualStyle?.strokeColor ?? defaultColors.edgeStroke,
                   strokeWidth: Math.min(4, Math.max(2, edgeVisualStyle?.strokeWidth ?? 3))
                 }}
                 onChange={(value) => onSelectedEdgeStyleChange(value as FlowchartEdgeStyle)}
@@ -541,7 +544,7 @@ export function DiagramToolPalette({
               <div className="palette-grid palette-grid--edge">
                 <PaletteColorInput
                   label="Color"
-                  value={edgeVisualStyle?.strokeColor ?? '#60a5fa'}
+                  value={edgeVisualStyle?.strokeColor ?? defaultColors.edgeStroke}
                   title="Edge line color"
                   onChange={(value) => onSelectedEdgeVisualStyleChange({ strokeColor: value })}
                 />
@@ -668,6 +671,29 @@ const classAnnotationPresets: SelectOption[] = [
   { value: 'Service', label: 'Service' },
   { value: 'Enumeration', label: 'Enumeration' }
 ]
+
+const paletteDefaultColors: Record<
+  AppTheme,
+  {
+    nodeFill: string
+    nodeStroke: string
+    nodeText: string
+    edgeStroke: string
+  }
+> = {
+  dark: {
+    nodeFill: '#1e293b',
+    nodeStroke: '#60a5fa',
+    nodeText: '#f8fafc',
+    edgeStroke: '#60a5fa'
+  },
+  light: {
+    nodeFill: '#ffffff',
+    nodeStroke: '#93c5fd',
+    nodeText: '#0f172a',
+    edgeStroke: '#2563eb'
+  }
+}
 
 function PaletteField({ label, children }: { label: string; children: ReactNode }): JSX.Element {
   return (
