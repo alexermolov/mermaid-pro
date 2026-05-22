@@ -187,12 +187,12 @@ app.whenReady().then(() => {
       return undefined
     }
 
-    const content =
-      payload.extension === 'png'
-        ? Buffer.from(payload.data.replace(/^data:image\/png;base64,/, ''), 'base64')
-        : payload.data
+    if (payload.extension === 'png') {
+      await writeFile(result.filePath, Buffer.from(payload.data.replace(/^data:image\/png;base64,/, ''), 'base64'))
+      return result.filePath
+    }
 
-    await writeFile(result.filePath, content)
+    await writeFile(result.filePath, payload.data, 'utf8')
     return result.filePath
   })
 

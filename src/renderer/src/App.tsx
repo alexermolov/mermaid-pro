@@ -82,6 +82,20 @@ const sidebarCollapsedWidth = 24
 const initialDiagramId = 'diagram-1'
 const initialDiagramSnapshot = createDefaultDiagramSnapshot(initialDiagramId)
 
+function serializeSvgForExport(container: HTMLElement | null, fallbackSvg: string): string {
+  const svgElement = container?.querySelector('svg')
+
+  if (!svgElement) {
+    return fallbackSvg
+  }
+
+  const svgClone = svgElement.cloneNode(true) as SVGSVGElement
+  svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+  svgClone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(svgClone)}\n`
+}
+
 export default function App(): JSX.Element {
   const [diagrams, setDiagrams] = useState<DiagramSnapshot[]>([initialDiagramSnapshot])
   const [selectedDiagramId, setSelectedDiagramId] = useState(initialDiagramId)
@@ -1800,7 +1814,7 @@ export default function App(): JSX.Element {
 
     const filePath = await window.mermaidPro.saveExport({
       fileName: `${toFileBaseName(title)}.svg`,
-      data: renderedSvg,
+      data: serializeSvgForExport(previewRef.current, renderedSvg),
       extension: 'svg'
     })
 
