@@ -1242,17 +1242,16 @@ label {
 .lightbox-modal__preview-host {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   display: grid;
 }
 
 .lightbox-modal__preview-host .preview-panel {
-  min-height: min-content;
   padding: clamp(20px, 4vw, 40px);
 }
 
 .lightbox-modal__preview-host .preview-canvas svg {
-  max-width: min(94vw, 1600px);
+  max-width: none;
   width: auto;
   height: auto;
 }
@@ -1276,11 +1275,11 @@ label {
 }
 
 .preview-panel {
-  display: grid;
+  position: relative;
+  display: block;
   min-height: 0;
-  justify-items: center;
-  align-content: start;
   overflow: auto;
+  overscroll-behavior: contain;
   background:
     linear-gradient(45deg, var(--preview-checker) 25%, transparent 25%),
     linear-gradient(-45deg, var(--preview-checker) 25%, transparent 25%),
@@ -1305,18 +1304,10 @@ label {
   user-select: none;
 }
 
-.preview-canvas {
-  display: flex;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  justify-content: center;
-  align-items: flex-start;
-}
-
 .preview-canvas-wrap {
   position: relative;
-  width: 100%;
+  min-width: 100%;
+  min-height: 100%;
 }
 
 .preview-zoom-controls {
@@ -1337,9 +1328,24 @@ label {
   line-height: 1;
 }
 
+.preview-canvas-space {
+  display: flex;
+  min-width: 100%;
+  min-height: 100%;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.preview-canvas {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+}
+
 .preview-canvas svg {
-  max-width: 100%;
+  display: block;
+  max-width: none;
   height: auto;
+  pointer-events: none;
 }
 
 .preview-error {

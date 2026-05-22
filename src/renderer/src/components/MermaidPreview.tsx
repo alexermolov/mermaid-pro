@@ -3,6 +3,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type MouseEvent,
   type RefObject,
   type WheelEvent
@@ -18,6 +19,15 @@ type MermaidPreviewProps = {
   /** Secondary instance (e.g. lightbox): do not clear/update parent export or status bar */
   suppressParentNotify?: boolean
 }
+
+type SvgDimensions = {
+  width: number
+  height: number
+}
+
+const zoomStep = 0.1
+const minZoom = 0.2
+const maxZoom = 3
 
 const mermaidThemeVariables = {
   light: {
@@ -50,6 +60,44 @@ const mermaidThemeVariables = {
   }
 } as const
 
+function clampZoom(value: number): number {
+  return Math.min(maxZoom, Math.max(minZoom, value))
+}
+
+function parseSvgLength(value: string | null): number | null {
+  if (!value) {
+    return null
+  }
+
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+function getSvgDimensions(svgMarkup: string): SvgDimensions | null {
+  const parsed = new DOMParser().parseFromString(svgMarkup, 'image/svg+xml')
+  const svgElement = parsed.querySelector('svg')
+
+  if (!svgElement) {
+    return null
+  }
+
+  const viewBox = svgElement.getAttribute('viewBox')
+  if (viewBox) {
+    const parts = viewBox.trim().split(/[\s,]+/).map(Number)
+    if (parts.length === 4 && parts.every(Number.isFinite) && parts[2] > 0 && parts[3] > 0) {
+      return {
+        width: parts[2],
+        height: parts[3]
+      }
+    }
+  }
+
+  const width = parseSvgLength(svgElement.getAttribute('width'))
+  const height = parseSvgLength(svgElement.getAttribute('height'))
+
+  return width && height ? { width, height } : null
+}
+
 export function MermaidPreview({
   code,
   containerRef,
@@ -59,14 +107,12 @@ export function MermaidPreview({
   suppressParentNotify = false
 }: MermaidPreviewProps): JSX.Element {
   const [svg, setSvg] = useState('')
+  const [svgDimensions, setSvgDimensions] = useState<SvgDimensions | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isRendering, setIsRendering] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [isPanning, setIsPanning] = useState(false)
   const renderId = useMemo(() => `mermaid-${Date.now().toString(36)}`, [code])
-  const zoomStep = 0.1
-  const minZoom = 0.2
-  const maxZoom = 3
   const panStateRef = useRef({
     isActive: false,
     startX: 0,
@@ -76,16 +122,33 @@ export function MermaidPreview({
   })
 
   const setSafeZoom = (value: number): void => {
-    setZoom(Math.min(maxZoom, Math.max(minZoom, value)))
+    setZoom(clampZoom(value))
   }
 
   const handleWheelZoom = (event: WheelEvent<HTMLDivElement>): void => {
     if (!svg) {
       return
     }
+
     event.preventDefault()
+
+    const container = event.currentTarget
+    const rect = container.getBoundingClientRect()
+    const anchorX = event.clientX - rect.left + container.scrollLeft
+    const anchorY = event.clientY - rect.top + container.scrollTop
     const direction = event.deltaY < 0 ? 1 : -1
-    setSafeZoom(zoom + direction * zoomStep)
+    const nextZoom = clampZoom(zoom + direction * zoomStep)
+
+    if (nextZoom === zoom) {
+      return
+    }
+
+    setZoom(nextZoom)
+    window.requestAnimationFrame(() => {
+      const zoomRatio = nextZoom / zoom
+      container.scrollLeft = anchorX * zoomRatio - (event.clientX - rect.left)
+      container.scrollTop = anchorY * zoomRatio - (event.clientY - rect.top)
+    })
   }
 
   const handlePanStart = (event: MouseEvent<HTMLDivElement>): void => {
@@ -96,6 +159,7 @@ export function MermaidPreview({
     if (target.closest('.preview-zoom-controls')) {
       return
     }
+    event.preventDefault()
     const container = event.currentTarget
     panStateRef.current = {
       isActive: true,
@@ -143,6 +207,7 @@ export function MermaidPreview({
 
         if (!cancelled) {
           setSvg(result.svg)
+          setSvgDimensions(getSvgDimensions(result.svg))
           setError(null)
           setIsRendering(false)
           if (!suppressParentNotify) {
@@ -153,6 +218,7 @@ export function MermaidPreview({
       } catch (caughtError) {
         if (!cancelled) {
           setSvg('')
+          setSvgDimensions(null)
           setError(caughtError instanceof Error ? caughtError.message : 'Unable to render diagram')
           setIsRendering(false)
           if (!suppressParentNotify) {
@@ -164,6 +230,7 @@ export function MermaidPreview({
     }
 
     setSvg('')
+    setSvgDimensions(null)
     setError(null)
     setIsRendering(true)
     if (!suppressParentNotify) {
@@ -182,12 +249,35 @@ export function MermaidPreview({
 
   useEffect(() => {
     setZoom(1)
+    if (containerRef.current) {
+      containerRef.current.scrollLeft = 0
+      containerRef.current.scrollTop = 0
+    }
   }, [code, theme])
+
+  const scaledCanvasStyle: CSSProperties | undefined = svgDimensions
+    ? {
+        width: `${Math.max(1, svgDimensions.width * zoom)}px`,
+        height: `${Math.max(1, svgDimensions.height * zoom)}px`
+      }
+    : undefined
+  const canvasStyle: CSSProperties = svgDimensions
+    ? {
+        width: `${svgDimensions.width}px`,
+        height: `${svgDimensions.height}px`,
+        transform: `scale(${zoom})`,
+        transformOrigin: 'top center'
+      }
+    : {
+        transform: `scale(${zoom})`,
+        transformOrigin: 'top center'
+      }
 
   return (
     <div
       className={`preview-panel ${svg ? 'preview-panel--pannable' : ''} ${isPanning ? 'preview-panel--panning' : ''}`}
       ref={containerRef}
+      onWheel={handleWheelZoom}
       onMouseDown={handlePanStart}
       onMouseMove={handlePanMove}
       onMouseUp={handlePanEnd}
@@ -229,11 +319,15 @@ export function MermaidPreview({
             </button>
           </div>
           <div
-            className="preview-canvas"
-            onWheel={handleWheelZoom}
-            dangerouslySetInnerHTML={{ __html: svg }}
-            style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}
-          />
+            className="preview-canvas-space"
+            style={scaledCanvasStyle}
+          >
+            <div
+              className="preview-canvas"
+              dangerouslySetInnerHTML={{ __html: svg }}
+              style={canvasStyle}
+            />
+          </div>
         </div>
       )}
     </div>
