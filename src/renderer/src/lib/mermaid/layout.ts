@@ -426,7 +426,9 @@ export function layoutFlowchartSubgraphNodes(
     acc = updated
   }
 
-  // Layout root-level nodes (no parentId) among themselves
+  // Layout root-level nodes (no parentId) among themselves.
+  // dagre-позиционируем только бордеры — дети уже имеют inner-позиции.
+  // Сдвигаем детей на delta бордера, чтобы layout сдвинулся целиком.
   const roots = acc.filter((n) => !n.parentId)
   if (roots.length > 1) {
     const rootEdges = edges.filter(
@@ -434,6 +436,20 @@ export function layoutFlowchartSubgraphNodes(
     )
     const laidRoots = autoLayoutNodes(roots, rootEdges, direction, diagramType)
     const posById = new Map(laidRoots.map((n) => [n.id, n.position]))
+
+    // Translate children (including nested boundaries) by boundary delta
+    for (const boundary of boundaries) {
+      const newPos = posById.get(boundary.id)
+      const oldPos = boundary.position
+      if (!newPos || (newPos.x === oldPos.x && newPos.y === oldPos.y)) {
+        continue
+      }
+      const dx = newPos.x - oldPos.x
+      const dy = newPos.y - oldPos.y
+      for (const child of childrenOf(boundary.id)) {
+        child.position = { x: child.position.x + dx, y: child.position.y + dy }
+      }
+    }
 
     return acc.map((node) => {
       const pos = posById.get(node.id)

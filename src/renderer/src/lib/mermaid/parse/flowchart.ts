@@ -216,6 +216,40 @@ function applySubgraphBoundaries(
   }
 
   function buildHierarchy(parentBoundaryId: string, parentSubgraphId: string): void {
+    // Create boundary for the current subgraph itself (fixes root-level subgraphs
+    // that have no child subgraphs — previously the loop below never ran).
+    if (!created.has(parentSubgraphId)) {
+      created.add(parentSubgraphId)
+
+      const bId = boundaryId(parentSubgraphId)
+      const entry = subgraphs.get(parentSubgraphId)
+      if (entry) {
+        const title = entry.title ?? parentSubgraphId
+        const subgraphNode: VisualNode = {
+          id: bId,
+          type: 'subgraphBoundary',
+          position: { x: 0, y: 0 },
+          data: { label: title, subgraphTitle: title, subgraphDirection: entry.direction },
+          style: { width: 380, height: 260 },
+          draggable: true,
+          selectable: true
+        }
+        nodeMap.set(bId, subgraphNode)
+        allNodes.push(subgraphNode)
+
+        // Assign child nodes to this subgraph boundary
+        for (const childNodeId of entry.nodeIds) {
+          const child = nodeMap.get(childNodeId)
+          if (child && child.type !== 'subgraphBoundary') {
+            child.parentId = bId
+            child.extent = undefined
+            child.data.flowchartSubgraphId = parentSubgraphId
+            child.data.flowchartSubgraphTitle = title
+          }
+        }
+      }
+    }
+
     const children = Array.from(subgraphs.entries())
       .filter(([, entry]) => entry.parentSubgraphId === parentSubgraphId)
 
@@ -241,7 +275,6 @@ function applySubgraphBoundaries(
       for (const childNodeId of entry.nodeIds) {
         const child = nodeMap.get(childNodeId)
         if (child && child.type !== 'subgraphBoundary') {
-          // Walk up to find the actual top-most parent
           child.parentId = bId
           child.extent = undefined
           child.data.flowchartSubgraphId = subId

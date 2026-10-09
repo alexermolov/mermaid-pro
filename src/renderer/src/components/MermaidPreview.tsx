@@ -41,7 +41,11 @@ const mermaidThemeVariables = {
     secondBkg: '#f8fafc',
     tertiaryBkg: '#eff6ff',
     textColor: '#0f172a',
-    fontFamily: 'Inter, Segoe UI, sans-serif'
+    fontFamily: 'Inter, Segoe UI, sans-serif',
+    subgroupBackgroundColor: '#ffffff',
+    subgroupBorderColor: '#94a3b8',
+    subgroupBorderWidth: '1.5px',
+    subgroupLineBreak: true
   },
   dark: {
     primaryColor: '#1e3a8a',
@@ -55,7 +59,11 @@ const mermaidThemeVariables = {
     secondBkg: '#111827',
     tertiaryBkg: '#172554',
     textColor: '#e2e8f0',
-    fontFamily: 'Inter, Segoe UI, sans-serif'
+    fontFamily: 'Inter, Segoe UI, sans-serif',
+    subgroupBackgroundColor: 'rgba(30, 41, 59, 0.6)',
+    subgroupBorderColor: '#64748b',
+    subgroupBorderWidth: '1.5px',
+    subgroupLineBreak: true
   }
 } as const
 
@@ -167,6 +175,30 @@ export function MermaidPreview({
   useEffect(() => {
     let cancelled = false
 
+    function injectSubgraphStyles(svgString: string): string {
+      const isDark = theme === 'dark'
+      const fill = isDark ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.85)'
+      const stroke = isDark ? '#475569' : '#94a3b8'
+      const labelBg = isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(255, 255, 255, 0.95)'
+
+      const subgraphCss = `
+        <style>
+          .mermaid .cluster rect.subgraph {
+            fill: ${fill} !important;
+            stroke: ${stroke} !important;
+            stroke-width: 1.5px !important;
+          }
+          .mermaid .cluster .cluster-label text {
+            fill: ${isDark ? '#cbd5e1' : '#475569'} !important;
+          }
+          .mermaid .cluster g.cluster-label rect {
+            fill: ${labelBg} !important;
+          }
+        </style>
+      `
+      return svgString.replace('</svg>', subgraphCss + '\n</svg>')
+    }
+
     async function render(): Promise<void> {
       try {
         mermaid.initialize({
@@ -179,12 +211,13 @@ export function MermaidPreview({
         const result = await mermaid.render(renderId, code)
 
         if (!cancelled) {
-          setSvg(result.svg)
+          const enhancedSvg = injectSubgraphStyles(result.svg)
+          setSvg(enhancedSvg)
           setSvgDimensions(getSvgDimensions(result.svg))
           setError(null)
           setIsRendering(false)
           if (!suppressParentNotify) {
-            onSvgChange(result.svg)
+            onSvgChange(enhancedSvg)
             onRenderStateChange('Preview is up to date')
           }
         }
