@@ -14,8 +14,8 @@ export function SubgraphBoundary(props: NodeProps<VisualNode>): JSX.Element {
   const borderWidth = 1.5
   const strokeColor = 'var(--accent)'
   const fillColor = 'rgba(15, 23, 42, 0.35)'
-  const width = DEFAULT_WIDTH
-  const height = DEFAULT_HEIGHT
+  const width = props.width ?? DEFAULT_WIDTH
+  const height = props.height ?? DEFAULT_HEIGHT
 
   const svgStyle: CSSProperties = {
     width,

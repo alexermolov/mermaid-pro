@@ -1,15 +1,13 @@
 // Verification: parse the user's subgraph flowchart and check that
 // children are laid out INSIDE their subgraph boundary containers.
-// dagre's UMD bundle expects a browser `window` global.
-;(globalThis as unknown as { window: unknown }).window = globalThis
-
+import './window-polyfill'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { parseFlowchart } from '../../src/renderer/src/lib/mermaid/parse/flowchart'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const code = readFileSync(join(here, 'user-diagram.mmd'), 'utf8')
+const code = readFileSync(join(here, '..', 'user-diagram.mmd'), 'utf8')
 const parsed = parseFlowchart(code.split(/\r?\n/))
 
 const boundaries = parsed.nodes.filter((n) => n.type === 'subgraphBoundary')

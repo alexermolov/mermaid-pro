@@ -429,7 +429,6 @@ export function layoutFlowchartSubgraphNodes(
 
   // Layout root-level nodes (no parentId) among themselves.
   // dagre-позиционируем только бордеры — дети уже имеют inner-позиции.
-  // Сдвигаем детей на delta бордера, чтобы layout сдвинулся целиком.
   const roots = acc.filter((n) => !n.parentId)
   if (roots.length > 1) {
     const nodeById = new Map(acc.map((n) => [n.id, n]))
@@ -462,24 +461,42 @@ export function layoutFlowchartSubgraphNodes(
     const laidRoots = autoLayoutNodes(roots, rootEdges, direction, diagramType)
     const posById = new Map(laidRoots.map((n) => [n.id, n.position]))
 
-    // Translate children (including nested boundaries) by boundary delta
-    for (const boundary of boundaries) {
-      const newPos = posById.get(boundary.id)
-      const oldPos = boundary.position
-      if (!newPos || (newPos.x === oldPos.x && newPos.y === oldPos.y)) {
-        continue
+    // Apply dagre positions to root boundary nodes.
+    // Children keep their relative positions inside parent; React Flow handles the rest.
+    for (const r of roots) {
+      const pos = posById.get(r.id)
+      if (pos) {
+        r.position = { ...pos }
       }
-      const dx = newPos.x - oldPos.x
-      const dy = newPos.y - oldPos.y
-      for (const child of childrenOf(boundary.id)) {
-        child.position = { x: child.position.x + dx, y: child.position.y + dy }
+    }
+
+    // Post-process: ensure gaps prevent overlap between large boundaries
+    const sortedRoots = roots.slice().sort((a, b) => a.position.y - b.position.y)
+    for (let i = 1; i < sortedRoots.length; i++) {
+      const prev = sortedRoots[i - 1]
+      const curr = sortedRoots[i]
+      const prevH = Number(prev.style?.height) || 260
+      const minY = prev.position.y + prevH + 40
+      if (curr.position.y < minY) {
+        curr.position.y = minY
+      }
+    }
+
+    // Also prevent horizontal overlap
+    const sortedByX = roots.slice().sort((a, b) => a.position.x - b.position.x)
+    for (let i = 1; i < sortedByX.length; i++) {
+      const prev = sortedByX[i - 1]
+      const curr = sortedByX[i]
+      const prevW = Number(prev.style?.width) || 380
+      const minX = prev.position.x + prevW + 40
+      if (curr.position.x < minX) {
+        curr.position.x = minX
       }
     }
 
     return acc.map((node) => {
-      const pos = posById.get(node.id)
-      if (pos) {
-        return { ...node, position: { ...pos } }
+      if (!node.parentId) {
+        return { ...node, position: { ...node.position } }
       }
       return node
     })
@@ -517,7 +534,7 @@ function getAutoLayoutNodeSize(node: VisualNode, diagramType?: DiagramType): { w
     node.data.stateDescription
   ].filter((section): section is string => typeof section === 'string' && section.trim().length > 0)
 
-  const lines = textSections.flatMap((section) => section.split(/\r?\n/).map((line) => line.trim()).filter(Boolean))
+  const lines = textSections.flatMap((section) => section.split(/<br\s*\/?>|\r?\n/).map((line) => line.trim()).filter(Boolean))
   const longestLineLength = Math.max(...lines.map((line) => line.length), 12)
   const lineCount = Math.max(lines.length, 1)
 
