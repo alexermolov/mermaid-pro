@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Copy, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { Copy, Maximize, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { AppTheme, DiagramType } from '../../../shared/diagram'
 import {
   classMultiplicityOptions,
@@ -51,6 +51,8 @@ type DiagramToolPaletteProps = {
   onAddSequenceMessage: () => void
   onSequenceMessageDraftChange: (draft: Partial<{ sourceId: string; targetId: string }>) => void
   onDuplicateSelected: () => void
+  /** Restore default (registry) size for nodes resized via the canvas resize handles. */
+  onResetSelectedNodeSizes?: () => void
   onSelectedNodeShapeChange: (shape: FlowchartNodeShape) => void
   onSelectedSequenceParticipantPresentationChange: (presentation: SequenceParticipantPresentation) => void
   onSelectedNodeStyleChange: (style: Partial<FlowchartNodeStyle>) => void
@@ -111,6 +113,7 @@ export function DiagramToolPalette({
   onAddSequenceMessage,
   onSequenceMessageDraftChange,
   onDuplicateSelected,
+  onResetSelectedNodeSizes,
   onSelectedNodeShapeChange,
   onSelectedSequenceParticipantPresentationChange,
   onSelectedNodeStyleChange,
@@ -144,6 +147,8 @@ export function DiagramToolPalette({
   const canEditClassEdge = diagramType === 'class' && hasSingleEdgeSelection
   const canEditStateEdge = diagramType === 'state' && hasSingleEdgeSelection
   const canDuplicateNodes = selectedNodeCount > 0
+  const hasResizedSingleNode =
+    hasSingleNodeSelection && (selectedNode?.width != null || selectedNode?.height != null)
   const canAddSequenceMessage = diagramType === 'sequence' && Boolean(sequenceMessageSourceId) && Boolean(sequenceMessageTargetId)
   const nodeStyle = selectedNode?.data.style
   const edgeVisualStyle = selectedEdge?.data?.visualStyle
@@ -277,6 +282,15 @@ export function DiagramToolPalette({
           <Copy size={16} />
           Duplicate
         </button>
+        {onResetSelectedNodeSizes && hasResizedSingleNode && (
+          <button
+            onClick={onResetSelectedNodeSizes}
+            title="Restore the default node size after manual resizing"
+          >
+            <Maximize size={16} />
+            Reset size
+          </button>
+        )}
         <button
           className="danger-action"
           onClick={onDeleteSelected}

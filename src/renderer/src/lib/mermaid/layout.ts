@@ -359,6 +359,104 @@ export function getSequenceLifelineHeight(messageCount: number): number {
   return Math.max(180, 96 + messageCount * 56)
 }
 
+/**
+ * Hierarchical layout for flowcharts with subgraph boundary nodes (React Flow `parentId`).
+ * Positions subgraph containers first, then arranges child nodes inside each container.
+ */
+export function layoutFlowchartSubgraphNodes(
+  nodes: VisualNode[],
+  edges: VisualEdge[],
+  direction: DiagramDirection,
+  diagramType?: DiagramType
+): VisualNode[] {
+  let acc = nodes.map((node) => ({ ...node }))
+  const childrenOf = (parentId: string) => acc.filter((n) => n.parentId === parentId)
+
+  // Collect all subgraph boundaries sorted deepest-first so parents expand after children
+  const boundaries = acc.filter((n) => n.type === 'subgraphBoundary').sort((a, b) => b.id.length - a.id.length)
+
+  for (const boundary of boundaries) {
+    const children = childrenOf(boundary.id)
+    if (children.length === 0) {
+      boundary.style = { ...boundary.style, width: 380, height: 260 }
+      continue
+    }
+
+    // Auto-layout children within the subgraph
+    const childIds = new Set(children.map((c) => c.id))
+    const innerEdges = edges.filter((e) => childIds.has(e.source) && childIds.has(e.target))
+    const laidChildren = autoLayoutNodes(children, innerEdges, direction, diagramType)
+
+    // Normalize children positions relative to (0, 0)
+    const minX = Math.min(...laidChildren.map((n) => n.position.x))
+    const minY = Math.min(...laidChildren.map((n) => n.position.y))
+    const pad = 48
+
+    const rel = laidChildren.map((n) => ({
+      ...n,
+      position: {
+        x: n.position.x - minX + pad,
+        y: n.position.y - minY + pad
+      }
+    }))
+
+    // Compute bounding box of children
+    let maxX = 0
+    let maxY = 0
+    for (const child of rel) {
+      const sz = getAutoLayoutNodeSize(child, diagramType)
+      maxX = Math.max(maxX, child.position.x + sz.width)
+      maxY = Math.max(maxY, child.position.y + sz.height)
+    }
+
+    const boxW = Math.max(380, maxX + pad)
+    const boxH = Math.max(260, maxY + pad)
+
+    // Update positions
+    const updated = acc.map((node) => {
+      const hit = rel.find((r) => r.id === node.id)
+      if (hit) {
+        return { ...node, ...hit }
+      }
+      if (node.id === boundary.id) {
+        return { ...node, style: { ...node.style, width: boxW, height: boxH } }
+      }
+      return node
+    })
+    acc = updated
+  }
+
+  // Layout root-level nodes (no parentId) among themselves
+  const roots = acc.filter((n) => !n.parentId)
+  if (roots.length > 1) {
+    const rootEdges = edges.filter(
+      (e) => !e.source.startsWith('__sg_') && !e.target.startsWith('__sg_')
+    )
+    const laidRoots = autoLayoutNodes(roots, rootEdges, direction, diagramType)
+    const posById = new Map(laidRoots.map((n) => [n.id, n.position]))
+
+    return acc.map((node) => {
+      const pos = posById.get(node.id)
+      if (pos) {
+        return { ...node, position: { ...pos } }
+      }
+      return node
+    })
+  }
+
+  // If only one root (the subgraph itself), position it at origin
+  if (roots.length === 1 && roots[0].type === 'subgraphBoundary') {
+    return acc.map((node) => {
+      if (node.id === roots[0].id) {
+        return { ...node, position: { x: 120, y: 120 } }
+      }
+      return node
+    })
+  }
+
+  return acc
+}
+
 function getAutoLayoutNodeSize(node: VisualNode, diagramType?: DiagramType): { width: number; height: number } {
   const textSections = [
     node.data.label,

@@ -268,7 +268,110 @@ type FlowchartSubgraphTree = {
   rootSubgraphs: FlowchartSubgraphDefinition[]
 }
 
+/**
+ * Strip the `__sg_` / `__` wrapper from a subgraph boundary node ID
+ * to recover the original subgraph ID used in Mermaid code.
+ */
+function extractSubgraphIdFromBoundary(boundaryId: string): string | undefined {
+  const match = /^__sg_(.+?)__$/.exec(boundaryId)
+  return match ? match[1] : undefined
+}
+
+/**
+ * Build subgraph tree from `parentId` relationships where `parentId` points
+ * to a `subgraphBoundary` node, as a fallback to the legacy `flowchartSubgraphPathIds`.
+ */
+function collectFlowchartSubgraphTreeFromParentId(
+  nodes: VisualNode[]
+): FlowchartSubgraphTree {
+  // Find all subgraph boundary nodes
+  const boundaries = nodes.filter(
+    (n) => n.type === 'subgraphBoundary'
+  )
+  const boundaryIdToSubgraphId = new Map<string, string>()
+  for (const boundary of boundaries) {
+    const subId = extractSubgraphIdFromBoundary(boundary.id)
+    if (subId) {
+      boundaryIdToSubgraphId.set(boundary.id, subId)
+    }
+  }
+
+  if (boundaryIdToSubgraphId.size === 0) {
+    return { rootSubgraphs: [] }
+  }
+
+  const subgraphMap = new Map<string, FlowchartSubgraphDefinition>()
+  const rootSubgraphIds = new Set<string>()
+  const boundaryChildren = new Map<string, string[]>()
+
+  for (const node of nodes) {
+    if (node.parentId && boundaryIdToSubgraphId.has(node.parentId)) {
+      const subId = boundaryIdToSubgraphId.get(node.parentId!)
+      if (!subId) continue
+
+      // Register the subgraph
+      if (!subgraphMap.has(subId)) {
+        const boundary = boundaries.find((b) => b.id === node.parentId)
+        subgraphMap.set(subId, {
+          id: subId,
+          title: boundary?.data.subgraphTitle,
+          direction: boundary?.data.subgraphDirection,
+          ownNodes: [],
+          childSubgraphs: []
+        })
+        rootSubgraphIds.add(subId)
+      }
+
+      subgraphMap.get(subId)!.ownNodes.push(node)
+
+      // Record that this boundary contains children (may be sub-boundaries)
+      if (!boundaryChildren.has(node.parentId!)) {
+        boundaryChildren.set(node.parentId!, [])
+      }
+    }
+  }
+
+  // Build nesting by checking if any boundary's children include other boundaries
+  for (const boundary of boundaries) {
+    const children = nodes.filter((n) => n.parentId === boundary.id)
+    for (const child of children) {
+      if (boundaryIdToSubgraphId.has(child.id)) {
+        // child is a nested subgraph boundary
+        const childSubId = boundaryIdToSubgraphId.get(child.id)!
+        const parentSubId = boundaryIdToSubgraphId.get(boundary.id)
+        if (parentSubId && childSubId) {
+          rootSubgraphIds.delete(childSubId) // not a root
+          const parentSub = subgraphMap.get(parentSubId)
+          const childSub = subgraphMap.get(childSubId)
+          if (parentSub && childSub && !parentSub.childSubgraphs.includes(childSub)) {
+            parentSub.childSubgraphs.push(childSub)
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    rootSubgraphs: Array.from(rootSubgraphIds)
+      .map((id) => subgraphMap.get(id))
+      .filter(
+        (sg): sg is FlowchartSubgraphDefinition => Boolean(sg)
+      )
+  }
+}
+
 function collectFlowchartSubgraphTree(nodes: VisualNode[]): FlowchartSubgraphTree {
+  // Try legacy format first (flowchartSubgraphPathIds on nodes)
+  const legacyTree = collectFlowchartSubgraphTreeFromLegacy(nodes)
+  if (legacyTree.rootSubgraphs.length > 0) {
+    return legacyTree
+  }
+
+  // Fallback: build from parentId relationships with subgraphBoundary nodes
+  return collectFlowchartSubgraphTreeFromParentId(nodes)
+}
+
+function collectFlowchartSubgraphTreeFromLegacy(nodes: VisualNode[]): FlowchartSubgraphTree {
   const subgraphMap = new Map<string, FlowchartSubgraphDefinition>()
   const rootSubgraphIds: string[] = []
 

@@ -49,6 +49,7 @@ import {
   defaultDiagram,
   getSequenceLifelineHeight,
   graphToMermaidText,
+  layoutFlowchartSubgraphNodes,
   layoutSequenceNodes,
   nextNodeId,
   toMermaid,
@@ -884,6 +885,32 @@ export default function App(): JSX.Element {
     setStatus(`Duplicated ${duplicatedNodes.length} selected node${duplicatedNodes.length === 1 ? '' : 's'}`)
   }, [edges, nodes, selectedNodeIds, setEdges, setNodes])
 
+  const resetSelectedNodeSizes = useCallback(() => {
+    if (selectedNodeIds.length === 0) {
+      return
+    }
+
+    const selectedNodeIdSet = new Set(selectedNodeIds)
+    const resetNodeIds = nodes
+      .filter((node) => selectedNodeIdSet.has(node.id) && (node.width != null || node.height != null))
+      .map((node) => node.id)
+
+    if (resetNodeIds.length === 0) {
+      return
+    }
+
+    const resetNodeIdSet = new Set(resetNodeIds)
+    setNodes((currentNodes) =>
+      currentNodes.map((node) =>
+        resetNodeIdSet.has(node.id)
+          ? { ...node, width: undefined, height: undefined, style: { ...node.style, width: undefined, height: undefined } }
+          : node
+      )
+    )
+    setAutoSync(true)
+    setStatus(`Restored default size for ${resetNodeIds.length} node${resetNodeIds.length === 1 ? '' : 's'}`)
+  }, [nodes, selectedNodeIds, setNodes])
+
   const addSelectedSequenceMessage = useCallback(() => {
     if (diagramType !== 'sequence') {
       return
@@ -1528,9 +1555,19 @@ export default function App(): JSX.Element {
       return
     }
 
-    setNodes(
-      diagramType === 'sequence' ? layoutSequenceNodes(nodes) : autoLayoutNodes(nodes, edges, nextDirection, diagramType)
-    )
+    setNodes((currentNodes) => {
+      if (diagramType === 'sequence') {
+        return layoutSequenceNodes(currentNodes)
+      }
+
+      let laid = autoLayoutNodes(currentNodes, edges, nextDirection, diagramType)
+
+      if (diagramType === 'flowchart') {
+        laid = layoutFlowchartSubgraphNodes(laid, edges, nextDirection, diagramType)
+      }
+
+      return laid
+    })
     setAutoSync(true)
   }
 
@@ -1929,6 +1966,7 @@ export default function App(): JSX.Element {
                 }))
               }
               onDuplicateSelected={duplicateSelectedNodes}
+              onResetSelectedNodeSizes={resetSelectedNodeSizes}
               onSelectedNodeShapeChange={updateSelectedNodeShape}
               onSelectedSequenceParticipantPresentationChange={updateSelectedSequenceParticipantPresentation}
               onSelectedNodeStyleChange={updateSelectedNodeStyle}

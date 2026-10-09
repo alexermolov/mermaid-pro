@@ -1438,6 +1438,23 @@ label {
   overflow: visible;
 }
 
+/* Subgraph boundary container */
+.subgraph-boundary {
+  position: relative;
+  pointer-events: none;
+}
+
+/* SVG shape fills the container */
+.subgraph-boundary__shape {
+  width: 100%;
+  height: 100%;
+}
+
+/* Edge connection handles on boundary */
+.subgraph-boundary__handle {
+  z-index: 10;
+}
+
 .editable-node--class .editable-node__content > input {
   border-bottom: 1.5px solid color-mix(in srgb, var(--editable-node-border) 88%, transparent);
   padding-bottom: 10px;

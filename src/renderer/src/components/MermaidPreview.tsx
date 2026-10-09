@@ -5,8 +5,7 @@ import {
   useState,
   type CSSProperties,
   type MouseEvent,
-  type RefObject,
-  type WheelEvent
+  type RefObject
 } from 'react'
 import mermaid from 'mermaid'
 
@@ -123,32 +122,6 @@ export function MermaidPreview({
 
   const setSafeZoom = (value: number): void => {
     setZoom(clampZoom(value))
-  }
-
-  const handleWheelZoom = (event: WheelEvent<HTMLDivElement>): void => {
-    if (!svg) {
-      return
-    }
-
-    event.preventDefault()
-
-    const container = event.currentTarget
-    const rect = container.getBoundingClientRect()
-    const anchorX = event.clientX - rect.left + container.scrollLeft
-    const anchorY = event.clientY - rect.top + container.scrollTop
-    const direction = event.deltaY < 0 ? 1 : -1
-    const nextZoom = clampZoom(zoom + direction * zoomStep)
-
-    if (nextZoom === zoom) {
-      return
-    }
-
-    setZoom(nextZoom)
-    window.requestAnimationFrame(() => {
-      const zoomRatio = nextZoom / zoom
-      container.scrollLeft = anchorX * zoomRatio - (event.clientX - rect.left)
-      container.scrollTop = anchorY * zoomRatio - (event.clientY - rect.top)
-    })
   }
 
   const handlePanStart = (event: MouseEvent<HTMLDivElement>): void => {
@@ -277,7 +250,6 @@ export function MermaidPreview({
     <div
       className={`preview-panel ${svg ? 'preview-panel--pannable' : ''} ${isPanning ? 'preview-panel--panning' : ''}`}
       ref={containerRef}
-      onWheel={handleWheelZoom}
       onMouseDown={handlePanStart}
       onMouseMove={handlePanMove}
       onMouseUp={handlePanEnd}

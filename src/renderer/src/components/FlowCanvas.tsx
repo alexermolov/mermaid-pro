@@ -14,9 +14,10 @@ import {
 import { useEffect, type ReactNode } from 'react'
 import { EditableNode } from './EditableNode'
 import { EditableEdge } from './EditableEdge'
+import { SubgraphBoundary } from './SubgraphBoundary'
 import type { VisualNode } from '../lib/mermaid'
 
-const nodeTypes = { editableNode: EditableNode }
+const nodeTypes = { editableNode: EditableNode, subgraphBoundary: SubgraphBoundary }
 const edgeTypes = { editableEdge: EditableEdge }
 
 type FlowTheme = {

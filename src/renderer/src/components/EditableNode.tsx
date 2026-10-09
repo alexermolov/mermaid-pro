@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { NodeProps } from '@xyflow/react'
-import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react'
+import { Handle, NodeResizer, Position, useUpdateNodeInternals } from '@xyflow/react'
 import type { CSSProperties } from 'react'
 import type { DiagramDirection } from '../../../shared/diagram'
 import type { FlowchartNodeStyle, VisualNode } from '../lib/mermaid'
@@ -34,13 +34,32 @@ function getNodeHandlePositions(diagramType: VisualNode['data']['diagramType'], 
   return getHandlePositions(direction)
 }
 
-export function EditableNode({ id, data, selected, isConnectable }: NodeProps<VisualNode>): JSX.Element {
+const defaultResizeMinWidth = 144
+const defaultResizeMinHeight = 58
+
+export function EditableNode({
+  id,
+  data,
+  selected,
+  isConnectable,
+  width,
+  height
+}: NodeProps<VisualNode>): JSX.Element {
   const updateNodeInternals = useUpdateNodeInternals()
   const handlePositions = getNodeHandlePositions(data.diagramType, data.direction)
   const presentation = resolveNodePresentation(data)
-  const nodeStyle = getNodeStyle(data.style, Boolean(presentation.renderShape), presentation.layout)
+  const nodeStyle = getNodeStyle(data.style, Boolean(presentation.renderShape), presentation.layout, width, height)
   const isFlowchartSubgraphNode = data.diagramType === 'flowchart' && Boolean(data.flowchartSubgraphId)
   const subgraphBadgeText = data.flowchartSubgraphTitle || data.flowchartSubgraphId
+  const isResizable = !data.statePseudo
+  const resizeMinWidth =
+    getLayoutNumber(presentation.layout?.minWidth) ??
+    getLayoutNumber(presentation.layout?.width) ??
+    defaultResizeMinWidth
+  const resizeMinHeight =
+    getLayoutNumber(presentation.layout?.minHeight) ??
+    getLayoutNumber(presentation.layout?.height) ??
+    defaultResizeMinHeight
 
   useEffect(() => {
     updateNodeInternals(id)
@@ -67,6 +86,13 @@ export function EditableNode({ id, data, selected, isConnectable }: NodeProps<Vi
       }`}
       style={nodeStyle}
     >
+      <NodeResizer
+        nodeId={id}
+        isVisible={Boolean(selected) && isResizable}
+        color="#7c3aed"
+        minWidth={resizeMinWidth}
+        minHeight={resizeMinHeight}
+      />
       {isFlowchartSubgraphNode ? (
         <div className="editable-node__subgraph-badge" title={`Subgraph: ${subgraphBadgeText}`}>
           {`Block: ${subgraphBadgeText}`}
@@ -158,13 +184,28 @@ function getFlowchartShapeAppearance(
 function getNodeStyle(
   style: VisualNode['data']['style'],
   isFlowchartShape = false,
-  flowchartLayout?: CSSProperties
+  flowchartLayout?: CSSProperties,
+  userWidth?: number | null,
+  userHeight?: number | null
 ): CSSProperties {
+  const { width: layoutWidth, height: layoutHeight, ...layoutRest } = flowchartLayout ?? {}
+  // When the user resized the node, React Flow sizes the wrapper from node.width/height;
+  // the inner element should fill it instead of forcing the registry default size.
+  const sizeStyle: CSSProperties = {
+    ...(userWidth != null ? { width: '100%' } : layoutWidth !== undefined ? { width: layoutWidth } : {}),
+    ...(userHeight != null ? { height: '100%' } : layoutHeight !== undefined ? { height: layoutHeight } : {})
+  }
+
   return {
-    ...(flowchartLayout ?? {}),
+    ...layoutRest,
+    ...sizeStyle,
     ...(!isFlowchartShape && style?.fillColor ? { background: style.fillColor } : {}),
     ...(!isFlowchartShape && style?.strokeColor ? { borderColor: style.strokeColor } : {}),
     ...(style?.textColor ? { color: style.textColor } : {}),
     ...(!isFlowchartShape && style?.borderWidth ? { borderWidth: style.borderWidth } : {})
   }
+}
+
+function getLayoutNumber(value: CSSProperties['width'] | CSSProperties['height']): number | undefined {
+  return typeof value === 'number' ? value : undefined
 }

@@ -177,13 +177,94 @@ export function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
     }
   }
 
+  const allNodes = Array.from(nodes.values())
+  applySubgraphBoundaries(allNodes, nodes, subgraphs)
+
   return {
     diagramType: 'flowchart',
     direction,
-    nodes: autoLayoutNodes(Array.from(nodes.values()), edges, direction, 'flowchart'),
+    nodes: autoLayoutNodes(allNodes, edges, direction, 'flowchart'),
     edges
   }
 }
+
+/**
+ * Create visual subgraph boundary nodes and wire `parentId` on child nodes
+ * so React Flow constrains them inside the container during pan / zoom.
+ */
+function applySubgraphBoundaries(
+  allNodes: VisualNode[],
+  nodeMap: Map<string, VisualNode>,
+  subgraphs: Map<string, ParsedFlowchartSubgraph>
+): void {
+  const boundaryId = (subId: string) => `__sg_${subId}__`
+  const created = new Set<string>()
+
+  function resolveTopMostParent(subId: string): string {
+    let current = subId
+    let top = current
+    while (true) {
+      const entry = subgraphs.get(current)
+      const parent = entry?.parentSubgraphId
+      if (!parent || subgraphs.has(parent)) {
+        top = current
+        break
+      }
+      current = parent
+    }
+    return boundaryId(top)
+  }
+
+  function buildHierarchy(parentBoundaryId: string, parentSubgraphId: string): void {
+    const children = Array.from(subgraphs.entries())
+      .filter(([, entry]) => entry.parentSubgraphId === parentSubgraphId)
+
+    for (const [subId, entry] of children) {
+      if (created.has(subId)) continue
+      created.add(subId)
+
+      const bId = boundaryId(subId)
+      const title = entry.title ?? subId
+      const subgraphNode: VisualNode = {
+        id: bId,
+        type: 'subgraphBoundary',
+        position: { x: 0, y: 0 },
+        data: { label: title, subgraphTitle: title, subgraphDirection: entry.direction },
+        style: { width: 380, height: 260 },
+        draggable: true,
+        selectable: true
+      }
+      nodeMap.set(bId, subgraphNode)
+      allNodes.push(subgraphNode)
+
+      // Assign child nodes to this subgraph boundary
+      for (const childNodeId of entry.nodeIds) {
+        const child = nodeMap.get(childNodeId)
+        if (child && child.type !== 'subgraphBoundary') {
+          // Walk up to find the actual top-most parent
+          child.parentId = bId
+          child.extent = undefined
+          child.data.flowchartSubgraphId = subId
+          child.data.flowchartSubgraphTitle = title
+        }
+      }
+
+      // Recurse into nested subgraphs
+      buildHierarchy(bId, subId)
+    }
+  }
+
+  // Find root subgraphs (no parent or parent not in map)
+  for (const [subId, entry] of subgraphs) {
+    const parent = entry.parentSubgraphId
+    if (!parent || !subgraphs.has(parent)) {
+      if (!created.has(subId)) {
+        buildHierarchy(resolveTopMostParent(subId), subId)
+      }
+    }
+  }
+}
+
 function tryParseFlowchartNode(
   line: string,
   nodes: Map<string, VisualNode>,

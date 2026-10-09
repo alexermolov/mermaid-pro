@@ -113,6 +113,10 @@ export type VisualNodeData = {
   flowchartSubgraphPathDirections?: Array<DiagramDirection | undefined>
   flowchartClassNames?: string[]
   flowchartClassStyles?: FlowchartClassStyleMap
+  /** Title text rendered on subgraph boundary containers (set by parser). */
+  subgraphTitle?: string
+  /** Direction stored on subgraph boundary nodes (set by parser). */
+  subgraphDirection?: DiagramDirection
   sequenceParticipantKind?: SequenceParticipantKind
   sequenceParticipantType?: SequenceParticipantType
   onLabelChange?: (id: string, label: string) => void
