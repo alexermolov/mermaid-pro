@@ -440,6 +440,10 @@ function tryParseFlowchartEdge(
       nodeClassAssignments,
       targetDescriptor.id === parsedEdge.target.id ? subgraphPathData : undefined
     )
+    // Skip self-loops caused by resolving a subgraph endpoint to the same node as the other endpoint
+    if (sourceNode.id === targetNode.id && parsedEdge.source.id !== parsedEdge.target.id) {
+      return
+    }
     const edgeId = `${sourceNode.id}-${targetNode.id}-${edges.length + 1}`
 
     edges.push({
