@@ -385,7 +385,8 @@ export function layoutFlowchartSubgraphNodes(
     // Auto-layout children within the subgraph
     const childIds = new Set(children.map((c) => c.id))
     const innerEdges = edges.filter((e) => childIds.has(e.source) && childIds.has(e.target))
-    const laidChildren = autoLayoutNodes(children, innerEdges, direction, diagramType)
+    const childDirection = boundary.data.subgraphDirection ?? direction
+    const laidChildren = autoLayoutNodes(children, innerEdges, childDirection, diagramType)
 
     // Normalize children positions relative to (0, 0)
     const minX = Math.min(...laidChildren.map((n) => n.position.x))
@@ -429,9 +430,33 @@ export function layoutFlowchartSubgraphNodes(
   // Layout root-level nodes (no parentId) among themselves
   const roots = acc.filter((n) => !n.parentId)
   if (roots.length > 1) {
-    const rootEdges = edges.filter(
-      (e) => !e.source.startsWith('__sg_') && !e.target.startsWith('__sg_')
-    )
+    const nodeById = new Map(acc.map((n) => [n.id, n]))
+
+    const rootOwnerOf = (nodeId: string): string | undefined => {
+      let current = nodeById.get(nodeId)
+      while (current?.parentId) {
+        const parent = nodeById.get(current.parentId)
+        if (!parent) {
+          return undefined
+        }
+        if (!parent.parentId) {
+          return parent.id
+        }
+        current = parent
+      }
+      return current && !current.parentId ? current.id : undefined
+    }
+
+    const rootEdges = []
+    for (const edge of edges) {
+      const sourceOwner = rootOwnerOf(edge.source)
+      const targetOwner = rootOwnerOf(edge.target)
+      if (!sourceOwner || !targetOwner || sourceOwner === targetOwner) {
+        continue
+      }
+      rootEdges.push({ ...edge, source: sourceOwner, target: targetOwner })
+    }
+
     const laidRoots = autoLayoutNodes(roots, rootEdges, direction, diagramType)
     const posById = new Map(laidRoots.map((n) => [n.id, n.position]))
 
@@ -458,6 +483,16 @@ export function layoutFlowchartSubgraphNodes(
 }
 
 function getAutoLayoutNodeSize(node: VisualNode, diagramType?: DiagramType): { width: number; height: number } {
+  if (node.type === 'subgraphBoundary') {
+    const rawW = node.style?.width
+    const rawH = node.style?.height
+    const styleWidth = typeof rawW === 'number' ? rawW : typeof rawW === 'string' ? parseFloat(rawW) : Number.NaN
+    const styleHeight = typeof rawH === 'number' ? rawH : typeof rawH === 'string' ? parseFloat(rawH) : Number.NaN
+    if (Number.isFinite(styleWidth) && Number.isFinite(styleHeight)) {
+      return { width: Math.max(240, styleWidth), height: Math.max(160, styleHeight) }
+    }
+  }
+
   const textSections = [
     node.data.label,
     node.data.classAttributes,

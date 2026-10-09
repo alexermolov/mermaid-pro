@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@types/dagre": "^0.7.54",
+    "dagre": "^0.8.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
