@@ -180,10 +180,14 @@ export function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
   const allNodes = Array.from(nodes.values())
   applySubgraphBoundaries(allNodes, nodes, subgraphs)
 
+  const hasSubgraphBoundaries = allNodes.some((node) => node.type === 'subgraphBoundary')
+
   return {
     diagramType: 'flowchart',
     direction,
-    nodes: layoutFlowchartSubgraphNodes(allNodes, edges, direction, 'flowchart'),
+    nodes: hasSubgraphBoundaries
+      ? layoutFlowchartSubgraphNodes(allNodes, edges, direction, 'flowchart')
+      : autoLayoutNodes(allNodes, edges, direction, 'flowchart'),
     edges
   }
 }
