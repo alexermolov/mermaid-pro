@@ -1,7 +1,7 @@
 import type { DiagramDirection } from '../../../../../shared/diagram'
 import { flowchartShapeAliases } from '../flowchart-shape-aliases'
 import { ensureNode } from '../graph-model'
-import { autoLayoutNodes } from '../layout'
+import { autoLayoutNodes, layoutFlowchartSubgraphNodes } from '../layout'
 import { normalizeEscapedText, normalizeFlowchartLabel } from '../text-utils'
 import type {
   FlowchartClassStyleMap,
@@ -183,7 +183,7 @@ export function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
   return {
     diagramType: 'flowchart',
     direction,
-    nodes: autoLayoutNodes(allNodes, edges, direction, 'flowchart'),
+    nodes: layoutFlowchartSubgraphNodes(allNodes, edges, direction, 'flowchart'),
     edges
   }
 }
