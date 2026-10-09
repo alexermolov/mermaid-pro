@@ -129,12 +129,22 @@ export function toSerializableNodes(nodes: VisualNode[]): VisualNode[] {
     delete data.diagramType
     delete data.direction
 
-    return {
+    const result = {
       ...node,
       selected: false,
       dragging: false,
       data
     }
+
+    // DEBUG: log any node losing its container binding (parentId/extent) during serialization
+    if (result.type !== 'subgraphBoundary' && !result.parentId && node.parentId) {
+      console.warn('[serialize] LOST parentId', { id: node.id, oldParentId: node.parentId, newParentId: result.parentId })
+    }
+    if (result.type !== 'subgraphBoundary' && result.extent === undefined && node.extent !== undefined) {
+      console.warn('[serialize] LOST extent', { id: node.id, oldExtent: node.extent })
+    }
+
+    return result
   })
 }
 
@@ -172,9 +182,10 @@ export function createDiagramSnapshotFromMermaidCode(
     title?: string
     autoSync?: boolean
     appTheme?: AppTheme
+    existingNodes?: Map<string, import('./mermaid').VisualNode>
   } = {}
 ): DiagramSnapshot {
-  const parsedDiagram = mermaidTextToGraph(code)
+  const parsedDiagram = mermaidTextToGraph(code, options.existingNodes)
 
   return {
     id: options.id ?? createDiagramId(),

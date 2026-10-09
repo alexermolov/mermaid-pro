@@ -29,11 +29,14 @@ type ParsedFlowchartSubgraph = {
   parentSubgraphId?: string
 }
 
-export function parseFlowchart(lines: string[]): ParsedMermaidDiagram {
+export function parseFlowchart(lines: string[], existingNodes?: Map<string, VisualNode>): ParsedMermaidDiagram {
   const headerMatch = lines[0]?.match(/^(?:flowchart|graph)\s+(TB|TD|LR|BT|RL)$/)
   const rawDirection = headerMatch?.[1]
   const direction = (rawDirection === 'TB' ? 'TD' : rawDirection) as DiagramDirection | undefined ?? 'TD'
-  const nodes = new Map<string, VisualNode>()
+  
+  // Если переданы существующие узлы, используем их как основу (сохраняем позиции)
+  // Иначе создаём новый пустой Map
+  const nodes = existingNodes ? new Map(existingNodes) : new Map<string, VisualNode>()
   const edges: VisualEdge[] = []
   const edgeIndexById = new Map<number, string>()
   const classStyles = new Map<string, FlowchartNodeStyle>()
@@ -201,6 +204,16 @@ function applySubgraphBoundaries(
   nodeMap: Map<string, VisualNode>,
   subgraphs: Map<string, ParsedFlowchartSubgraph>
 ): void {
+  console.log('[applySubgraphBoundaries] START', {
+    totalNodes: allNodes.length,
+    subgraphs: Array.from(subgraphs.entries()).map(([id, entry]) => ({
+      id,
+      title: entry.title,
+      nodeIds: entry.nodeIds,
+      childSubgraphIds: entry.childSubgraphIds,
+      parentSubgraphId: entry.parentSubgraphId
+    }))
+  })
   const boundaryId = (subId: string) => `__sg_${subId}__`
   const created = new Set<string>()
 
@@ -241,16 +254,23 @@ function applySubgraphBoundaries(
         nodeMap.set(bId, subgraphNode)
         allNodes.push(subgraphNode)
 
-        // Assign child nodes to this subgraph boundary
+        // Assign child nodes to this subgraph boundary.
+        // extent: 'parent' makes React Flow constrain these nodes inside the
+        // container, so they cannot be dragged outside the subgraph boundary.
+        const assignedChildren: string[] = []
         for (const childNodeId of entry.nodeIds) {
           const child = nodeMap.get(childNodeId)
           if (child && child.type !== 'subgraphBoundary') {
             child.parentId = bId
-            child.extent = undefined
+            child.extent = 'parent'
             child.data.flowchartSubgraphId = parentSubgraphId
             child.data.flowchartSubgraphTitle = title
+            assignedChildren.push(childNodeId)
+          } else {
+            console.warn('[applySubgraphBoundaries] SKIP child (missing or boundary)', { childNodeId, found: !!child, type: child?.type })
           }
         }
+        console.log('[applySubgraphBoundaries] ASSIGNED to', bId, { count: assignedChildren.length, children: assignedChildren })
       }
     }
 
@@ -275,16 +295,23 @@ function applySubgraphBoundaries(
       nodeMap.set(bId, subgraphNode)
       allNodes.push(subgraphNode)
 
-      // Assign child nodes to this subgraph boundary
+      // Assign child nodes to this subgraph boundary.
+      // extent: 'parent' makes React Flow constrain these nodes inside the
+      // container, so they cannot be dragged outside the subgraph boundary.
+      const assignedChildren2: string[] = []
       for (const childNodeId of entry.nodeIds) {
         const child = nodeMap.get(childNodeId)
         if (child && child.type !== 'subgraphBoundary') {
           child.parentId = bId
-          child.extent = undefined
+          child.extent = 'parent'
           child.data.flowchartSubgraphId = subId
           child.data.flowchartSubgraphTitle = title
+          assignedChildren2.push(childNodeId)
+        } else {
+          console.warn('[applySubgraphBoundaries] SKIP child (missing or boundary)', { childNodeId, found: !!child, type: child?.type })
         }
       }
+      console.log('[applySubgraphBoundaries] ASSIGNED to', bId, { count: assignedChildren2.length, children: assignedChildren2 })
 
       // Recurse into nested subgraphs
       buildHierarchy(bId, subId)
@@ -292,6 +319,10 @@ function applySubgraphBoundaries(
   }
 
   // Find root subgraphs (no parent or parent not in map)
+  const rootSubgraphs = Array.from(subgraphs.entries())
+    .filter(([, entry]) => !entry.parentSubgraphId || !subgraphs.has(entry.parentSubgraphId))
+    .map(([id]) => id)
+  console.log('[applySubgraphBoundaries] ROOT subgraphs:', rootSubgraphs)
   for (const [subId, entry] of subgraphs) {
     const parent = entry.parentSubgraphId
     if (!parent || !subgraphs.has(parent)) {
@@ -300,6 +331,43 @@ function applySubgraphBoundaries(
       }
     }
   }
+
+  // CRITICAL: React Flow requires parent nodes to appear BEFORE their children
+  // in the nodes array. Reorder allNodes so that any node with a parentId comes
+  // after its parent. We do a stable topological sort by depth.
+  const depth = new Map<string, number>()
+  const computeDepth = (nodeId: string): number => {
+    if (depth.has(nodeId)) return depth.get(nodeId)!
+    const node = nodeMap.get(nodeId)
+    if (!node || !node.parentId) {
+      depth.set(nodeId, 0)
+      return 0
+    }
+    const d = computeDepth(node.parentId) + 1
+    depth.set(nodeId, d)
+    return d
+  }
+  for (const node of allNodes) {
+    computeDepth(node.id)
+  }
+  // Stable sort: parents (lower depth) first
+  allNodes.sort((a, b) => (depth.get(a.id) ?? 0) - (depth.get(b.id) ?? 0))
+
+  // DEBUG: check for negative width/height which cause SVG render errors
+  const badNodes = allNodes.filter((n) => {
+    const w = n.width ?? (n.style?.width as number | undefined)
+    const h = n.height ?? (n.style?.height as number | undefined)
+    return (typeof w === 'number' && w < 0) || (typeof h === 'number' && h < 0)
+  })
+  if (badNodes.length > 0) {
+    console.warn('[applySubgraphBoundaries] NODES WITH NEGATIVE DIMENSIONS:',
+      badNodes.map((n) => ({ id: n.id, type: n.type, width: n.width, height: n.height, styleWidth: n.style?.width, styleHeight: n.style?.height }))
+    )
+  }
+
+  console.log('[applySubgraphBoundaries] END — final state (sorted by depth):',
+    allNodes.map((n) => ({ id: n.id, type: n.type, parentId: n.parentId, extent: n.extent, depth: depth.get(n.id) }))
+  )
 }
 
 function tryParseFlowchartNode(

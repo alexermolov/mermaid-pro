@@ -11,7 +11,7 @@ import { parseTimeline } from './timeline'
 
 const mermaidParsers: Array<{
   matches: (header: string) => boolean
-  parse: (lines: string[]) => ParsedMermaidDiagram
+  parse: (lines: string[], existingNodes?: Map<string, import('../types').VisualNode>) => ParsedMermaidDiagram
 }> = [
   {
     matches: (header) => /^(flowchart|graph)\s+(TB|TD|LR|BT|RL)$/.test(header),
@@ -43,7 +43,7 @@ const mermaidParsers: Array<{
   }
 ]
 
-export function parseMermaid(code: string): ParsedMermaidDiagram {
+export function parseMermaid(code: string, existingNodes?: Map<string, import('../types').VisualNode>): ParsedMermaidDiagram {
   const lines = stripLeadingMermaidFrontmatter(
     code
       .replace(/^\uFEFF/, '')
@@ -59,14 +59,14 @@ export function parseMermaid(code: string): ParsedMermaidDiagram {
 
   const matchingParser = mermaidParsers.find((parser) => parser.matches(header))
   if (matchingParser) {
-    return matchingParser.parse(lines)
+    return matchingParser.parse(lines, existingNodes)
   }
 
   throw new Error('Unsupported Mermaid diagram type')
 }
 
-export function mermaidTextToGraph(code: string): MermaidGraph {
-  return parseMermaid(code)
+export function mermaidTextToGraph(code: string, existingNodes?: Map<string, import('../types').VisualNode>): MermaidGraph {
+  return parseMermaid(code, existingNodes)
 }
 
 export function normalizeMermaidInput(input: string | MermaidGraphInput): { graph: MermaidGraph; code: string } {

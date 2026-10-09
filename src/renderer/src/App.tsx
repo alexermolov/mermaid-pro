@@ -1603,7 +1603,36 @@ export default function App(): JSX.Element {
   function syncFromCode(): void {
     try {
       setSkipDagre(true)
-      const parsedSnapshot = createDiagramSnapshotFromMermaidCode(code)
+      
+      // Создаём Map из существующих узлов, чтобы сохранить позиции при повторном парсинге
+      const existingNodesMap = new Map(nodes.map((node) => [node.id, node]))
+      console.log('[syncFromCode] BEFORE cleanup — nodes with parentId/extent:',
+        nodes.filter((n) => n.parentId || n.extent).map((n) => ({ id: n.id, type: n.type, parentId: n.parentId, extent: n.extent }))
+      )
+      // Удаляем stale subgraph-boundary nodes из existingNodes, чтобы парсер мог
+      // создать их заново с корректными parentId/extent. Иначе старые boundary
+      // блокируют создание новых и узлы теряют extent: 'parent'.
+      for (const key of Array.from(existingNodesMap.keys())) {
+        if (key.startsWith('__sg_') && key.endsWith('__')) {
+          existingNodesMap.delete(key)
+        }
+      }
+      // Чистим stale parentId/extent на обычных узлах: после изменения структуры
+      // subgraphs в коде старые ссылки могут указывать на несуществующие boundary.
+      // Парсер заново назначит parentId/extent через applySubgraphBoundaries.
+      for (const node of existingNodesMap.values()) {
+        if (node.type !== 'subgraphBoundary') {
+          delete node.parentId
+          delete node.extent
+        }
+      }
+      console.log('[syncFromCode] AFTER cleanup — remaining nodes:',
+        Array.from(existingNodesMap.values()).map((n) => ({ id: n.id, type: n.type, parentId: n.parentId, extent: n.extent }))
+      )
+      const parsedSnapshot = createDiagramSnapshotFromMermaidCode(code, { existingNodes: existingNodesMap })
+      console.log('[syncFromCode] AFTER parse — nodes with parentId/extent:',
+        parsedSnapshot.nodes.filter((n) => n.parentId || n.extent).map((n) => ({ id: n.id, type: n.type, parentId: n.parentId, extent: n.extent }))
+      )
       const parsedDiagramTypeDefinition = getDiagramTypeDefinition(parsedSnapshot.diagramType)
 
       setDiagramType(parsedSnapshot.diagramType)

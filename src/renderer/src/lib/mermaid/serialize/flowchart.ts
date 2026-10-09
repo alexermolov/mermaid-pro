@@ -86,6 +86,14 @@ export function toFlowchart(nodes: VisualNode[], edges: VisualEdge[], direction:
 
   const nodeLines = formatFlowchartNodeLines(nodes, subgraphTree)
 
+  // DEBUG: log boundary nodes that would be skipped (to verify the fix)
+  const boundaryNodes = nodes.filter((n) => n.type === 'subgraphBoundary')
+  if (boundaryNodes.length > 0) {
+    console.log('[toFlowchart] Skipping boundary nodes in residual loop:',
+      boundaryNodes.map((n) => n.id)
+    )
+  }
+
   const edgeLines = edges
     .map((edge) => {
       const label = edge.label ? String(edge.label) : ''
@@ -121,6 +129,11 @@ function formatFlowchartNodeLines(nodes: VisualNode[], subgraphTree: FlowchartSu
 
   for (const node of nodes) {
     if (assignedNodeIds.has(node.id)) {
+      continue
+    }
+    // Пропускаем subgraph-boundary nodes — они уже сериализованы как
+    // `subgraph ... end` блоки и не должны появляться как обычные узлы.
+    if (node.type === 'subgraphBoundary') {
       continue
     }
     lines.push(formatFlowchartNode(sanitizeId(node.id), escapeLabel(node.data.label || node.id), node.data.shape))

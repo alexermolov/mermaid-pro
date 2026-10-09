@@ -16,6 +16,14 @@ export function ensureNode(
     const shouldUpdateLabel =
       Boolean(label) && (!existingNode.data.label || existingNode.data.label === id || label !== id)
 
+    // DEBUG: log if ensureNode overwrites an existing parentId
+    if (opts?.parentId !== undefined && existingNode.parentId !== undefined && existingNode.parentId !== opts.parentId) {
+      console.warn('[ensureNode] OVERRIDING parentId', { id, old: existingNode.parentId, new: opts.parentId })
+    }
+    if (opts?.parentId !== undefined && existingNode.parentId === undefined && opts.parentId === undefined && existingNode.extent !== undefined) {
+      console.warn('[ensureNode] CLEARED extent (parentId became undefined)', { id, oldExtent: existingNode.extent })
+    }
+
     existingNode.data = {
       ...existingNode.data,
       ...(shouldUpdateLabel ? { label } : {}),
