@@ -16,6 +16,8 @@
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:browser": "vite",
+    "build:browser": "vite build",
     "build": "tsc --noEmit && electron-vite build",
     "check:mermaid-roundtrip": "tsx scripts/check-mermaid-roundtrip.ts",
     "dist": "npm run build && electron-builder",

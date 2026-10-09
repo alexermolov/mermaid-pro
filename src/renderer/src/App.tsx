@@ -52,6 +52,7 @@ import {
   layoutFlowchartSubgraphNodes,
   layoutSequenceNodes,
   nextNodeId,
+  setSkipDagre,
   toMermaid,
   type EditableVisualNodeData,
   type ErCardinality,
@@ -1601,6 +1602,7 @@ export default function App(): JSX.Element {
 
   function syncFromCode(): void {
     try {
+      setSkipDagre(true)
       const parsedSnapshot = createDiagramSnapshotFromMermaidCode(code)
       const parsedDiagramTypeDefinition = getDiagramTypeDefinition(parsedSnapshot.diagramType)
 
@@ -1620,6 +1622,8 @@ export default function App(): JSX.Element {
       )
     } catch (error) {
       setStatus(error instanceof Error ? `Sync failed: ${error.message}` : 'Sync failed')
+    } finally {
+      setSkipDagre(false)
     }
   }
 

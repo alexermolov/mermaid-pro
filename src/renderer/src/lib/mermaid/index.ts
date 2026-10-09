@@ -3,7 +3,7 @@
  */
 export * from './defaults'
 export * from './types'
-export { autoLayoutNodes, getSequenceLifelineHeight, layoutSequenceNodes, layoutStateCompositeNodes, layoutFlowchartSubgraphNodes } from './layout'
+export { autoLayoutNodes, getSequenceLifelineHeight, layoutSequenceNodes, layoutStateCompositeNodes, layoutFlowchartSubgraphNodes, setSkipDagre } from './layout'
 export { nextNodeId } from './graph-model'
 export { graphToMermaidText, toMermaid } from './serialize'
 export { mermaidTextToGraph, normalizeMermaidInput, parseMermaid } from './parse'

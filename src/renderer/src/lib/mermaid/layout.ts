@@ -3,6 +3,13 @@ import type { DiagramDirection, DiagramType } from '../../../../shared/diagram'
 import { STATE_SCOPE_SEP } from './stateDiagramIds'
 import type { VisualEdge, VisualNode } from './types'
 
+let _skipDagre = false
+
+/** Temporarily disable dagre layout (e.g. during manual Sync to inspect raw positions). */
+export function setSkipDagre(value: boolean): void {
+  _skipDagre = value
+}
+
 const autoLayoutOrigin = { x: 120, y: 120 }
 
 /** Dagre / fallback gaps: wide form cards (~220px) need extra room for edge paths and arrowheads. */
@@ -51,7 +58,7 @@ export function autoLayoutNodes(
   const nodeOrder = new Map(nodes.map((node, index) => [node.id, index]))
   const dagreSpacing = getAutoLayoutSpacing(diagramType)
 
-  if (nodes.length <= 1 || edges.length === 0) {
+  if (_skipDagre || nodes.length <= 1 || edges.length === 0) {
     return layoutParsedNodesLinearly(nodes, direction, diagramType)
   }
 
@@ -375,6 +382,15 @@ export function layoutFlowchartSubgraphNodes(
   // Collect all subgraph boundaries sorted deepest-first so parents expand after children
   const boundaries = acc.filter((n) => n.type === 'subgraphBoundary').sort((a, b) => b.id.length - a.id.length)
 
+  // Save child-relative layout data after inner layout, before dagre moves boundaries.
+  // Key: boundary.id → { children: [{id, relX, relY}], minX, minY }
+  type ChildLayoutEntry = {
+    children: { id: string; relX: number; relY: number }[]
+    minX: number
+    minY: number
+  }
+  const childLayout = new Map<string, ChildLayoutEntry>()
+
   for (const boundary of boundaries) {
     const children = childrenOf(boundary.id)
     if (children.length === 0) {
@@ -412,6 +428,13 @@ export function layoutFlowchartSubgraphNodes(
 
     const boxW = Math.max(380, maxX + pad)
     const boxH = Math.max(260, maxY + pad)
+
+    // Save relative child positions for later offset by dagre boundary position
+    childLayout.set(boundary.id, {
+      children: rel.map((c) => ({ id: c.id, relX: c.position.x, relY: c.position.y })),
+      minX,
+      minY
+    })
 
     // Update positions
     const updated = acc.map((node) => {
@@ -491,6 +514,28 @@ export function layoutFlowchartSubgraphNodes(
       const minX = prev.position.x + prevW + 40
       if (curr.position.x < minX) {
         curr.position.x = minX
+      }
+    }
+
+    // Offset children so they land inside their parent subgraph boundary.
+    // When dagre is disabled, boundary.position already includes the layout offset,
+    // so we use it directly instead of subtracting layout.minX (which would give ~0).
+    for (const boundary of boundaries) {
+      const layout = childLayout.get(boundary.id)
+      if (!layout) {
+        continue
+      }
+      const delta = _skipDagre
+        ? { x: boundary.position.x, y: boundary.position.y }
+        : { x: boundary.position.x - layout.minX, y: boundary.position.y - layout.minY }
+      for (const child of layout.children) {
+        const childNode = nodeById.get(child.id)
+        if (childNode) {
+          childNode.position = {
+            x: child.relX + delta.x,
+            y: child.relY + delta.y
+          }
+        }
       }
     }
 
